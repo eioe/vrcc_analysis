@@ -1,0 +1,61 @@
+Brain Vision Data Exchange Header File Version 1.0
+; Data created by the Vision Recorder
+
+[Common Infos]
+Codepage=UTF-8
+DataFile=diodeDummyData_03.eeg
+MarkerFile=diodeDummyData_03.vmrk
+DataFormat=BINARY
+; Data orientation: MULTIPLEXED=ch1,pt1, ch2,pt1 ...
+DataOrientation=MULTIPLEXED
+NumberOfChannels=2
+; Sampling interval in microseconds
+SamplingInterval=2000
+
+[Binary Infos]
+BinaryFormat=IEEE_FLOAT_32
+
+[Channel Infos]
+; Each entry: Ch<Channel number>=<Name>,<Reference channel name>,
+; <Resolution in "Unit">,<Unit>, Future extensions..
+; Fields are delimited by commas, some fields might be omitted (empty).
+; Commas in channel names are coded as "\1".
+Ch1=ECG,,1,mV
+Ch2=Photodiode,,1,mV
+
+[Comment]
+
+BrainVision Recorder Professional   -   V. 1.21.0402
+
+
+A m p l i f i e r  S e t u p
+============================
+Number of channels: 2
+Sampling Rate [Hz]: 500
+Sampling Interval [µS]: 2000
+
+Channels
+--------
+#     Name      Phys. Chn.    Resolution / Unit   Low Cutoff [s]   High Cutoff [Hz]   Notch [Hz]    Gradient         Offset
+1     ECG         33                 1 mV             DC              131              Off         100[mV/mV]       0[mV] = 0[mV]
+2     Photodiode  34                 1 mV             DC              131              Off          10[mV/mV]       0[mV] = 0[mV]
+
+
+LiveAmp SN:                		LA-054206-0127
+LiveAmp hardware revision: 		4
+Firmware version:          		4.4
+
+Sensor and trigger extension SN:                STE-054212-0022
+Sensor and trigger extension hardware revision: 1
+Sensor and trigger extension firmware version:  1.14
+
+Library version:           		9.18.6.27
+
+Use Active/Dry Electrodes: No
+
+S o f t w a r e  F i l t e r s
+==============================
+Disabled
+
+
+No impedance values available at 20:07:31!
