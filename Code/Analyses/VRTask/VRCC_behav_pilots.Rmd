@@ -16,19 +16,17 @@ Due t heterogenity, I do this in separate steps for the 5 pilot subjects.
 Subjects 1-2:
 ```{r}
 require(ggplot2)
-require(plyr)
 require(dplyr)
 require(lmtest)
+require(here)
 
 # Load data sets:
 
 # send me to VRCC dir:
-VRCC_dir <- "C:/Users/x220t/Seafile/CentralKollegs18/centralkollegs18"
+VRCC_dir <- here()
 
 # Set up the data directory
-
-data_dir <- file.path(VRCC_dir, "Data/VRTask/logfiles/Pilots")
-setwd(data_dir)
+data_dir <- here("Data/VRTask/logfiles/Pilots")
 dat <- NULL
 data <- NULL
 
@@ -96,7 +94,7 @@ fulldat <- rbind(data[[1]], data[[2]])
 
 Subjects 3-5:
 ```{r}
-dirs <- list.dirs()[-1]
+dirs <- list.dirs(data_dir)[-1]
 
 for (dir in dirs) {
   dat <- NULL
