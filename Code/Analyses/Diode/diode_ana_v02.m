@@ -9,7 +9,7 @@
 %%
 
 % get file manually (expects to be in centalkollegs18/Code/Analyses/Diode)
-[fname fpath] = uigetfile(fullfile('../../../Data/Diode', '*.vhdr'), ...
+[fname fpath] = uigetfile(fullfile('../../../Data/VRTask/Cardio', '*.vhdr'), ...
     'select VHDR file');
 
 % request setname:

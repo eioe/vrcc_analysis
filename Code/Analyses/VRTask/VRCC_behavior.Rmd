@@ -3,9 +3,10 @@ title: VRCC behavioral data
 author: "PM & FK"
 contact: "pawel.motyka@psych.uw.edu.pl"
 date: "15th January 2019"
-output: html_document
+output: md_document
 editor_options: 
 chunk_output_type: console
+self_contained: no
 ---
 
 **1. Preprocess behavioral data**
@@ -154,6 +155,16 @@ object_condition <- ggplot(data=data, aes(x=trueDistance, y=diff_norm, group= St
 
 object_condition  + geom_hline(yintercept=0, linetype="dashed", color = "black")
 
+```
+
+```{r, opts, echo = FALSE}
+knitr::opts_chunk$set(
+  fig.path = "images/"
+)
+
+require(dplyr)
+
+# Start here with DF "data" from above (after inital processing):
 
 # drop unnecessary factor levels:
 data <- droplevels(data)
@@ -164,8 +175,35 @@ data <- data[complete.cases(data[, c('Stimulus', 'estDistance', 'trueDistance')]
 # calculate relation of estDist to trueDist:
 data$rel <- data$estDistance/data$trueDistance
 
+# let's permute:
+anims <- levels(data$Animal)
+
+n_reps = 300
+res <- NULL
+res2 <- NULL
+ans <- NULL
+
+for (rep in 1:n_reps) {
+  
+  c1 <- sample(anims, 4)
+  data$NewStimulus <- "NonThreatening"
+  data$NewStimulus[is.element(data$Animal, c1)] <- "Threatening"
+  relTT <- t.test(rel ~ NewStimulus, data = data)
+  
+  #if ((relTT$p.value < 0.005) && (relTT$estimate[1] > relTT$estimate[2])) {
+  if (relTT$statistic > 3.9) {
+    res <- append(res, relTT$estimate[2])
+    res2 <- append(res, relTT$estimate[1])
+    ans <- append(ans, c1)}
+}
+ansf <- as.factor(ans)
+summary(ansf)
+hist(res)  
+
 # summarize to get mean per condition: 
-meansStim <- data %>% group_by(Stimulus) %>% summarise(mean = median(rel))
+meansStim <- data %>% group_by(Stimulus) %>% summarise(mean = mean(rel))
+
+meansAnim <- data %>% group_by(stimulus) %>% summarise(mean = mean(rel), sd = sd(rel))
 
 # histogram:
 relHist <- ggplot(data, aes(x = rel, fill = Stimulus)) + 
@@ -176,7 +214,8 @@ relHist <- ggplot(data, aes(x = rel, fill = Stimulus)) +
              linetype = 'dashed', size = 1) +
   scale_fill_manual(values = c('blue', 'red')) + 
   scale_color_manual(values = c('blue', 'red')) +
-  labs(x = "estimated dist. / true dist.")
+  labs(x = "estimated dist. / true dist.") + 
+  theme_classic()
     
   
 relHist
@@ -184,6 +223,118 @@ relHist
 # T-Test:
 relTT <- t.test(rel ~ Stimulus, data = data)
 relTT
+```
+
+
+
+
+```{r}
+require(ggplot2)
+require(plyr)
+require(dplyr)
+require(lmtest)
+
+# Load both data sets:
+
+# send me to VRCC dir:
+VRCC_dir <- "C:/Users/x220t/Seafile/CentralKollegs18/centralkollegs18"
+
+# Set up the data directory
+#data_dir <- 'N:/VRCC'
+data_dir <- file.path(VRCC_dir, "Data/VRTask/")
+setwd(data_dir)
+dat <- NULL
+data <- NULL
+
+### Pilot 2 ###
+dat <- read.table(file.path(data_dir, "VRCC_pilot2.txt"), skip = 6, 
+                        header = T, sep = ";", na.string ="-1")
+
+# cut to relevant columns:
+dat <- dat[ , c("stimulus", "isFearObject", "estDistance", 
+                            "trueDistance")]
+colnames(dat) <- c("Animal", "isFear", "estDist", "trueDist")
+
+dat <- dat[complete.cases(dat), ]
+
+dat$Animal <- as.factor(gsub(pattern = " \\(UnityEngine.GameObject\\)", 
+                   replacement = '', 
+                   dat$Animal))
+dat$isFear <- as.logical(dat$isFear)
+
+# save to list:
+dat$who <- as.factor("P01")
+data[[1]] <- dat 
+dat <- NULL
+
+
+
+### Pilot 3 ###
+
+dat <- read.table(file.path(data_dir, "VRCC_pilot3.txt"), skip = 6, header = T, sep = ";", na.string ="-1.00")
+dat <- dat[dat$Phase == "Estimation",]
+
+dat <- dat[ , c(6,7,10,9)]
+colnames(dat) <- c("Animal", "isFear", "estDist", "trueDist")
+
+# drop unnecessary factor levels:
+dat <- droplevels(dat)
+
+# remove trials with incomplete data in relevant domains:
+dat <- dat[complete.cases(dat), ]
+
+# get types right and correct trueDist for offset of playerPos:
+dat$isFear <- as.logical(dat$isFear)
+dat$estDist <- as.numeric(as.character(dat$estDist))
+dat$trueDist <- as.numeric(as.character(dat$trueDist)) - 7
+
+# save to list:
+dat$who <- as.factor("P02")
+data[[2]] <- dat 
+dat <- NULL
+
+# merge data sets:
+fulldat <- rbind(data[[1]], data[[2]])
+
+# calculate relation of estDist to trueDist:
+fulldat$rel <- fulldat$estDist/fulldat$trueDist
+
+# calc. error:
+fulldat <- fulldat %>% mutate(err = (estDist - trueDist),
+                              errAbs = abs(err),
+                              errNorm = err/trueDist,
+                              errAbsNorm = abs(errNorm))
+
+meansStim <- fulldat %>% 
+  filter(who == "P02") %>%
+  group_by(isFear) %>% 
+  summarise(meanRel = mean(rel), 
+            meanErr = mean(errNorm),
+            meanErrAbs = mean(errAbsNorm))
+
+meansAnim <- fulldat %>% 
+  filter(who == "P02") %>%
+  group_by(Animal) %>% 
+  summarise(meanRel = mean(rel), 
+            meanErr = mean(errNorm),
+            meanErrAbs = mean(errAbsNorm))
+
+
+
+p1dat <- fulldat %>%
+  filter(who == "P01")
+
+p2dat <- fulldat %>%
+  filter(who == "P02")
+
+lmErrDist <- lm(err~trueDist, data = p2dat)
+plot(lmErrDist)
+
+# studentized Breusch-Pagan test to test for homoscedasticity:
+bptest(lmErrDist)
+
+plot(err ~ trueDist, data = p1dat)
+
 ```
 
 

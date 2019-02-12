@@ -1,0 +1,198 @@
+---
+title: "VRCC Analyses Behav Pilot Data"
+author: "FK & PM"
+date: "12 Februar 2019"
+contact: "klotzsche@cbs.mpg.de"
+output: html_document
+editor_options: 
+chunk_output_type: console
+self_contained: no
+---
+
+Preliminary pipeline to read in pilot data (heterogeneous in structure) of the 
+VRCC experiment. 
+
+Due t heterogenity, I do this in separate steps for the 5 pilot subjects.
+Subjects 1-2:
+```{r}
+require(ggplot2)
+require(plyr)
+require(dplyr)
+require(lmtest)
+
+# Load data sets:
+
+# send me to VRCC dir:
+VRCC_dir <- "C:/Users/x220t/Seafile/CentralKollegs18/centralkollegs18"
+
+# Set up the data directory
+
+data_dir <- file.path(VRCC_dir, "Data/VRTask/logfiles/Pilots")
+setwd(data_dir)
+dat <- NULL
+data <- NULL
+
+### Pilot 1 ###
+
+dat <- read.table(file.path(data_dir, "VRCC_P01.txt"),
+                  skip = 6,
+                  header = T,
+                  sep = ";",
+                  na.string = "-1")
+
+# cut to relevant columns:
+dat <- dat[, c("stimulus", "isFearObject", "estDistance","trueDistance")]
+colnames(dat) <- c("Animal", "isFear", "estDist", "trueDist")
+
+dat <- dat[complete.cases(dat),]
+
+dat$Animal <- as.factor(gsub(pattern = " \\(UnityEngine.GameObject\\)",
+                             replacement = '',
+                             dat$Animal))
+dat$isFear <- as.logical(dat$isFear)
+
+# save to list:
+dat$who <- as.factor("P01")
+data[[1]] <- dat
+dat <- NULL
+
+
+
+### Pilot 2 ###
+
+dat <- read.table(file.path(data_dir, "VRCC_P02.txt"),
+                  skip = 6,
+                  header = T,
+                  sep = ";",
+                  na.string = "-1.00")
+dat <- dat[dat$Phase == "Estimation", ]
+
+dat <- dat[, c('Stimulus', 'Fear.Object', 'Estimated.Distance', 
+               'Real.Distance')]
+colnames(dat) <- c("Animal", "isFear", "estDist", "trueDist")
+
+# drop unnecessary factor levels:
+dat <- droplevels(dat)
+
+# remove trials with incomplete data in relevant domains:
+dat <- dat[complete.cases(dat),]
+
+# get types right and correct trueDist for offset of playerPos:
+dat$isFear <- as.logical(dat$isFear)
+dat$estDist <- as.numeric(as.character(dat$estDist))
+# correct for offset (corrected in later logfiles):
+dat$trueDist <- as.numeric(as.character(dat$trueDist)) - 7
+
+# save to list:
+dat$who <- as.factor("P02")
+data[[2]] <- dat
+dat <- NULL
+
+# merge data sets:
+fulldat <- rbind(data[[1]], data[[2]])
+
+```
+
+
+Subjects 3-5:
+```{r}
+dirs <- list.dirs()[-1]
+
+for (dir in dirs) {
+  dat <- NULL
+  data <- NULL
+  
+  dat <-
+    read.table(
+      list.files(
+        path = dir,
+        pattern = '*_PlayerLog_*',
+        full.names = T),
+      skip = 6,
+      header = T,
+      sep = ";",
+      na.string = "-1.00")
+  # only one row per trial and ignore data from familiarization trials:
+  dat <- dat[dat$Phase == "Estimation" & dat$Round > 0, ]
+  
+  dat <-dat[, c('Stimulus', 'FearObject','EstimatedDistance', 'RealDistance')]
+  colnames(dat) <- c("Animal", "isFear", "estDist", "trueDist")
+  
+  # drop unnecessary factor levels:
+  dat <- droplevels(dat)
+  
+  # remove trials with incomplete data in relevant domains:
+  dat <- dat[complete.cases(dat),]
+  
+  # get types right:
+  dat$isFear <- as.logical(dat$isFear)
+  dat$estDist <- as.numeric(as.character(dat$estDist))
+  dat$trueDist <- as.numeric(as.character(dat$trueDist)) 
+  dat$who <- strsplit(dir, '/')[[1]][2]
+  
+  # merge with other data:
+  fulldat <- rbind(fulldat, dat)
+}
+
+# get fear labels in order:
+fulldat$isFear <- fulldat$isFear <- fulldat$Animal %in% c('Tarantula', 
+                                                          'Finalwolf', 
+                                                          'FinalSnake', 
+                                                          'Scorpio', 
+                                                          'FinalHyena')
+
+# calc. error:
+fulldat <- fulldat %>% 
+  mutate(err = (estDist - trueDist),
+         errAbs = abs(err),
+         errNorm = err / trueDist,
+         errAbsNorm = abs(errNorm))
+
+meansStim <- fulldat %>%
+  group_by(isFear) %>%
+    summarise(meanErr = mean(err),
+              meanErrNorm = mean(errNorm),
+              meanErrAbs = mean(errAbsNorm))
+
+meansAnim <- fulldat %>%
+  group_by(Animal) %>%
+    summarise(meanErr = mean(err),
+              meanErrNorm = mean(errNorm),
+              meanErrAbs = mean(errAbsNorm))
+
+```
+
+Let's look into some features f the full data set:
+```{r}
+## Influence of trueDistance:
+lmErrDist <- lm(err ~ trueDist, data = fulldat)
+
+plot(lmErrDist)
+
+# studentized Breusch-Pagan test to test for homoscedasticity:
+bptest(lmErrDist, data = fulldat)
+# good!
+
+summary(lmErrDist)
+# ups...
+plot(err ~ trueDist, data = fulldat)
+
+
+errHist <- ggplot(fulldat, aes(x = err, fill = isFear)) + 
+  geom_histogram(binwidth = 0.01, position = "identity", alpha = 0.5) + 
+  xlim(-1, 1)  +
+  geom_density(alpha = 0.2) +
+  geom_vline(data=meansStim, aes(xintercept = meanErr, color = isFear), 
+             linetype = 'dashed', size = 1) +
+  scale_fill_manual(values = c('blue', 'red')) + 
+  scale_color_manual(values = c('blue', 'red')) +
+  labs(x = "Distance Error [m]") + 
+  theme_classic()
+    
+  
+errHist
+
+```
+
+
+
