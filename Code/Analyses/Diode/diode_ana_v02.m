@@ -23,7 +23,7 @@ setname = input('Confirm with ENTER.\n', 's');
 EEG = pop_loadbv(fpath, fname);
 [ALLEEG EEG CURRENTSET] = pop_newset(ALLEEG, EEG, 0,'gui','off'); 
 % low-pass filter (FIR, 20Hz):
-EEG = pop_eegfiltnew(EEG, [], 50); %, 330, 0, [], 1);
+EEG = pop_eegfiltnew(EEG, [], 20); %, 330, 0, [], 1);
 [ALLEEG EEG CURRENTSET] = pop_newset(ALLEEG, EEG, 1,'setname',setname,'gui','off'); 
 eeglab redraw;
 
