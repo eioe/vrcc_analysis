@@ -1,5 +1,5 @@
-    % extract event labels and time stamps
-    allEventLabels = repmat({'S25'}, 1, length(RTs));
+    % prep event labels and time stamps
+    allEventLabels = repmat({'RR'}, 1, length(RTs));
     eventTimeStamp = RTs; %
 
 
