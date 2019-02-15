@@ -1,0 +1,356 @@
+T-tests (independent) for all pairs / all features
+for the `new` data (n=94) [14.02.2019]
+
+-------------------
+
+Wolf vs Goat
+
+Threat
+μ = 5.94 vs 2.81
+p-val: 0.000
+
+Disgust
+μ = 2.34 vs 1.88
+p-val: 0.023
+
+Speed
+μ = 5.88 vs 4.79
+p-val: 0.000
+
+-------------------
+
+Wolf vs Pig
+
+Threat
+μ = 5.94 vs 2.11
+p-val: 0.000
+
+Disgust
+μ = 2.34 vs 2.38
+p-val: 0.842
+
+Speed
+μ = 5.88 vs 3.62
+p-val: 0.000
+
+-------------------
+
+Wolf vs Doe
+
+Threat
+μ = 5.94 vs 1.64
+p-val: 0.000
+
+Disgust
+μ = 2.34 vs 1.10
+p-val: 0.000
+
+Speed
+μ = 5.88 vs 4.84
+p-val: 0.000
+
+-------------------
+
+Snake vs Turtle
+
+Threat
+μ = 5.59 vs 1.31
+p-val: 0.000
+
+Disgust
+μ = 3.68 vs 1.43
+p-val: 0.000
+
+Speed
+μ = 5.50 vs 1.72
+p-val: 0.000
+
+-------------------
+
+Snake vs Chicken
+
+Threat
+μ = 5.59 vs 1.55
+p-val: 0.000
+
+Disgust
+μ = 3.68 vs 1.76
+p-val: 0.000
+
+Speed
+μ = 5.50 vs 3.82
+p-val: 0.000
+
+-------------------
+
+Snake vs Rabbit
+
+Threat
+μ = 5.59 vs 1.28
+p-val: 0.000
+
+Disgust
+μ = 3.68 vs 1.20
+p-val: 0.000
+
+Speed
+μ = 5.50 vs 4.72
+p-val: 0.000
+
+-------------------
+
+Crocodile vs Goat
+
+Threat
+μ = 5.63 vs 2.81
+p-val: 0.000
+
+Disgust
+μ = 2.64 vs 1.88
+p-val: 0.000
+
+Speed
+μ = 4.82 vs 4.79
+p-val: 0.884
+
+-------------------
+
+Crocodile vs Pig
+
+Threat
+μ = 5.63 vs 2.11
+p-val: 0.000
+
+Disgust
+μ = 2.64 vs 2.38
+p-val: 0.253
+
+Speed
+μ = 4.82 vs 3.62
+p-val: 0.000
+
+-------------------
+
+Crocodile vs Doe
+
+Threat
+μ = 5.63 vs 1.64
+p-val: 0.000
+
+Disgust
+μ = 2.64 vs 1.10
+p-val: 0.000
+
+Speed
+μ = 4.82 vs 4.84
+p-val: 0.928
+
+-------------------
+
+Scorpion vs Squirrel
+
+Threat
+μ = 5.19 vs 1.40
+p-val: 0.000
+
+Disgust
+μ = 3.82 vs 1.13
+p-val: 0.000
+
+Speed
+μ = 4.69 vs 5.15
+p-val: 0.052
+
+-------------------
+
+Scorpion vs Bird
+
+Threat
+μ = 5.19 vs 1.41
+p-val: 0.000
+
+Disgust
+μ = 3.82 vs 1.34
+p-val: 0.000
+
+Speed
+μ = 4.69 vs 4.67
+p-val: 0.931
+
+-------------------
+
+Scorpion vs Pigeon
+
+Threat
+μ = 5.19 vs 1.59
+p-val: 0.000
+
+Disgust
+μ = 3.82 vs 2.69
+p-val: 0.000
+
+Speed
+μ = 4.69 vs 4.45
+p-val: 0.326
+
+-------------------
+
+Scorpion vs Chicken
+
+Threat
+μ = 5.19 vs 1.55
+p-val: 0.000
+
+Disgust
+μ = 3.82 vs 1.76
+p-val: 0.000
+
+Speed
+μ = 4.69 vs 3.82
+p-val: 0.000
+
+-------------------
+
+Scorpion vs Rabbit
+
+Threat
+μ = 5.19 vs 1.28
+p-val: 0.000
+
+Disgust
+μ = 3.82 vs 1.20
+p-val: 0.000
+
+Speed
+μ = 4.69 vs 4.72
+p-val: 0.888
+
+-------------------
+
+Spider vs Squirrel
+
+Threat
+μ = 4.45 vs 1.40
+p-val: 0.000
+
+Disgust
+μ = 4.27 vs 1.13
+p-val: 0.000
+
+Speed
+μ = 5.52 vs 5.15
+p-val: 0.118
+
+-------------------
+
+Spider vs Bird
+
+Threat
+μ = 4.45 vs 1.41
+p-val: 0.000
+
+Disgust
+μ = 4.27 vs 1.34
+p-val: 0.000
+
+Speed
+μ = 5.52 vs 4.67
+p-val: 0.001
+
+-------------------
+
+Spider vs Pigeon
+
+Threat
+μ = 4.45 vs 1.59
+p-val: 0.000
+
+Disgust
+μ = 4.27 vs 2.69
+p-val: 0.000
+
+Speed
+μ = 5.52 vs 4.45
+p-val: 0.000
+
+-------------------
+
+Spider vs Chicken
+
+Threat
+μ = 4.45 vs 1.55
+p-val: 0.000
+
+Disgust
+μ = 4.27 vs 1.76
+p-val: 0.000
+
+Speed
+μ = 5.52 vs 3.82
+p-val: 0.000
+
+-------------------
+
+Spider vs Rabbit
+
+Threat
+μ = 4.45 vs 1.28
+p-val: 0.000
+
+Disgust
+μ = 4.27 vs 1.20
+p-val: 0.000
+
+Speed
+μ = 5.52 vs 4.72
+p-val: 0.001
+
+-------------------
+
+Hyena vs Goat
+
+Threat
+μ = 5.40 vs 2.81
+p-val: 0.000
+
+Disgust
+μ = 2.20 vs 1.88
+p-val: 0.105
+
+Speed
+μ = 5.61 vs 4.79
+p-val: 0.000
+
+-------------------
+
+Hyena vs Pig
+
+Threat
+μ = 5.40 vs 2.11
+p-val: 0.000
+
+Disgust
+μ = 2.20 vs 2.38
+p-val: 0.388
+
+Speed
+μ = 5.61 vs 3.62
+p-val: 0.000
+
+-------------------
+
+Hyena vs Doe
+
+Threat
+μ = 5.40 vs 1.64
+p-val: 0.000
+
+Disgust
+μ = 2.20 vs 1.10
+p-val: 0.000
+
+Speed
+μ = 5.61 vs 4.84
+p-val: 0.001
+
+-------------------
