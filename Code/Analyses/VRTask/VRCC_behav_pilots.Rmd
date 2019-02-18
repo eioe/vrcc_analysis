@@ -208,6 +208,22 @@ meansAnim <- fulldat %>%
 
 ```
 
+
+Add the cardio information to the data frame (fulldat):
+```{r}
+
+source("add_cardio_info.R")
+# for whom do we want to add cardio info:
+# (skipping first 2 pilots as there's no (reasonable) cardio info for them )
+#cardio_subjs <- levels(fulldat$who)[-2] 
+cardio_subjs <- c('P05', 'P04')
+for (part in cardio_subjs) {
+  fulldat <- add_cardio_info(fulldat, part)
+}
+
+```
+
+
 Let's look into some features f the full data set:
 ```{r}
 ## Influence of trueDistance:
@@ -238,19 +254,14 @@ errHist <- ggplot(fulldat, aes(x = err, fill = isFear)) +
   
 errHist
 
+
+boxplot(err ~ isSystTrial, data = fulldat)
+lines(mean(fulldat$err[fulldat$isFear]), 0)
+
+
 ```
 
-Add the cardio information to the data frame (fulldat):
 ```{r}
 
-source("add_cardio_info.R")
-# for whom do we want to add cardio info:
-# (skipping first 2 pilots as there's no (reasonable) cardio info for them )
-#cardio_subjs <- levels(fulldat$who)[-2] 
-cardio_subjs <- c('P04')
-for (part in cardio_subjs) {
-  fulldat <- add_cardio_info(fulldat, part)
-}
 
 ```
-

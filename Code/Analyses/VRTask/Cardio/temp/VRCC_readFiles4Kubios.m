@@ -47,7 +47,8 @@ load([fpath '/KubiosExports/' fname '_hrv.mat'])
     %Get the latencies (data point indices) for all 'A' type events...
 A_latencies = Res.HRV.Data.T_RR;
 
-%for each A_latencies add a new event type '1' with a latency of (A_latencies(i)+1.5*EEG.srate)-1...
+% for each A_latencies add a new event type '1' with a latency of 
+% (A_latencies(i)+1.5*EEG.srate)-1...
 for i=1:length(A_latencies)
     n_events=length(EEG.event);
     EEG.event(n_events+1).type='RP';
@@ -59,3 +60,4 @@ end
 EEG=eeg_checkset(EEG,'eventconsistency');
 
 EEG = pop_saveset(EEG, [fpath '/SETwithRPeaks/' fname]);
+pop_expevents(EEG, [fpath '/SETwithRPeaks/' fname '_mrkrs.csv'], 'samples');
