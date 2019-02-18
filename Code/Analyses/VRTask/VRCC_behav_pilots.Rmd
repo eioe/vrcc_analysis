@@ -39,14 +39,29 @@ dat <- read.table(file.path(data_dir, "VRCC_P01.txt"),
                   na.string = "-1")
 
 # cut to relevant columns:
-dat <- dat[, c("stimulus", "isFearObject", "estDistance","trueDistance")]
-colnames(dat) <- c("Animal", "isFear", "estDist", "trueDist")
+dat <- dat[, c("trial", 
+               "round",
+               "stimulus", 
+               "isFearObject", 
+               "estDistance", 
+               "trueDistance"
+              )
+           ]
+
+colnames(dat) <- c("Trial", 
+                   "Round",
+                   "Animal", 
+                   "isFear", 
+                   "estDist", 
+                   "trueDist"
+                  )
 
 dat <- dat[complete.cases(dat),]
 
 dat$Animal <- as.factor(gsub(pattern = " \\(UnityEngine.GameObject\\)",
                              replacement = '',
-                             dat$Animal))
+                             dat$Animal)
+                        )
 dat$isFear <- as.logical(dat$isFear)
 
 # save to list:
@@ -65,9 +80,20 @@ dat <- read.table(file.path(data_dir, "VRCC_P02.txt"),
                   na.string = "-1.00")
 dat <- dat[dat$Phase == "Estimation", ]
 
-dat <- dat[, c('Stimulus', 'Fear.Object', 'Estimated.Distance', 
-               'Real.Distance')]
-colnames(dat) <- c("Animal", "isFear", "estDist", "trueDist")
+dat <- dat[, c('Trial', 
+               'Round',
+               'Stimulus', 
+               'Fear.Object', 
+               'Estimated.Distance', 
+               'Real.Distance'
+              )
+          ]
+colnames(dat) <- c("Trial", 
+                   'Round',
+                   "Animal", 
+                   "isFear", 
+                   "estDist", 
+                   "trueDist")
 
 # drop unnecessary factor levels:
 dat <- droplevels(dat)
@@ -110,11 +136,25 @@ for (dir in dirs) {
       header = T,
       sep = ";",
       na.string = "-1.00")
+  
   # only one row per trial and ignore data from familiarization trials:
   dat <- dat[dat$Phase == "Estimation" & dat$Round > 0, ]
   
-  dat <-dat[, c('Stimulus', 'FearObject','EstimatedDistance', 'RealDistance')]
-  colnames(dat) <- c("Animal", "isFear", "estDist", "trueDist")
+  dat <-dat[, c('Trial',
+                'Round',
+                'Stimulus', 
+                'FearObject',
+                'EstimatedDistance', 
+                'RealDistance'
+              )
+            ]
+  colnames(dat) <- c('Trial', 
+                     'Round', 
+                     'Animal', 
+                     'isFear', 
+                     'estDist', 
+                     'trueDist'
+                     )
   
   # drop unnecessary factor levels:
   dat <- droplevels(dat)
@@ -126,7 +166,7 @@ for (dir in dirs) {
   dat$isFear <- as.logical(dat$isFear)
   dat$estDist <- as.numeric(as.character(dat$estDist))
   dat$trueDist <- as.numeric(as.character(dat$trueDist)) 
-  dat$who <- strsplit(dir, '/')[[1]][2]
+  dat$who <- strsplit(dir, 'Pilots/')[[1]][2]
   
   # merge with other data:
   fulldat <- rbind(fulldat, dat)
@@ -138,6 +178,14 @@ fulldat$isFear <- fulldat$isFear <- fulldat$Animal %in% c('Tarantula',
                                                           'FinalSnake', 
                                                           'Scorpio', 
                                                           'FinalHyena')
+
+# get trial/round data in order:
+fulldat$Trial <- as.numeric(fulldat$Trial)
+fulldat$Round <- as.numeric(fulldat$Round)
+# add column with consecutively numbered trials (over rounds)
+fulldat <- mutate(fulldat, totTrial = Trial + (Round-1)*120)
+  
+
 
 # calc. error:
 fulldat <- fulldat %>% 
@@ -192,5 +240,17 @@ errHist
 
 ```
 
+Add the cardio information to the data frame (fulldat):
+```{r}
 
+source("add_cardio_info.R")
+# for whom do we want to add cardio info:
+# (skipping first 2 pilots as there's no (reasonable) cardio info for them )
+#cardio_subjs <- levels(fulldat$who)[-2] 
+cardio_subjs <- c('P04')
+for (part in cardio_subjs) {
+  fulldat <- add_cardio_info(fulldat, part)
+}
+
+```
 

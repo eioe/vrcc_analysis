@@ -6,7 +6,7 @@ add_cardio_info <- function(fulldat, subj_ID) {
   
   fpath <- paste0("/Data/VRTask/Cardio/Pilots/SETwithRPeaks/", 
                   subj_ID, 
-                  "-mrkrs.csv"
+                  "_mrkrs.csv"
                   )
   
   mrks <- read_delim(here(fpath), 
@@ -99,7 +99,7 @@ add_cardio_info <- function(fulldat, subj_ID) {
   hansi$totTrial <- as.numeric(hansi$totTrial)
   
   # add column with participant ID:
-  hansi <- add_column(hansi, who = as.factor(subj_ID), .after = "trial")
+  hansi <- add_column(hansi, who = as.factor(subj_ID), .after = "totTrial")
  
   # export only relevant data to fulldat:
   export_df <- hansi[, c("who",
