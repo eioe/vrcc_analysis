@@ -172,20 +172,21 @@ for (dir in dirs) {
   fulldat <- rbind(fulldat, dat)
 }
 
-# get fear labels in order:
-fulldat$isFear <- fulldat$isFear <- fulldat$Animal %in% c('Tarantula', 
-                                                          'Finalwolf', 
-                                                          'FinalSnake', 
-                                                          'Scorpio', 
-                                                          'FinalHyena')
+
 
 # get trial/round data in order:
 fulldat$Trial <- as.numeric(fulldat$Trial)
 fulldat$Round <- as.numeric(fulldat$Round)
 # add column with consecutively numbered trials (over rounds)
 fulldat <- mutate(fulldat, totTrial = Trial + (Round-1)*120)
-  
 
+  
+# get fear labels in order:
+fulldat$isFear <- fulldat$isFear <- fulldat$Animal %in% c('Tarantula', 
+                                                          'FinalWolf', 
+                                                          'FinalSnake', 
+                                                          'Scorpio', 
+                                                          'FinalHyena')
 
 # calc. error:
 fulldat <- fulldat %>% 
@@ -220,6 +221,12 @@ cardio_subjs <- c('P05', 'P04')
 for (part in cardio_subjs) {
   fulldat <- add_cardio_info(fulldat, part)
 }
+
+```
+
+
+```{r}
+
 
 ```
 
@@ -263,5 +270,5 @@ lines(mean(fulldat$err[fulldat$isFear]), 0)
 
 ```{r}
 
-
+#save(fulldat, file = here('Data/VRTask/Cardio/Pilots/fulldata_pilots.RData'))
 ```
