@@ -9,12 +9,8 @@ chunk_output_type: console
 self_contained: no
 ---
 
-Preliminary pipeline to read in pilot data (heterogeneous in structure) of the 
-VRCC experiment. 
-
-Due t heterogenity, I do this in separate steps for the 5 pilot subjects.
-Subjects 1-2:
 ```{r}
+# install.packages('here')
 require(ggplot2)
 require(dplyr)
 require(lmtest)
@@ -26,89 +22,60 @@ require(here)
 VRCC_dir <- here()
 
 # Set up the data directory
-data_dir <- here("Data/VRTask/logfiles/Pilots")
+data_dir <- here("Data/VRTask/Logfiles/ExpSubjects")
 dat <- NULL
 data <- NULL
 
-### Pilot 1 ###
+### Subject 19 ###
 
-dat <- read.table(file.path(data_dir, "VRCC_P01.txt"),
+dat <- read.table(file.path(data_dir, "S19_PlayerLog_15-55-38-01-03-2019.txt"),
                   skip = 6,
                   header = T,
                   sep = ";",
-                  na.string = "-1")
+                  row.names = NULL,
+                  na.string = "-1.0000")
 
-# cut to relevant columns:
-dat <- dat[, c("trial", 
-               "round",
-               "stimulus", 
-               "isFearObject", 
-               "estDistance", 
-               "trueDistance"
-              )
-           ]
+#mismatched columns - shifting names of the columns               ### TRY TO CLEAN THIS!!!
+get_names <- colnames(dat)            
+updated_names <- get_names[c(2:19)] # remove the first name
+colnames(dat) <- updated_names # now the order is ok.
+dat <- dat[,1:18]
 
-colnames(dat) <- c("Trial", 
-                   "Round",
-                   "Animal", 
-                   "isFear", 
-                   "estDist", 
-                   "trueDist"
-                  )
+# cut to relevant rows:
+dat <- dat[dat$Phase == "Estimation",  ]   ### Pick estimations only (filter-out other observations)
+dat <- dat[dat$Training == "False",  ]     ### Filter-out training
 
-dat <- dat[complete.cases(dat),]
-
-dat$Animal <- as.factor(gsub(pattern = " \\(UnityEngine.GameObject\\)",
-                             replacement = '',
-                             dat$Animal)
-                        )
-dat$isFear <- as.logical(dat$isFear)
+# We end up with 730 observations
 
 # save to list:
-dat$who <- as.factor("P01")
+dat$who <- as.factor("S19")
 data[[1]] <- dat
 dat <- NULL
 
 
-
-### Pilot 2 ###
-
-dat <- read.table(file.path(data_dir, "VRCC_P02.txt"),
+### Subject 6 ###
+dat <- read.table(file.path(data_dir, "S06_PlayerLog_12-58-47-27-02-2019.txt"),
                   skip = 6,
                   header = T,
                   sep = ";",
-                  na.string = "-1.00")
-dat <- dat[dat$Phase == "Estimation", ]
+                  row.names = NULL,
+                  na.string = "-1.0000")
 
-dat <- dat[, c('Trial', 
-               'Round',
-               'Stimulus', 
-               'Fear.Object', 
-               'Estimated.Distance', 
-               'Real.Distance'
-              )
-          ]
-colnames(dat) <- c("Trial", 
-                   'Round',
-                   "Animal", 
-                   "isFear", 
-                   "estDist", 
-                   "trueDist")
+#mismatched columns - shifting names of the columns
+get_names <- colnames(dat)
+updated_names <- get_names[c(2:19)] # remove the first name
+colnames(dat) <- updated_names # now the order is ok.
+dat <- dat[,1:18]
 
-# drop unnecessary factor levels:
-dat <- droplevels(dat)
+# cut to relevant rows:
+dat <- dat[dat$Phase == "Estimation",  ]
+dat <- dat[dat$Training == "False",  ]
 
-# remove trials with incomplete data in relevant domains:
-dat <- dat[complete.cases(dat),]
+### I'm not sure why we end up with 725 observations
 
-# get types right and correct trueDist for offset of playerPos:
-dat$isFear <- as.logical(dat$isFear)
-dat$estDist <- as.numeric(as.character(dat$estDist))
-# correct for offset (corrected in later logfiles):
-dat$trueDist <- as.numeric(as.character(dat$trueDist)) - 7
 
 # save to list:
-dat$who <- as.factor("P02")
+dat$who <- as.factor("S06")
 data[[2]] <- dat
 dat <- NULL
 
@@ -118,106 +85,46 @@ fulldat <- rbind(data[[1]], data[[2]])
 ```
 
 
-Subjects 3-5:
+Checks & creating new variables
+
+
 ```{r}
-dirs <- list.dirs(data_dir)[-1]
-
-for (dir in dirs) {
-  dat <- NULL
-  data <- NULL
   
-  dat <-
-    read.table(
-      list.files(
-        path = dir,
-        pattern = '*_PlayerLog_*',
-        full.names = T),
-      skip = 6,
-      header = T,
-      sep = ";",
-      na.string = "-1.00")
-  
-  # only one row per trial and ignore data from familiarization trials:
-  dat <- dat[dat$Phase == "Estimation" & dat$Round > 0, ]
-  
-  dat <-dat[, c('Trial',
-                'Round',
-                'Stimulus', 
-                'FearObject',
-                'EstimatedDistance', 
-                'RealDistance'
-              )
-            ]
-  colnames(dat) <- c('Trial', 
-                     'Round', 
-                     'Animal', 
-                     'isFear', 
-                     'estDist', 
-                     'trueDist'
-                     )
-  
-  # drop unnecessary factor levels:
-  dat <- droplevels(dat)
-  
-  # remove trials with incomplete data in relevant domains:
-  dat <- dat[complete.cases(dat),]
-  
-  # get types right:
-  dat$isFear <- as.logical(dat$isFear)
-  dat$estDist <- as.numeric(as.character(dat$estDist))
-  dat$trueDist <- as.numeric(as.character(dat$trueDist)) 
-  dat$who <- strsplit(dir, 'Pilots/')[[1]][2]
-  
-  # merge with other data:
-  fulldat <- rbind(fulldat, dat)
-}
-
-
-
-# get trial/round data in order:
-fulldat$Trial <- as.numeric(fulldat$Trial)
-fulldat$Round <- as.numeric(fulldat$Round)
-# add column with consecutively numbered trials (over rounds)
-fulldat <- mutate(fulldat, totTrial = Trial + (Round-1)*120)
-
-  
-# get fear labels in order:
-fulldat$isFear <- fulldat$isFear <- fulldat$Animal %in% c('Tarantula', 
-                                                          'FinalWolf', 
-                                                          'FinalSnake', 
-                                                          'Scorpio', 
-                                                          'FinalHyena')
+# count threatening and non-threatening animals
+length(which(fulldat$FearObject == T))
+length(which(fulldat$FearObject == F))
 
 # calc. error:
 fulldat <- fulldat %>% 
-  mutate(err = (estDist - trueDist),
+  mutate(err = (EstimatedDistance - RealDistance),
          errAbs = abs(err),
-         errNorm = err / trueDist,
+         errNorm = err / RealDistance,
          errAbsNorm = abs(errNorm))
 
+# These below needs to be updated to skip NA     ### Returns NA - but not maybe necessary now
 meansStim <- fulldat %>%
-  group_by(isFear) %>%
-    summarise(meanErr = mean(err),
-              meanErrNorm = mean(errNorm),
-              meanErrAbs = mean(errAbsNorm))
+  group_by(FearObject) %>%
+    summarise(meanErr = mean(err, na.rm=T),
+              meanErrNorm = mean(errNorm, na.rm=T),
+              meanErrAbs = mean(errAbsNorm, na.rm=T))
 
 meansAnim <- fulldat %>%
-  group_by(Animal) %>%
-    summarise(meanErr = mean(err),
-              meanErrNorm = mean(errNorm),
-              meanErrAbs = mean(errAbsNorm))
+  group_by(Stimulus) %>%
+    summarise(meanErr = mean(err, na.rm=T),
+              meanErrNorm = mean(errNorm, na.rm=T),
+              meanErrAbs = mean(errAbsNorm, na.rm=T))
 
 ```
 
 
-Add the cardio information to the data frame (fulldat):
+Add the cardio information to the data frame (fulldat): (NEEDS UPDATING)
 ```{r}
 
 source("add_cardio_info.R")
 # for whom do we want to add cardio info:
 # (skipping first 2 pilots as there's no (reasonable) cardio info for them )
 #cardio_subjs <- levels(fulldat$who)[-2] 
-cardio_subjs <- c('P05', 'P04')
+cardio_subjs <- c('S19','S06')
 for (part in cardio_subjs) {
   fulldat <- add_cardio_info(fulldat, part)
 }
@@ -225,13 +132,7 @@ for (part in cardio_subjs) {
 ```
 
 
-```{r}
-
-
-```
-
-
-Let's look into some features f the full data set:
+Let's look into some features f the full data set: (NEEDS UPDATING - NEW NAMES OF VARIABLES)
 ```{r}
 ## Influence of trueDistance:
 lmErrDist <- lm(err ~ trueDist, data = fulldat)
@@ -270,5 +171,202 @@ lines(mean(fulldat$err[fulldat$isFear]), 0)
 
 ```{r}
 
-#save(fulldat, file = here('Data/VRTask/Cardio/Pilots/fulldata_pilots.RData'))
+d <- fulldat[fulldat$who %in% c("P03", "P04", "P05"), ]
+require(circular)
+
+for (p in unique(d$who)) {
+
+temp_onset <- circular(d$relPosRRrad[d$who== p], type="angles", units="radians", rotation="clock", zero=pi/2) 
+temp_onset <- temp_onset[!is.na(temp_onset)]
+
+# test uniformity of onset distribution for a particpant and save the results
+  onset_distribution_individual <- rayleigh.test(temp_onset) 
+
+# show test statistics and p-value for a participant
+  print(onset_distribution_individual)
+
+plot(temp_onset, stack=TRUE, col = "gray25", cex = 0.77, main = paste("Onsets ID:", p, "\n p value:", round(onset_distribution_individual$p.value, 3), " / mean resultant length:", round(onset_distribution_individual$statistic,2)))
+  rose.diag(temp_onset, bins = 16, col = "cadetblue4", prop = 2.5, add = T, axes = F)
+  circ.dens = density(temp_onset, bw=40)
+  lines(circ.dens, col="lightcyan3", lwd = 3, xpd=TRUE)
+  
+}
+
+
+  
 ```
+
+
+```{r}
+
+
+for (p in unique(d$who)) {
+
+med_value_fear <- median(d$err[d$who == p & d$isFear == T])
+med_value_non_fear <- median(d$err[d$who == p & d$isFear == F])
+
+for (t in 1:720) {
+  
+ifelse(d$err[d$who == p & d$totTrial == t & d$isFear == T] < med_value_fear, d$closer_fear[d$who == p & d$totTrial == t] <- T, d$closer_fear[d$who == p & d$totTrial == t] <- F)
+
+ifelse(d$err[d$who == p & d$totTrial == t & d$isFear == F] < med_value_non_fear, d$closer_nonfear[d$who == p & d$totTrial == t] <- T, d$closer_nonfear[d$who == p & d$totTrial == t] <- F) 
+}
+}
+
+#length(d$closer_fear[d$closer_fear == TRUE & d$closer_fear != NA])
+#length(d$closer_nonfear[d$closer_nonfear == T & d$closer_nonfear != NA])
+
+threat <- circular(d$relPosRRrad[d$closer_fear == T], type="angles", units="radians", rotation="clock", zero=pi/2)
+threat <- threat[!is.na(threat)]
+
+non_threat <- circular(d$relPosRRrad[d$closer_nonfear == T], type="angles", units="radians", rotation="clock", zero=pi/2)
+non_threat <- non_threat[!is.na(non_threat)]
+
+# plot the distribution of mean hits within RR interval across participants - with 0 indicating the R peak previous to the stimulus onset
+plot(threat, stack= FALSE , bins = 720, col = "gray", cex = 0.7, lwd = 1, main = " ")
+points(non_threat, stack = FALSE, col = "gray", cex = 0.01, lwd = 1)
+
+# add arrows representing mean hits for each participant
+arrows.circular(threat, col =  rgb(0.55, 0.23, 0.23, 0.1), lwd = 1, length = 0.001)
+arrows.circular(non_threat, col = rgb(0.247, 0.435, 0.545, 0.1), lwd = 1, length = 0.001)
+
+# add an arrow representing grand mean for hits - with its length signifying resultant length of the grand mean
+arrows.circular(mean(threat), y=rho.circular(threat), lwd = 3, col = rgb(0.45, 0.13, 0.13, 0.75), length = 0.08)
+arrows.circular(mean(non_threat), y=rho.circular(non_threat), lwd = 3, col = rgb(0.147, 0.285, 0.395, 0.75), length = 0.08)
+
+# add line signifying distribution of hits (bandwidth = 20)
+circ.dens = density(threat, bw=20)
+lines(circ.dens, col= rgb(0.55, 0.23, 0.23), lwd = 1.5, xpd=TRUE)
+
+circ.dens = density(non_threat, bw=20)
+lines(circ.dens, col= rgb(0.247, 0.435, 0.545), lwd = 1.5, xpd=TRUE)
+
+
+
+```
+
+
+```{r}
+
+
+for (p in unique(d$who)) {
+
+  
+  for (a in unique(d$Animal)) {
+
+name <- paste("med_value_",a,sep="")
+med <- assign(name, median(d$err[d$who == p & d$Animal == a]))
+
+for (t in 1:720) {
+
+d$closer[d$who == p & d$totTrial == t & d$Animal == a & d$err < med] <- T
+  
+#ifelse(d$err[d$who == p & d$totTrial == t & d$Animal == a] < med_value_fear, d$closer[d$who == p & d$totTrial == t & d$Animal == a] <- T)
+
+}
+}
+}
+
+
+#length(d$closer_fear[d$closer_fear == TRUE & d$closer_fear != NA])
+#length(d$closer_nonfear[d$closer_nonfear == T & d$closer_nonfear != NA])
+
+threat <- circular(d$relPosRRrad[d$closer == T & d$isFear == T], type="angles", units="radians", rotation="clock", zero=pi/2)
+threat <- threat[!is.na(threat)]
+
+non_threat <- circular(d$relPosRRrad[d$closer == T & d$isFear == F], type="angles", units="radians", rotation="clock", zero=pi/2)
+non_threat <- non_threat[!is.na(non_threat)]
+
+# plot the distribution of mean hits within RR interval across participants - with 0 indicating the R peak previous to the stimulus onset
+plot(threat, stack= FALSE , bins = 720, col = "gray", cex = 0.7, lwd = 1, main = " ")
+points(non_threat, stack = FALSE, col = "gray", cex = 0.01, lwd = 1)
+
+# add arrows representing mean hits for each participant
+arrows.circular(threat, col =  rgb(0.55, 0.23, 0.23, 0.1), lwd = 1, length = 0.001)
+arrows.circular(non_threat, col = rgb(0.247, 0.435, 0.545, 0.1), lwd = 1, length = 0.001)
+
+# add an arrow representing grand mean for hits - with its length signifying resultant length of the grand mean
+arrows.circular(mean(threat), y=rho.circular(threat), lwd = 3, col = rgb(0.45, 0.13, 0.13, 0.75), length = 0.08)
+arrows.circular(mean(non_threat), y=rho.circular(non_threat), lwd = 3, col = rgb(0.147, 0.285, 0.395, 0.75), length = 0.08)
+
+# add line signifying distribution of hits (bandwidth = 20)
+circ.dens = density(threat, bw=20)
+lines(circ.dens, col= rgb(0.55, 0.23, 0.23), lwd = 1.5, xpd=TRUE)
+
+circ.dens = density(non_threat, bw=20)
+lines(circ.dens, col= rgb(0.247, 0.435, 0.545), lwd = 1.5, xpd=TRUE)
+
+
+
+
+```
+
+
+
+```{r}
+
+
+
+for (p in unique(d$who)) {
+
+  
+  for (a in unique(d$Animal)) {
+
+name <- paste("med_value_",a,sep="")
+med <- assign(name, median(d$err[d$who == p & d$Animal == a]))
+
+for (t in 1:720) {
+
+d$closer[d$who == p & d$totTrial == t & d$Animal == a & d$err < med] <- T
+  
+#ifelse(d$err[d$who == p & d$totTrial == t & d$Animal == a] < med_value_fear, d$closer[d$who == p & d$totTrial == t & d$Animal == a] <- T)
+
+}
+}
+}
+
+
+means_threat <- vector()
+means_nonthreat <- vector()
+
+for (p in unique(d$who)) {
+  
+threat <- circular(d$relPosRRrad[d$who == p & d$closer == T & d$isFear == T], type="angles", units="radians", rotation="clock", zero=pi/2)
+threat <- threat[!is.na(threat)]
+
+means_threat[p] <- mean(threat)
+
+non_threat <- circular(d$relPosRRrad[d$who == p & d$closer == T & d$isFear == F], type="angles", units="radians", rotation="clock", zero=pi/2)
+non_threat <- non_threat[!is.na(non_threat)]
+
+means_nonthreat[p] <- mean(non_threat)
+}
+
+# save the vector with the mean hits for each particiapant as a circular object
+means_threat <- circular(means_threat, type="angles", units="radians", rotation="clock", zero=pi/2)
+
+means_nonthreat <- circular(means_nonthreat, type="angles", units="radians", rotation="clock", zero=pi/2)
+
+# plot the distribution of mean hits within RR interval across participants - with 0 indicating the R peak previous to the stimulus onset
+plot(means_threat, stack= FALSE , bins = 720, col = "gray", cex = 0.7, lwd = 1, main = " ")
+points(means_nonthreat, stack = FALSE, col = "gray", cex = 0.01, lwd = 1)
+
+# add arrows representing mean hits for each participant
+arrows.circular(means_threat, col =  "darkred", lwd = 1, length = 0.001)
+arrows.circular(means_nonthreat, col = "darkblue", lwd = 1, length = 0.001)
+
+# add an arrow representing grand mean for hits - with its length signifying resultant length of the grand mean
+arrows.circular(mean(means_threat), y=rho.circular(means_threat), lwd = 3, col = rgb(0.45, 0.13, 0.13, 0.75), length = 0.08)
+arrows.circular(mean(means_nonthreat), y=rho.circular(means_nonthreat), lwd = 3, col = rgb(0.147, 0.285, 0.395, 0.75), length = 0.08)
+
+# add line signifying distribution of hits (bandwidth = 20)
+circ.dens = density(means_threat, bw=20)
+lines(circ.dens, col= rgb(0.55, 0.23, 0.23), lwd = 1.5, xpd=TRUE)
+
+circ.dens = density(means_nonthreat, bw=20)
+lines(circ.dens, col= rgb(0.247, 0.435, 0.545), lwd = 1.5, xpd=TRUE)
+
+
+
+```
+

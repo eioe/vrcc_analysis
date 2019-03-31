@@ -4,7 +4,7 @@ library(here)
 
 add_cardio_info <- function(fulldat, subj_ID) {
   
-  fpath <- paste0("/Data/VRTask/Cardio/Pilots/SETwithRPeaks/VRCC_", 
+  fpath <- paste0("/Data/VRTask/Cardio/ExpSubjects/SETwithRPeaks/VRCC_", 
                   subj_ID, 
                   "_mrkrs.csv"
                   )
@@ -23,24 +23,28 @@ add_cardio_info <- function(fulldat, subj_ID) {
   getID <- filter(mrks, class == 'stimID')
   getAnim <- fulldat %>% 
     filter(who == subj_ID) %>% 
-    select(Animal) 
-  getAnim$Animal <- as_factor(getAnim$Animal) 
+    select(Stimulus) 
+  getAnim$Stimulus <- as_factor(getAnim$Stimulus) 
   getAnim <- droplevels(getAnim)
   
   getAnim$trueType <- NA
-  for (A in levels(getAnim$Animal)) {
-    allIdx <- which(A == getAnim$Animal)
+  for (A in levels(getAnim$Stimulus)) {
+    allIdx <- which(A == getAnim$Stimulus)
     idx <- min(allIdx)
     getAnim$trueType[allIdx] <- getID$type[idx]
   }
   
-  # for P03 there's no ECG data for rounds 1& 2:
-  if (subj_ID == 'P03') {
-    skip_trials <- 240
-  } else {
-    skip_trials <- 0
-  }
+  ### AM: COMMENTING THIS OUT (WAS A CODE FOR A SPECIAL CASE) ###
   
+  # for P03 there's no ECG data for rounds 1& 2: 
+  # if (subj_ID == 'P03') {
+  #   skip_trials <- 240
+  # } else {
+  #   skip_trials <- 0
+  # }
+  # 
+  
+  ######
   
   minLength <- min(nrow(getID), nrow(getAnim))
   while (sum(getID$type[1+skip_trials:minLength+skip_trials] != getAnim$trueType[1+skip_trials:minLength+skip_trials], na.rm = T)>0) {
