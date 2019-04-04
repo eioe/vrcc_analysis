@@ -36,13 +36,13 @@ add_cardio_info <- function(fulldat, subj_ID) {
   
   ### AM: COMMENTING THIS OUT (WAS A CODE FOR A SPECIAL CASE) ###
   
-  # for P03 there's no ECG data for rounds 1& 2: 
-  # if (subj_ID == 'P03') {
-  #   skip_trials <- 240
-  # } else {
-  #   skip_trials <- 0
-  # }
-  # 
+  # for P03 there's no ECG data for rounds 1& 2:
+  if (subj_ID == 'P03') {
+    skip_trials <- 240
+  } else {
+    skip_trials <- 0
+  }
+
   
   ######
   

@@ -16,6 +16,8 @@ require(dplyr)
 require(lmtest)
 require(here)
 
+source("get_cardio_info.R")
+
 # Load data sets:
 
 # send me to VRCC dir:
@@ -28,14 +30,21 @@ data <- NULL
 
 ### Subject 19 ###
 
-dat <- read.table(file.path(data_dir, "S19_PlayerLog_15-55-38-01-03-2019.txt"),
+# I assume this will be a loop over the subj folders in Data/VRTask/Logfile.
+#  For now I set the folder (missing in the read.table call below) manually:
+
+subj_ID <- "S19"
+
+dat <- read.table(file.path(data_dir, 
+                            subj_ID, 
+                            "S19_PlayerLog_15-55-38-01-03-2019.txt"),
                   skip = 6,
                   header = T,
                   sep = ";",
                   row.names = NULL,
                   na.string = "-1.0000")
 
-#mismatched columns - shifting names of the columns               ### TRY TO CLEAN THIS!!!
+#mismatched columns - shifting names of the columns               ### TRY TO CLEAN THIS!!! Tidyverse might help 
 get_names <- colnames(dat)            
 updated_names <- get_names[c(2:19)] # remove the first name
 colnames(dat) <- updated_names # now the order is ok.
@@ -43,18 +52,22 @@ dat <- dat[,1:18]
 
 # cut to relevant rows:
 dat <- dat[dat$Phase == "Estimation",  ]   ### Pick estimations only (filter-out other observations)
-dat <- dat[dat$Training == "False",  ]     ### Filter-out training
+dat <- dat[dat$Training == "False",  ]     ### Filter-out training (this is the training for the depth estimation [Stimuluss visible])
+dat <- dat[dat$Round > 0, ]                ### Filer-out 2nd training ("real" training with other Stimuluss) 
 
-# We end up with 730 observations
+# We should end up with 720 observations     #
 
 # save to list:
-dat$who <- as.factor("S19")
+dat$who <- as.factor(subj_ID)
 data[[1]] <- dat
 dat <- NULL
 
 
 ### Subject 6 ###
-dat <- read.table(file.path(data_dir, "S06_PlayerLog_12-58-47-27-02-2019.txt"),
+subj_ID <- "S06"
+dat <- read.table(file.path(data_dir, 
+                            subj_ID, 
+                            "S06_PlayerLog_12-58-47-27-02-2019.txt"),
                   skip = 6,
                   header = T,
                   sep = ";",
@@ -70,12 +83,15 @@ dat <- dat[,1:18]
 # cut to relevant rows:
 dat <- dat[dat$Phase == "Estimation",  ]
 dat <- dat[dat$Training == "False",  ]
+dat <- dat[dat$Round > 0, ]   
 
-### I'm not sure why we end up with 725 observations
+### I'm not sure why we end up with 725 observations 
+# >> "real" training blocks come in clusters of 5; S19 apparantly did two rounds
+# of "real" training (that's possible)
 
 
 # save to list:
-dat$who <- as.factor("S06")
+dat$who <- as.factor(subj_ID)
 data[[2]] <- dat
 dat <- NULL
 
@@ -93,15 +109,20 @@ Checks & creating new variables
 # count threatening and non-threatening animals
 length(which(fulldat$FearObject == T))
 length(which(fulldat$FearObject == F))
+# [FK:] I don't know what these lines do; 
+# Anyway, we should do:
+fulldat <- droplevels(fulldat)
 
 # calc. error:
 fulldat <- fulldat %>% 
   mutate(err = (EstimatedDistance - RealDistance),
          errAbs = abs(err),
          errNorm = err / RealDistance,
-         errAbsNorm = abs(errNorm))
+         errAbsNorm = abs(errNorm)) %>% 
+  mutate(totTrial = Trial + (Round - 1) * max(Trial))
 
-# These below needs to be updated to skip NA     ### Returns NA - but not maybe necessary now
+# These below needs to be updated to skip NA     ### Returns NA - but not maybe necessary no
+# [FK:] Works fine for me, maybe after discarding the training trials
 meansStim <- fulldat %>%
   group_by(FearObject) %>%
     summarise(meanErr = mean(err, na.rm=T),
@@ -120,14 +141,19 @@ meansAnim <- fulldat %>%
 Add the cardio information to the data frame (fulldat): (NEEDS UPDATING)
 ```{r}
 
-source("add_cardio_info.R")
+
 # for whom do we want to add cardio info:
 # (skipping first 2 pilots as there's no (reasonable) cardio info for them )
 #cardio_subjs <- levels(fulldat$who)[-2] 
 cardio_subjs <- c('S19','S06')
+cardio_dat <- NULL;
 for (part in cardio_subjs) {
-  fulldat <- add_cardio_info(fulldat, part)
+  cardio_dat_t <- get_cardio_info(fulldat, part)
+  cardio_dat <- bind_rows(cardio_dat, cardio_dat_t)
 }
+
+# add it to fulldat:
+fulldat <- full_join(fulldat, cardio_dat)
 
 ```
 
@@ -135,7 +161,7 @@ for (part in cardio_subjs) {
 Let's look into some features f the full data set: (NEEDS UPDATING - NEW NAMES OF VARIABLES)
 ```{r}
 ## Influence of trueDistance:
-lmErrDist <- lm(err ~ trueDist, data = fulldat)
+lmErrDist <- lm(err ~ RealDistance, data = fulldat)
 
 plot(lmErrDist)
 
@@ -145,14 +171,14 @@ bptest(lmErrDist, data = fulldat)
 
 summary(lmErrDist)
 # ups...
-plot(err ~ trueDist, data = fulldat)
+plot(err ~ RealDistance, data = fulldat)
 
 
-errHist <- ggplot(fulldat, aes(x = err, fill = isFear)) + 
+errHist <- ggplot(fulldat, aes(x = err, fill = FearObject)) + 
   geom_histogram(binwidth = 0.01, position = "identity", alpha = 0.5) + 
   xlim(-1, 1)  +
   geom_density(alpha = 0.2) +
-  geom_vline(data=meansStim, aes(xintercept = meanErr, color = isFear), 
+  geom_vline(data=meansStim, aes(xintercept = meanErr, color = FearObject), 
              linetype = 'dashed', size = 1) +
   scale_fill_manual(values = c('blue', 'red')) + 
   scale_color_manual(values = c('blue', 'red')) +
@@ -164,14 +190,14 @@ errHist
 
 
 boxplot(err ~ isSystTrial, data = fulldat)
-lines(mean(fulldat$err[fulldat$isFear]), 0)
+lines(mean(fulldat$err[fulldat$FearObject]), 0)
 
 
 ```
 
 ```{r}
 
-d <- fulldat[fulldat$who %in% c("P03", "P04", "P05"), ]
+d <- fulldat[fulldat$who %in% c("S06", "S19"), ]
 require(circular)
 
 for (p in unique(d$who)) {
@@ -202,14 +228,14 @@ plot(temp_onset, stack=TRUE, col = "gray25", cex = 0.77, main = paste("Onsets ID
 
 for (p in unique(d$who)) {
 
-med_value_fear <- median(d$err[d$who == p & d$isFear == T])
-med_value_non_fear <- median(d$err[d$who == p & d$isFear == F])
+med_value_fear <- median(d$err[d$who == p & d$FearObject == T])
+med_value_non_fear <- median(d$err[d$who == p & d$FearObject == F])
 
 for (t in 1:720) {
   
-ifelse(d$err[d$who == p & d$totTrial == t & d$isFear == T] < med_value_fear, d$closer_fear[d$who == p & d$totTrial == t] <- T, d$closer_fear[d$who == p & d$totTrial == t] <- F)
+ifelse(d$err[d$who == p & d$totTrial == t & d$FearObject == T] < med_value_fear, d$closer_fear[d$who == p & d$totTrial == t] <- T, d$closer_fear[d$who == p & d$totTrial == t] <- F)
 
-ifelse(d$err[d$who == p & d$totTrial == t & d$isFear == F] < med_value_non_fear, d$closer_nonfear[d$who == p & d$totTrial == t] <- T, d$closer_nonfear[d$who == p & d$totTrial == t] <- F) 
+ifelse(d$err[d$who == p & d$totTrial == t & d$FearObject == F] < med_value_non_fear, d$closer_nonfear[d$who == p & d$totTrial == t] <- T, d$closer_nonfear[d$who == p & d$totTrial == t] <- F) 
 }
 }
 
@@ -252,16 +278,16 @@ lines(circ.dens, col= rgb(0.247, 0.435, 0.545), lwd = 1.5, xpd=TRUE)
 for (p in unique(d$who)) {
 
   
-  for (a in unique(d$Animal)) {
+  for (a in unique(d$Stimulus)) {
 
 name <- paste("med_value_",a,sep="")
-med <- assign(name, median(d$err[d$who == p & d$Animal == a]))
+med <- assign(name, median(d$err[d$who == p & d$Stimulus == a]))
 
 for (t in 1:720) {
 
-d$closer[d$who == p & d$totTrial == t & d$Animal == a & d$err < med] <- T
+d$closer[d$who == p & d$totTrial == t & d$Stimulus == a & d$err < med] <- T
   
-#ifelse(d$err[d$who == p & d$totTrial == t & d$Animal == a] < med_value_fear, d$closer[d$who == p & d$totTrial == t & d$Animal == a] <- T)
+#ifelse(d$err[d$who == p & d$totTrial == t & d$Stimulus == a] < med_value_fear, d$closer[d$who == p & d$totTrial == t & d$Stimulus == a] <- T)
 
 }
 }
@@ -271,10 +297,10 @@ d$closer[d$who == p & d$totTrial == t & d$Animal == a & d$err < med] <- T
 #length(d$closer_fear[d$closer_fear == TRUE & d$closer_fear != NA])
 #length(d$closer_nonfear[d$closer_nonfear == T & d$closer_nonfear != NA])
 
-threat <- circular(d$relPosRRrad[d$closer == T & d$isFear == T], type="angles", units="radians", rotation="clock", zero=pi/2)
+threat <- circular(d$relPosRRrad[d$closer == T & d$FearObject == T], type="angles", units="radians", rotation="clock", zero=pi/2)
 threat <- threat[!is.na(threat)]
 
-non_threat <- circular(d$relPosRRrad[d$closer == T & d$isFear == F], type="angles", units="radians", rotation="clock", zero=pi/2)
+non_threat <- circular(d$relPosRRrad[d$closer == T & d$FearObject == F], type="angles", units="radians", rotation="clock", zero=pi/2)
 non_threat <- non_threat[!is.na(non_threat)]
 
 # plot the distribution of mean hits within RR interval across participants - with 0 indicating the R peak previous to the stimulus onset
@@ -310,16 +336,16 @@ lines(circ.dens, col= rgb(0.247, 0.435, 0.545), lwd = 1.5, xpd=TRUE)
 for (p in unique(d$who)) {
 
   
-  for (a in unique(d$Animal)) {
+  for (a in unique(d$Stimulus)) {
 
 name <- paste("med_value_",a,sep="")
-med <- assign(name, median(d$err[d$who == p & d$Animal == a]))
+med <- assign(name, median(d$err[d$who == p & d$Stimulus == a]))
 
 for (t in 1:720) {
 
-d$closer[d$who == p & d$totTrial == t & d$Animal == a & d$err < med] <- T
+d$closer[d$who == p & d$totTrial == t & d$Stimulus == a & d$err < med] <- T
   
-#ifelse(d$err[d$who == p & d$totTrial == t & d$Animal == a] < med_value_fear, d$closer[d$who == p & d$totTrial == t & d$Animal == a] <- T)
+#ifelse(d$err[d$who == p & d$totTrial == t & d$Stimulus == a] < med_value_fear, d$closer[d$who == p & d$totTrial == t & d$Stimulus == a] <- T)
 
 }
 }
@@ -331,12 +357,12 @@ means_nonthreat <- vector()
 
 for (p in unique(d$who)) {
   
-threat <- circular(d$relPosRRrad[d$who == p & d$closer == T & d$isFear == T], type="angles", units="radians", rotation="clock", zero=pi/2)
+threat <- circular(d$relPosRRrad[d$who == p & d$closer == T & d$FearObject == T], type="angles", units="radians", rotation="clock", zero=pi/2)
 threat <- threat[!is.na(threat)]
 
 means_threat[p] <- mean(threat)
 
-non_threat <- circular(d$relPosRRrad[d$who == p & d$closer == T & d$isFear == F], type="angles", units="radians", rotation="clock", zero=pi/2)
+non_threat <- circular(d$relPosRRrad[d$who == p & d$closer == T & d$FearObject == F], type="angles", units="radians", rotation="clock", zero=pi/2)
 non_threat <- non_threat[!is.na(non_threat)]
 
 means_nonthreat[p] <- mean(non_threat)

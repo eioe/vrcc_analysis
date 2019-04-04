@@ -8,9 +8,15 @@
 %%
 
 % get file manually (expects to be in centalkollegs18/Code/Data/VRTask/Cardio)
-[fname fpath] = uigetfile(fullfile('../../../../../Data/VRTask/Cardio', ...
+[fname fpath] = uigetfile(fullfile('../../../../../Data/VRTask/Cardio/ExpSubjects/', ...
     '*.vhdr'), ...
     'select VHDR file');
+
+% check for folders:
+dirDataTXT = [fpath '/TXTs/'];
+dirDataPeaks = [fpath 'SETwithRPeaks/'];
+mkdir(dirDataTXT)
+mkdir(dirDataPeaks)
 
 % request setname:
 fprintf('\n\n ########################## \n');

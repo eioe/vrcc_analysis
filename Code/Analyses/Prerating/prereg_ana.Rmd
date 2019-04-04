@@ -44,6 +44,7 @@ bymedian <- with(speedgdat, reorder(animal, -rating, mean))
 boxplot(rating ~ bymedian, data = speedgdat)
 
 
+
 ```
 
 
