@@ -17,20 +17,20 @@ knitr::opts_chunk$set(echo = TRUE)
 ```{r}
 # Utils
 library(dplyr)
-require(here)
-require(haven)
-require(readr)
-require(tibble)
-require(purrr)
+library(here)
+library(haven)
+library(readr)
+library(tibble)
+library(purrr)
 
 # Plotting and tables
-require(ggplot2)
-require(sjPlot)
+library(ggplot2)
+library(sjPlot)
 
 # Statistical tools
-require(lme4)
-require(lmtest)
-require(lmerTest)
+library(lme4)
+library(lmtest)
+library(lmerTest)
 
 # Load helper functions
 source("./Code/Analyses/VRTask/Utils/get_cardio_info.R")
