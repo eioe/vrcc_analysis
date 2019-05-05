@@ -68,7 +68,6 @@ filter_data <- function(df) {
   # according to the original criteria from `VRCC_behav_pilots.Rmd`
   
   df %>% filter(Phase == "Estimation" & 
-                Training == "False" & 
                 Round > 0)
 }
 
