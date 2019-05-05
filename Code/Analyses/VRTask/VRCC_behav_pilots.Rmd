@@ -21,7 +21,7 @@ require(readr)
 require(purrr)
 require(tibble)
 
-source("get_cardio_info.R")
+source("./Utils/get_cardio_info.R")
 
 # Load data sets:
 
@@ -169,7 +169,7 @@ fulldat <- full_join(fulldat, cardio_dat)                 # AM: add writing to d
 ____________________________________
 ## **AM:** BELOW: TEMP/EXPLORATORY CODE
 
-Let's look into some features f the full data set: (NEEDS UPDATING - NEW NAMES OF VARIABLES)
+Let's look into some features of the full data set: (NEEDS UPDATING - NEW NAMES OF VARIABLES)
 ```{r}
 ## Influence of trueDistance:
 lmErrDist <- lm(err ~ RealDistance, data = fulldat)
