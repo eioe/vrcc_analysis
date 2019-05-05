@@ -1,5 +1,4 @@
-
-# ignore the Data placeholder folder
-Data
+# Ignore:
 Notes
-Code/Analyses/VRTask/VRCC_analysis_pipeline.Rmd
+Data
+# Code/Analyses/VRTask/VRCC_analysis_pipeline.Rmd

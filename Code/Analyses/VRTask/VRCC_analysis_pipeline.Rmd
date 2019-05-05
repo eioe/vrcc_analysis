@@ -12,10 +12,11 @@ self_contained: no
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-# Import libraries
+# Import libraries & setup directories
 
 ```{r}
 # Utils
+library(dplyr)
 require(here)
 require(haven)
 require(readr)
@@ -31,9 +32,9 @@ require(lme4)
 require(lmtest)
 require(lmerTest)
 
-# Helper functions
-source("./Utils/get_cardio_info.R")
-source("./Utils/read_utils.r")
+# Load helper functions
+source("./Code/Analyses/VRTask/Utils/get_cardio_info.R")
+source("./Code/Analyses/VRTask/Utils/read_utils.r")
 
 ```
 
@@ -42,14 +43,58 @@ source("./Utils/read_utils.r")
 # Build the dataset
 
 ```{r}
+# Set up the data directory
+VRCC_dir <- here()
+data_dir <- here("Data/VRTask/Logfiles/ExpSubjects")
+
+# Build the dataset
+fulldata <- build_dataset(data_dir)
 
 ```
 
 <br>
 
-# Apply further transformations
+# Apply further transformations and create additional variables
 
 ```{r}
+# Drop unused levels
+fulldata <- droplevels(fulldata)
+
+```
+
+<br>
+
+* ### Compute distance errors
+
+```{r}
+# Compute distance errors & add to the dataset
+fulldata <- fulldata %>% 
+  mutate(DistanceError = (EstimatedDistance - RealDistance),
+         DistanceErrorAbs = abs(DistanceError),
+         DistanceErrorNorm = DistanceError / RealDistance,
+         DistanceErrorNormAbs = abs(DistanceErrorNorm)) %>% 
+  mutate(totTrial = Trial + (Round - 1) * max(Trial))          # **AM 05-05-19**: What's that?
+
+```
+
+<br>
+
+* ### Add cardio information to the dataset
+
+```{r}
+subjects_list <- fulldata %>%
+                  select(ID) %>%
+                  distinct()
+
+cardio_data   <- NULL
+
+for (subject in subjects_list$ID) {                               
+  cardio_temp <- get_cardio_info(fulldata, subject)
+  cardio_data <- bind_rows(cardio_data, cardio_temp)
+}
+
+# Join the data
+fulldata <- full_join(fulldata, cardio_data)                 
 
 ```
 
@@ -63,9 +108,24 @@ source("./Utils/read_utils.r")
 
 <br>
 
-# Additional analyses
+# Exploratory / additional analyses
 
 ```{r}
 
+mean_error_per_fear <- fulldata %>%
+                          group_by(FearObject) %>%
+                            summarise(MeanDistanceError = mean(DistanceError, na.rm=T),
+                                      MeanDistanceErrorNorm = mean(DistanceErrorNorm, na.rm=T),
+                                      MeanDistanceErrorAbs = mean(DistanceErrorAbs, na.rm=T))
+
+mean_error_per_animal <- fulldata %>%
+                          group_by(Stimulus) %>%
+                            summarise(MeanDistanceError = mean(DistanceError, na.rm=T),
+                                      MeanDistanceErrorNorm = mean(DistanceErrorNorm, na.rm=T),
+                                      MeanDistanceErrorAbs = mean(DistanceErrorAbs, na.rm=T))
+
+mean_dist_per_fear
+mean_dist_per_animal
+      
 ```
 
