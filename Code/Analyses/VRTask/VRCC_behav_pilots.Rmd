@@ -5,6 +5,7 @@ date: "12 Februar 2019"
 contact: "klotzsche@cbs.mpg.de"
 output: html_document
 editor_options: 
+  chunk_output_type: console
 chunk_output_type: console
 self_contained: no
 ---
@@ -15,6 +16,10 @@ require(ggplot2)
 require(dplyr)
 require(lmtest)
 require(here)
+require(haven)
+require(readr)
+require(purrr)
+require(tibble)
 
 source("get_cardio_info.R")
 
@@ -38,9 +43,9 @@ subj_ID <- "S19"
 dat <- read.table(file.path(data_dir, 
                             subj_ID, 
                             "S19_PlayerLog_15-55-38-01-03-2019.txt"),
-                  skip = 6,
-                  header = T,
-                  sep = ";",
+                  skip      = 6,
+                  header    = T,
+                  sep       = ";",
                   row.names = NULL,
                   na.string = "-1.0000")
 
@@ -67,7 +72,7 @@ dat <- NULL
 subj_ID <- "S06"
 dat <- read.table(file.path(data_dir, 
                             subj_ID, 
-                            "S06_PlayerLog_12-58-47-27-02-2019.txt"),
+                            "S06_PlayerLog_12-58-47-27-02-2019.txt"),     # AM: automate based solely on "S__"
                   skip = 6,
                   header = T,
                   sep = ";",
@@ -89,6 +94,7 @@ dat <- dat[dat$Round > 0, ]
 # >> "real" training blocks come in clusters of 5; S19 apparantly did two rounds
 # of "real" training (that's possible)
 
+### **AM 05-05-2019**: Now we get 720 rows per participant
 
 # save to list:
 dat$who <- as.factor(subj_ID)
@@ -96,7 +102,7 @@ data[[2]] <- dat
 dat <- NULL
 
 # merge data sets:
-fulldat <- rbind(data[[1]], data[[2]])
+fulldat <- rbind(data[[2]], data[[1]])
 
 ```
 
@@ -147,16 +153,21 @@ Add the cardio information to the data frame (fulldat): (NEEDS UPDATING)
 #cardio_subjs <- levels(fulldat$who)[-2] 
 cardio_subjs <- c('S19','S06')
 cardio_dat <- NULL;
-for (part in cardio_subjs) {
+
+#### AM: BELOW: Type mismatch - `factor` and `character` vectors
+
+for (part in cardio_subjs) {                               # AM: put in a function
   cardio_dat_t <- get_cardio_info(fulldat, part)
   cardio_dat <- bind_rows(cardio_dat, cardio_dat_t)
 }
 
 # add it to fulldat:
-fulldat <- full_join(fulldat, cardio_dat)
+fulldat <- full_join(fulldat, cardio_dat)                 # AM: add writing to disk with datetime
 
 ```
-
+<br><br>
+_______________________________
+**AM:** BELOW: TEMP/EXPLORATORY CODE
 
 Let's look into some features f the full data set: (NEEDS UPDATING - NEW NAMES OF VARIABLES)
 ```{r}
