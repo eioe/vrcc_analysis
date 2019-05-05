@@ -1,6 +1,7 @@
 
 get_cardio_info <- function(fulldat, subj_ID) {
-  # gets information about (cardiac) events (from ECG file) for a specific 
+  
+  # Gets information about (cardiac) events (from ECG file) for a specific 
   # subject.
   # 
   # Args:
@@ -54,14 +55,14 @@ get_cardio_info <- function(fulldat, subj_ID) {
     select(Stimulus) %>%
     mutate(Stimulus = as_factor(Stimulus))
   
-  # following line assumes that the (mappings in the) first trials are in order:
+  # Following line assumes that the (mappings in the) first trials are in order:
   mappingStim2Mrk <- setNames(as.list(unique(anim_seq$Stimulus)), 
                               as.list(unique(mrk_seq$type)))
   
   mrk_seq <- mutate(mrk_seq, 
                     mappedStim = recode(mrk_seq$type, !!!mappingStim2Mrk))
   
-  # now we can check for identity:
+  # Now we can check for identity:
   if (any(mrk_seq$mappedStim != anim_seq$Stimulus)) {
     stop("Mapping between trials in log file and physio data is incorrect.")
   }
@@ -82,7 +83,7 @@ get_cardio_info <- function(fulldat, subj_ID) {
     select(latency) %>% 
     as_vector()
   
-  # find StimOnset surrounding RPeaks:
+  # Find StimOnset surrounding RPeaks:
   RPeakLats <- mrks %>% 
     filter(type == 'RP') %>% 
     select(latency) %>% 
@@ -116,11 +117,11 @@ get_cardio_info <- function(fulldat, subj_ID) {
            relPosRRrad = relPosRR *2*pi, 
            isSystTrial = ifelse(dist2RPm1 < 300, TRUE, FALSE))
   
-  # add totTrial info:
+  # Add totTrial info:
   phys_dat <- rowid_to_column(phys_dat, var = "totTrial")
   phys_dat$totTrial <- as.numeric(phys_dat$totTrial)
   
-  # add column with participant ID:
+  # Add column with participant ID:
   phys_dat <- add_column(phys_dat, ID = as.factor(subj_ID), .after = "totTrial")
   
   return(phys_dat)
