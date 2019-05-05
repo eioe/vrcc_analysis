@@ -1,0 +1,71 @@
+---
+title: "VRCC Analysis Pipeline"
+author: "AM, FK, PM"
+date: "May 5, 2019"
+contact: "klotzsche@cbs.mpg.de", "aleksander.molak@gmail.com"
+output: html_document
+editor_options: 
+  chunk_output_type: console
+chunk_output_type: console
+self_contained: no
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Import libraries
+
+```{r}
+# Utils
+require(here)
+require(haven)
+require(readr)
+require(tibble)
+require(purrr)
+
+# Plotting and tables
+require(ggplot2)
+require(sjPlot)
+
+# Statistical tools
+require(lmtest)
+
+# Halper functions
+source("./Utils/get_cardio_info.R")
+source("./Utils/read_utils.r")
+
+```
+
+<br>
+
+# Build the dataset
+
+```{r}
+
+```
+
+<br>
+
+# Apply further transformations
+
+```{r}
+
+```
+
+<br>
+
+# Main analysis
+
+```{r}
+
+```
+
+<br>
+
+# Additional analyses
+
+```{r}
+
+```
+
