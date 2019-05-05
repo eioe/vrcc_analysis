@@ -4,8 +4,6 @@ author: "AM, FK, PM"
 date: "May 5, 2019"
 contact: "klotzsche@cbs.mpg.de", "aleksander.molak@gmail.com"
 output: html_document
-editor_options: 
-  chunk_output_type: console
 chunk_output_type: console
 self_contained: no
 ---
@@ -29,9 +27,11 @@ require(ggplot2)
 require(sjPlot)
 
 # Statistical tools
+require(lme4)
 require(lmtest)
+require(lmerTest)
 
-# Halper functions
+# Helper functions
 source("./Utils/get_cardio_info.R")
 source("./Utils/read_utils.r")
 
