@@ -50,7 +50,7 @@ get_cardio_info <- function(fulldat, subj_ID) {
     select(type)
   
   anim_seq <- fulldat %>% 
-    filter(who == subj_ID) %>% 
+    filter(ID == subj_ID) %>% 
     select(Stimulus) %>%
     mutate(Stimulus = as_factor(Stimulus))
   
@@ -121,7 +121,7 @@ get_cardio_info <- function(fulldat, subj_ID) {
   phys_dat$totTrial <- as.numeric(phys_dat$totTrial)
   
   # add column with participant ID:
-  phys_dat <- add_column(phys_dat, who = as.factor(subj_ID), .after = "totTrial")
+  phys_dat <- add_column(phys_dat, ID = as.factor(subj_ID), .after = "totTrial")
   
   return(phys_dat)
 }  
