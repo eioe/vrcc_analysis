@@ -166,8 +166,8 @@ fulldat <- full_join(fulldat, cardio_dat)                 # AM: add writing to d
 
 ```
 <br><br>
-_______________________________
-**AM:** BELOW: TEMP/EXPLORATORY CODE
+____________________________________
+## **AM:** BELOW: TEMP/EXPLORATORY CODE
 
 Let's look into some features f the full data set: (NEEDS UPDATING - NEW NAMES OF VARIABLES)
 ```{r}
