@@ -10,6 +10,7 @@ self_contained: no
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
+basic_color <- '#195e8c'
 ```
 
 # Import libraries & setup directories
@@ -31,6 +32,7 @@ library(sjPlot)
 library(lme4)
 library(lmtest)
 library(lmerTest)
+library(car)
 
 # Load helper functions
 source("./Code/Analyses/VRTask/Utils/get_cardio_info.R")
@@ -102,9 +104,45 @@ fulldata <- full_join(fulldata, cardio_data)
 
 # Main analysis
 
+<br>
+
+* ### Check if the distance error ($DE$) differs between threatning and non-threatning trials
+
 ```{r}
+# Check the distribution of DE
+ggplot(fulldata, aes(x = DistanceError, fill = FearObject)) + 
+                           geom_histogram(alpha = .7) + 
+                           xlab('Distance Error') + 
+                           ylab('Value') + 
+                           theme_minimal()
+
+qqPlot(fulldata$DistanceError)
+
+shapiro.test(fulldata$DistanceError)
 
 ```
+
+<br>
+
+Distributions are far from normal - performing Wilcoxon non-param. test for dependent samples.
+
+<br>
+
+```{r}
+# Split the data
+fear_true <- fulldata %>% 
+              filter(FearObject == 'True') %>%
+              select(DistanceError) %>% pull
+
+fear_flse <- fulldata %>% 
+              filter(FearObject == 'False') %>%
+              select(DistanceError) %>% pull
+
+# Perfom Wilcoxon signed-rank test
+wilcox.test(fear_true, fear_flse, paired = T)
+
+```
+
 
 <br>
 
