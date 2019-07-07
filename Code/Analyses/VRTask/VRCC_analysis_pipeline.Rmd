@@ -35,8 +35,8 @@ library(lmerTest)
 library(car)
 
 # Load helper functions
-source("./Code/Analyses/VRTask/Utils/get_cardio_info.R")
-source("./Code/Analyses/VRTask/Utils/read_utils.r")
+source(here("./Code/Analyses/VRTask/Utils/get_cardio_info.R"))
+source(here("./Code/Analyses/VRTask/Utils/read_utils.r"))
 
 ```
 
@@ -47,7 +47,7 @@ source("./Code/Analyses/VRTask/Utils/read_utils.r")
 ```{r}
 # Set up the data directory
 VRCC_dir <- here()
-data_dir <- here("Data/VRTask/Logfiles/ExpSubjects")
+data_dir <- here("Data/VRTask/Logfiles/ExpSubjects/clean")
 
 # Build the dataset
 fulldata <- build_dataset(data_dir)
@@ -76,6 +76,8 @@ fulldata <- fulldata %>%
          DistanceErrorNorm = DistanceError / RealDistance,
          DistanceErrorNormAbs = abs(DistanceErrorNorm)) %>% 
   mutate(totTrial = Trial + (Round - 1) * max(Trial))          # **AM 05-05-19**: What's that?
+                                                               # **FK 07-07-19**: Labels the trials with sequential numbers over the whole experiment (1-720)   
+
 
 ```
 

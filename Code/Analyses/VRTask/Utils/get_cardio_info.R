@@ -25,7 +25,7 @@ get_cardio_info <- function(fulldat, subj_ID) {
   mrks <- mrks %>% 
     select(latency, type) %>%
     filter(type != 'boundary') %>% 
-    mutate(class = recode(type,
+    mutate(class = dplyr::recode(type,
                           'RP' = 'RP', 
                           'S 41'= 'stimOn', 
                           'S 42' = 'stimOff',
@@ -60,7 +60,7 @@ get_cardio_info <- function(fulldat, subj_ID) {
                               as.list(unique(mrk_seq$type)))
   
   mrk_seq <- mutate(mrk_seq, 
-                    mappedStim = recode(mrk_seq$type, !!!mappingStim2Mrk))
+                    mappedStim = dplyr::recode(mrk_seq$type, !!!mappingStim2Mrk))
   
   # Now we can check for identity:
   if (any(mrk_seq$mappedStim != anim_seq$Stimulus)) {

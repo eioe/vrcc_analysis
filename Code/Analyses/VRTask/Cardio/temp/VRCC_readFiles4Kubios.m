@@ -32,6 +32,11 @@ EEG = pop_select( EEG,'channel',{'ECG'});
 [ALLEEG EEG CURRENTSET] = pop_newset(ALLEEG, EEG, 0,'setname',setname,...
     'gui','off'); 
 
+%% This section is for debugging / uncommnet for proper analysis
+eeglab redraw;
+
+disp(sum(strcmp({EEG.event.type}, 'S 41')));
+
 % Delete file ending:
 fname = strsplit(fname, '.');
 fname = fname{1};
