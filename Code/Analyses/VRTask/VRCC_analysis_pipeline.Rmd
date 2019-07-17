@@ -2,7 +2,7 @@
 title: "VRCC Analysis Pipeline"
 author: "AM, FK, PM"
 date: "May 5, 2019"
-contact: "klotzsche@cbs.mpg.de", "aleksander.molak@gmail.com"
+# contact: "klotzsche@cbs.mpg.de", "aleksander.molak@gmail.com"
 output: html_document
 chunk_output_type: console
 self_contained: no
@@ -15,7 +15,7 @@ basic_color <- '#195e8c'
 
 # Import libraries & setup directories
 
-```{r}
+```{r message=FALSE}
 # Utils
 library(dplyr)
 library(here)
@@ -33,6 +33,7 @@ library(lme4)
 library(lmtest)
 library(lmerTest)
 library(car)
+library(BayesFactor)
 
 # Load helper functions
 source(here("./Code/Analyses/VRTask/Utils/get_cardio_info.R"))
@@ -47,7 +48,7 @@ source(here("./Code/Analyses/VRTask/Utils/read_utils.r"))
 ```{r}
 # Set up the data directory
 VRCC_dir <- here()
-data_dir <- here("Data/VRTask/Logfiles/ExpSubjects/clean")
+data_dir <- here("Data/VRTask/Logfiles/ExpSubjects")
 
 # Build the dataset
 fulldata <- build_dataset(data_dir)
@@ -126,7 +127,9 @@ shapiro.test(fulldata$DistanceError)
 
 <br>
 
-Distributions are far from normal - performing Wilcoxon non-param. test for dependent samples.
+## Testing the main hypothesis (1)
+
+* ### Using two-tailed paired t-test and / or Wilcoxon paired test.
 
 <br>
 
@@ -140,11 +143,32 @@ fear_flse <- fulldata %>%
               filter(FearObject == 'False') %>%
               select(DistanceError) %>% pull
 
+# Perform paired t-test
+t.test(fear_true, fear_flse, paired = T)
+
 # Perfom Wilcoxon signed-rank test
 wilcox.test(fear_true, fear_flse, paired = T)
 
 ```
 
+<br>
+
+* ### Using bayesian t-test (BF).
+
+<br>
+
+```{r}
+ttestBF(fear_true, fear_flse, paired = T)
+```
+
+<br>
+
+## Testing the main hypothesis (2a) using multilevel modeling
+
+```{r}
+print('Implement this...')
+
+```
 
 <br>
 
@@ -163,9 +187,9 @@ mean_error_per_animal <- fulldata %>%
                             summarise(MeanDistanceError = mean(DistanceError, na.rm=T),
                                       MeanDistanceErrorNorm = mean(DistanceErrorNorm, na.rm=T),
                                       MeanDistanceErrorAbs = mean(DistanceErrorAbs, na.rm=T))
-
-mean_dist_per_fear
-mean_dist_per_animal
+# 
+# mean_dist_per_fear
+# mean_dist_per_animal
       
 ```
 
