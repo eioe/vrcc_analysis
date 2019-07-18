@@ -15,7 +15,8 @@ basic_color <- '#195e8c'
 
 # Import libraries & setup directories
 
-```{r message=FALSE}
+```{r message=FALSE, warning=FALSE}
+
 # Utils
 library(dplyr)
 library(here)
@@ -45,7 +46,8 @@ source(here("./Code/Analyses/VRTask/Utils/read_utils.r"))
 
 # Build the dataset
 
-```{r}
+```{r warning=FALSE}
+
 # Set up the data directory
 VRCC_dir <- here()
 data_dir <- here("Data/VRTask/Logfiles/ExpSubjects")
@@ -60,6 +62,7 @@ fulldata <- build_dataset(data_dir)
 # Apply further transformations and create additional variables
 
 ```{r}
+
 # Drop unused levels
 fulldata <- droplevels(fulldata)
 
@@ -70,6 +73,7 @@ fulldata <- droplevels(fulldata)
 * ### Compute distance errors
 
 ```{r}
+
 # Compute distance errors & add to the dataset
 fulldata <- fulldata %>% 
   mutate(DistanceError = (EstimatedDistance - RealDistance),
@@ -86,7 +90,8 @@ fulldata <- fulldata %>%
 
 * ### Add cardio information to the dataset
 
-```{r}
+```{r warning=FALSE}
+
 subjects_list <- fulldata %>%
                   select(ID) %>%
                   distinct()
@@ -111,7 +116,8 @@ fulldata <- full_join(fulldata, cardio_data)
 
 * ### Check if the distance error ($DE$) differs between threatning and non-threatning trials
 
-```{r}
+```{r message=FALSE}
+
 # Check the distribution of DE
 ggplot(fulldata, aes(x = DistanceError, fill = FearObject)) + 
                            geom_histogram(alpha = .7) + 
