@@ -549,9 +549,46 @@ wilcox.test(fear_true, fear_flse, paired = T)</code></pre>
 ## ---
 ## Bayes factor type: BFoneSample, JZS</code></pre>
 <p><br></p>
+<ul>
+<li><h3 id="multilevel-model">Multilevel model</h3></li>
+</ul>
+<p><br></p>
+<pre class="r"><code># Null model
+null_model_1 &lt;- lmer(DistanceError ~ (1|ID), 
+                     data = fulldata)
+
+summary_1 &lt;- summary(null_model_1)</code></pre>
+<p><br></p>
+<div id="compute-icc-to-check-if-multilevel-structure-is-justified" class="section level4">
+<h4>Compute ICC to check if multilevel structure is justified</h4>
+<p><br></p>
+<pre class="r"><code>ICC &lt;- function(summary) {
+  
+  variances = data.frame(summary$varcor)
+  
+  tau_00    = variances %&gt;% 
+                filter(var1 == '(Intercept)') %&gt;% 
+                select(vcov) %&gt;% 
+                .$vcov
+  sigma_2   = variances %&gt;% 
+                filter(grp == 'Residual') %&gt;% 
+                select(vcov) %&gt;% 
+                .$vcov
+  
+  tau_00 / (tau_00 + sigma_2)
+}</code></pre>
+<p><br></p>
 </div>
-<div id="testing-the-main-hypothesis-2a-using-multilevel-modeling" class="section level2">
-<h2>Testing the main hypothesis (2a) using multilevel modeling</h2>
+</div>
+<div id="testing-the-main-hypothesis-2a-using-multilevel-modeling-and-circular-predictor" class="section level2">
+<h2>Testing the main hypothesis (2a) using multilevel modeling and circular predictor</h2>
+<pre class="r"><code>print('Implement this...')</code></pre>
+<pre><code>## [1] &quot;Implement this...&quot;</code></pre>
+<p><br></p>
+</div>
+<div id="testing-the-main-hypothesis-2b-using-mutlilevel-modeling-and-binary-predictor" class="section level2">
+<h2>Testing the main hypothesis (2b) using mutlilevel modeling and binary predictor</h2>
+<p><br></p>
 <pre class="r"><code>print('Implement this...')</code></pre>
 <pre><code>## [1] &quot;Implement this...&quot;</code></pre>
 <p><br></p>

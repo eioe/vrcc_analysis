@@ -164,12 +164,98 @@ wilcox.test(fear_true, fear_flse, paired = T)
 <br>
 
 ```{r}
+
 ttestBF(fear_true, fear_flse, paired = T)
+
 ```
 
 <br>
 
-## Testing the main hypothesis (2a) using multilevel modeling
+* ### Hypothesis 1: Multilevel model - null model
+
+<br>
+
+```{r}
+# Null model
+null_model_1 <- lmer(DistanceError ~ (1|ID), 
+                     data = fulldata)
+
+summary_1_1 <- summary(null_model_1)
+
+```
+
+<br>
+
+* #### Compute ICC of a null model to check if multilevel structure is justified
+
+<br>
+
+```{r}
+# AM (2019-07-21): This will be moved to utility functions
+
+ICC <- function(summary) {
+  
+  variances = data.frame(summary$varcor)
+  
+  tau_00    = variances %>% 
+                filter(var1 == '(Intercept)') %>% 
+                select(vcov) %>% 
+                .$vcov
+  sigma_2   = variances %>% 
+                filter(grp == 'Residual') %>% 
+                select(vcov) %>% 
+                .$vcov
+  
+  tau_00 / (tau_00 + sigma_2)
+}
+
+# AM (2019-07-21): The below code should stay here:
+
+ICC(summary_1_1)
+
+```
+
+<br>
+
+* ### Hypothesis 1: Multilevel model - full model
+
+<br>
+
+```{r}
+# Null model
+full_model_1 <- lmer(DistanceError ~ FearObject + (1|ID), 
+                     data = fulldata)
+
+summary_1_2 <- summary(full_model_1)
+
+```
+
+<br>
+
+* ### Hypothesis 1: Compare the two models
+
+```{r}
+
+lrtest(null_model_1, full_model_1)
+
+```
+
+<br>
+
+## Testing the main hypothesis (2a) using multilevel modeling and a circular predictor
+
+<br>
+
+```{r}
+print('Implement this...')
+
+```
+
+<br>
+
+## Testing the main hypothesis (2b) using mutlilevel modeling and a binary predictor
+
+<br>
 
 ```{r}
 print('Implement this...')
