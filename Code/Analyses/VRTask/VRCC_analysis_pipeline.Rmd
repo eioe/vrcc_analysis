@@ -191,11 +191,11 @@ summary_1_1 <- summary(null_model_1)
 <br>
 
 ```{r}
-# AM (2019-07-21): This will be moved to utility functions
+# AM (2019-07-21): This will be moved to utility functions. This function only works properly for null models.
 
-ICC <- function(summary) {
+ICC <- function(model) {
   
-  variances = data.frame(summary$varcor)
+  variances = data.frame(summary(model)$varcor)
   
   tau_00    = variances %>% 
                 filter(var1 == '(Intercept)') %>% 
@@ -211,7 +211,7 @@ ICC <- function(summary) {
 
 # AM (2019-07-21): The below code should stay here:
 
-ICC(summary_1_1)
+ICC(null_model_1)
 
 ```
 
