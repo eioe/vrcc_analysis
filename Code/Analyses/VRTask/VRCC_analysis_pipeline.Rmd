@@ -223,7 +223,7 @@ ICC(summary_1_1)
 
 ```{r}
 # Null model
-full_model_1 <- lmer(DistanceError ~ FearObject + (1|ID), 
+full_model_1 <- lmer(DistanceError ~ FearObject + (1 + FearObject|ID), 
                      data = fulldata)
 
 summary_1_2 <- summary(full_model_1)
