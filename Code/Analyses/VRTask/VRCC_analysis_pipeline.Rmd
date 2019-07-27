@@ -125,8 +125,8 @@ ggplot(fulldata, aes(x = DistanceError, fill = FearObject)) +
                            ylab('Value') + 
                            theme_minimal()
 
+# Check for normality
 qqPlot(fulldata$DistanceError)
-
 shapiro.test(fulldata$DistanceError)
 
 ```
@@ -155,6 +155,10 @@ t.test(fear_true, fear_flse, paired = T)
 #                  Once we have all data set, we should summarize this by ID/subject.
 #                  I'm fairly sure for the standard t-test, not for wilcox and the Bayesian t-test. 
 #                  Will you look this up, Aleksander/Pawel? Esp w/ Bayes I have no experience.
+# **AM 27-07-19**: Ah, thank you for the comment. Maybe I misunderstood something about the data structure. Could you #                  give me a bit more details on how would you approach this? Do you think we should perform a
+#                  serie(s) of t-test for each individual? Or maybe take mean scores per individual and compare
+#                  these? As soon as the structure for t-test will be clear we can transfer this approach to
+#                  non-param. and bayesian methods.
 
 
 # Perfom Wilcoxon signed-rank test
@@ -188,6 +192,9 @@ null_model_1 <- lmer(DistanceError ~ (1|ID),
 #                  the 2nd hypothesis:
 #                  DistErr ~ 1 + (1 + DistTrue | ID)
 #                  Wouldn't it be coherent to use the same one here as well? Opinions welcome.
+# **AM 27-07-19**: In my understanding adding (1 + DistTrue ....) would mean that we add random slopes of true 
+#                  distance grouped by ID to the model. I'm not sure if I understand the rationle behind this at the 
+#                  moment. What would that mean to us?
 
 summary_1_1 <- summary(null_model_1)
 
@@ -237,6 +244,7 @@ full_model_1 <- lmer(DistanceError ~ FearObject + (1 + FearObject|ID),
 # **FK 23-07-19**: If we change the null model, the rand. effect DistTrue should probably go in here
 #                  as well. Also this makes the model comp. with the next model (2a) possible as they
 #                  then are nested. (Pls correct me if I'm bullshitting.)
+# **AM 27-07-19**: Yes, totally agree. I propose that we discuss the null model and act here accordingly.
 
 summary_1_2 <- summary(full_model_1)
 
