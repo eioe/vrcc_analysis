@@ -155,10 +155,8 @@ t.test(fear_true, fear_flse, paired = T)
 #                  Once we have all data set, we should summarize this by ID/subject.
 #                  I'm fairly sure for the standard t-test, not for wilcox and the Bayesian t-test. 
 #                  Will you look this up, Aleksander/Pawel? Esp w/ Bayes I have no experience.
-# **AM 27-07-19**: Ah, thank you for the comment. Maybe I misunderstood something about the data structure. Could you #                  give me a bit more details on how would you approach this? Do you think we should perform a
-#                  serie(s) of t-test for each individual? Or maybe take mean scores per individual and compare
-#                  these? As soon as the structure for t-test will be clear we can transfer this approach to
-#                  non-param. and bayesian methods.
+# **AM 09-08-19**: Ah, thank you for the comment. We met with Pawel and Pawel declared that he wants to 
+#                  take care about aggregating the data here. He'll push the changes next week.
 
 
 # Perfom Wilcoxon signed-rank test
