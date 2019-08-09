@@ -114,7 +114,7 @@ fulldata <- full_join(fulldata, cardio_data)
 
 <br>
 
-* ### Check if the distance error ($DE$) differs between threatning and non-threatning trials
+* ### Check if the distance error ($DE$) differs between threatening and non-threatening trials
 
 ```{r message=FALSE}
 
