@@ -50,11 +50,15 @@ source(here("./Code/Analyses/VRTask/Utils/read_utils.r"))
 ```{r warning=FALSE}
 
 # Set up the data directory
-VRCC_dir <- here()
-data_dir <- here("Data/VRTask/Logfiles/ExpSubjects")
+VRCC_dir        <- here()
+data_dir        <- here("Data/VRTask/Logfiles/ExpSubjects")
+qstnr_data_path <- here("Data/VRTask/VRCC_questionnaires.xlsx")
 
 # Build the dataset
 fulldata <- build_dataset(data_dir)
+
+# Read and filter behavioral data
+qstnr_data <- read_questionnaire_data(qstnr_data_path, filter_pilot = TRUE)
 
 ```
 
@@ -162,7 +166,7 @@ qqPlot(fulldata$DistanceError)
 # Derive individual means of distance error for threatening and non-threatening objects
 data_ID <- fulldata %>%
   group_by(ID) %>%
-  summarize(mean_threat = mean(DistanceError[FearObject == "True"]), # threatening objects
+  summarize(mean_threat     = mean(DistanceError[FearObject == "True"]), # threatening objects
             mean_non_threat = mean(DistanceError[FearObject == "False"])) # non-threatening objects
 
 # Check the normality of dependent variable distribution

@@ -9,6 +9,7 @@
 ###############################################################################
 
 library(dplyr)
+library(openxlsx)
 
 
 get_folders <- function(path) {
@@ -85,11 +86,26 @@ build_dataset <- function(path) {
     
     df <- get_single_table(file.path(path, folders[i]))
     df <- filter_data(df)
+    df$PhaseLenght <- as.numeric(df$PhaseLenght)    # There are some values that force type == factor
     
     tables[i] <- list(df)
   }
   
-  bind_rows(tables)
+  bind_rows(tables)   
   
+}
+
+
+read_questionnaire_data <- function(path, sheet = 'Scores', filter_pilot = TRUE) {
+  
+  data <- readWorkbook(path, sheet = sheet)
+  
+  if (filter_pilot == TRUE) {
+    data <- data %>% filter(SUBJECT != "PILOT")
+    
+  }
+  
+  data
+
 }
 
