@@ -11,7 +11,7 @@ get_cardio_info <- function(fulldat, subj_ID) {
   # Returns: 
   #   Data frame with cardiac information.
   
-  # 04/04/2019: FK --- eioe
+  # 04/04/2019: FK --- eioe, PM
   
   fpath <- paste0("/Data/VRTask/Cardio/ExpSubjects/SETwithRPeaks/VRCC_", 
                   subj_ID, 
@@ -26,24 +26,23 @@ get_cardio_info <- function(fulldat, subj_ID) {
     select(latency, type) %>%
     filter(type != 'boundary') %>% 
     mutate(class = dplyr::recode(type,
-                          'RP' = 'RP', 
-                          'S 41'= 'stimOn', 
-                          'S 42' = 'stimOff',
-                          'S 11' = 'trialStart', 
-                          'S 44' = 'resp',
-                          'S  1' = 'stimID',
-                          'S  2' = 'stimID',
-                          'S  3' = 'stimID',
-                          'S  4' = 'stimID',
-                          'S  5' = 'stimID',
-                          'S  6' = 'stimID',
-                          'S  7' = 'stimID',
-                          'S  8' = 'stimID',
-                          .default = NA_character_
-                          )
-           )
-                          
-                  
+                                 'RP' = 'RP', 
+                                 'S 41'= 'stimOn', 
+                                 'S 42' = 'stimOff',
+                                 'S 11' = 'trialStart', 
+                                 'S 44' = 'resp',
+                                 'S  1' = 'stimID',
+                                 'S  2' = 'stimID',
+                                 'S  3' = 'stimID',
+                                 'S  4' = 'stimID',
+                                 'S  5' = 'stimID',
+                                 'S  6' = 'stimID',
+                                 'S  7' = 'stimID',
+                                 'S  8' = 'stimID',
+                                 .default = NA_character_
+    )
+    )
+  
   # We have to get a mapping between mrks$stimID and fulldat$Stimulus (for each 
   # participant)
   mrk_seq <- mrks %>% 
@@ -89,33 +88,127 @@ get_cardio_info <- function(fulldat, subj_ID) {
     select(latency) %>% 
     as_vector()
   
-  RP_dat <- tibble(RPm1 = numeric(nTrials),
-                   RPm2 = numeric(nTrials),
-                   RPp1 = numeric(nTrials),
-                   RPp2 = numeric(nTrials))
+  # Load filtered ECG data (for the t-wave end detection algorithm)
+  filtered_ecg_fpath <- paste0("/Data/VRTask/Cardio/ExpSubjects/Filtered_ecg/VRCC_filt_ecg_",subj_ID, ".txt")
+  ecg <- read.table(here(filtered_ecg_fpath)) 
+  ecg[,1] <- ecg[,1] * 1000 # frequency: 1000 Hz
+  ecg[,2] <- -ecg[,2]  # change minus to plus values
   
-  for (i in 1:nTrials) {
+  # Create a data frame with cardiac variables
+  ECG_dat <- tibble(RPm1 = numeric(nTrials),
+                    RPm2 = numeric(nTrials),
+                    RPm3 = numeric(nTrials),
+                    RPp1 = numeric(nTrials),
+                    RPp2 = numeric(nTrials),
+                    RPp3 = numeric(nTrials),
+                    RPp4 = numeric(nTrials),
+                    RRLength = numeric(nTrials),
+                    dist2RPm1 = numeric(nTrials),
+                    dist2RPp1 = numeric(nTrials),
+                    tend = numeric(nTrials),
+                    systolength = numeric(nTrials))
+  
+  for (i in 1:nTrials) { ## Loop: Cardiac parameters for each trial
+    
+    ## R_peak related variables:
     idx <- max(which(RPeakLats-StimOnsets[i] < 0))
-    RP_dat$RPm1[i] <- RPeakLats[idx]
-    RP_dat$RPm2[i] <- RPeakLats[idx-1]
-    RP_dat$RPp1[i] <- RPeakLats[idx+1]
-    RP_dat$RPp2[i] <- RPeakLats[idx+2]
-  }
+    ECG_dat$RPm1[i] <- RPeakLats[idx] # R peak just before stimulus onset (mS)
+    ECG_dat$RPm2[i] <- RPeakLats[idx-1] # mS-1 ('minus/before' stimulus)
+    ECG_dat$RPm3[i] <- RPeakLats[idx-2] # mS-2
+    ECG_dat$RPp1[i] <- RPeakLats[idx+1] # R peak just after stimulus onset (pS)
+    ECG_dat$RPp2[i] <- RPeakLats[idx+2] # pS + 1 ('plus/post' stimulus)
+    ECG_dat$RPp3[i] <- RPeakLats[idx+3] # ps + 2 
+    ECG_dat$RPp4[i] <- RPeakLats[idx+4] # ps + 3 
+    ECG_dat$RRLength[i] <- ECG_dat$RPp1[i] - ECG_dat$RPm1[i] # RR interval length
+    ECG_dat$dist2RPm1[i] <- StimOnsets[i] - ECG_dat$RPm1[i] # time from the previous R peak to stimulus
+    ECG_dat$dist2RPp1[i] <- ECG_dat$RPp1[i] - StimOnsets[i] # time from the stimulus to the next R peak
+    
+    ## Encode T_wave related variables:
+    
+    # Limit the interval of interest - exclude the possibility of misreading the next R peak as T_wave   
+    t_limit <- ECG_dat$RPm1[i] + ECG_dat$RRLength[i] - 60 # 60 ms
+    
+    # Extract the long interval surrounding T wave from ECG data for visualization purposes. Data points are chosen arbitrarily to include only the  previous Rpeaks.
+    twave_long <- ecg[(ECG_dat$RPm1[i]- 100):t_limit,]
+    #plot(twave1)
+    
+    # Extract the interval from: 50 ms after R peak to t_limit
+    twave_int <- ecg[(ECG_dat$RPm1[i]+ 50):t_limit,]
+    #plot(twave_int)
+    
+    # Search for the maximum within the interval up to 350 ms after the R peak (50 + 300)
+    tmaxpos <- which.max(twave_int[1:300, 2])
+    ## Alternative solution:
+    #tmaxpos1 <- which.max(twave_int[1:((ECG_dat$RRLength[i] - 50)/3),2]) # alternative/previous solution that looks over ~1/3 of individual RR length (excluding the next R peak)
+    # side note: outcomes of both seem matched almost perfectly for S06, although I think that the second one might be to restrictie (too short interval taken into consideration - one observation too support it (SIC)) 
+    
+    twave2=twave_int[tmaxpos:dim(twave_int)[1],]
+    #plot(twave2)
+    
+    # Determine a point called xm located in the segment after the T peak, which has a minimum value in the first derivative. The algoritm searches for xm in a 120 ms time window startng from tmax. In case twave2 does not contain 0.12*fs (120 ms) data points, it searches only until the last point of twave2.
+    fs <- 1000
+    dp <- 0.12*fs # 120 ms
+    if (dp>dim(twave2)[1]) {
+      xm <- which(diff(twave2[,2])==min(diff(twave2[,2]))) 
+    } else {
+      xm <- which(diff(twave2[1:dp,2])==min(diff(twave2[1:dp,2]))) 
+    }
+    xm <- xm[1]
+    ym <- twave2[xm,2]
+    
+    # determine a point xr which is supposed t happen after tend.
+    xr <- 150+xm 
+    
+    # make a vector starting from xm and goes until xr
+    xseq <- xm:xr
+    yseq <- twave2[xm:xr,2]
+    
+    # write a function find the end of twave: first calculation of the trapeziums areas of all the points located between “xm“ and “xr“ and then identification of the point which gives the maximum area and label it as the t-wave end
+    trapez_area <- function(xm, ym, xseq, yseq, xr) {
+      a <- numeric()
+      for (i in seq_along(xseq)){
+        a[i] <- 0.5 * (ym - yseq[i]) * ((2*xr) - xseq[i] - xm)
+      }
+      x_tend <- which.max(a)+xm-1
+      return(x_tend)
+    }
+    tend <- trapez_area(xm, ym, xseq, yseq, xr)
+    
+    ## Optional: Plot visualizations of T-wave end for each trial and export them as jpg files
+    # jpeg(file = paste('VRCC_twave_ID_',subj_ID,'_trial', i,".jpg"), width=1024, height=600)
+    # par(mfrow=c(1,2))
+    # plot(twave_long,col='black',xlab='time(ms)', ylab= 'electric potential (normalized)')
+    # points(twave_int[tmaxpos,1],twave_int[tmaxpos,2],col='magenta',pch='+',cex=4)
+    # points(twave2[tend,1],twave2[tend,2],col='green',pch='+',cex=4)
+    # plot(twave2,col='black', xlab='time(s)', ylab='electric potential (normalized)')
+    # title(paste('ID',subj_ID,'_trial ', i, sep=''),line=-2, outer=TRUE)
+    # points(twave2[xm,1],twave2[xm,2],col='blue',pch='+',cex=2)
+    # points(twave2[xr,1],twave2[xr,2],col='blue',pch='+',cex=3)
+    # points(twave2[tend,1],twave2[tend,2],col='green',pch='+',cex=4)
+    # points(twave_int[tmaxpos,1],twave_int[tmaxpos,2],col='magenta',pch='+',cex=3)
+    # dev.off()
+    
+    ECG_dat$tend[i] <- twave2[tend,1] # T wave end position
+    ECG_dat$systolength[i] <- twave2[tend,1]- ECG_dat$RPm1[i] # Length of systole
+   
+  } ## Loop: Cardiac parameters for each trial
+  
   
   # Feed into one DF:
   phys_dat <- tibble(stimOn   = StimOnsets, 
                      stimOff  = StimOffsets)
   
-  phys_dat <- bind_cols(phys_dat, RP_dat)
+  phys_dat <- bind_cols(phys_dat, ECG_dat)
   
-  # Calculate further params:
+  # Calculate relative position of stimulus onset within the cardiac cycle:
   phys_dat <- phys_dat %>%
-    mutate(RRLength    = RPp1 - RPm1, 
-           dist2RPm1   = stimOn - RPm1, 
-           dist2RPp1   = RPp1 - stimOn, 
-           relPosRR    = dist2RPm1/RRLength, 
-           relPosRRrad = relPosRR *2*pi, 
-           isSystTrial = ifelse(dist2RPm1 < 300, TRUE, FALSE))
+    mutate(relPosRR    = dist2RPm1/RRLength, # relative stimulus onset position (proportion)
+           relPosRRrad = relPosRR *2*pi, # normalized stimulus onset position (pi)
+           # # Infer whether stimulus onset was delivered during systole diastole or intermediate buffors 
+           c_phase = derivedFactor("systole" = ((dist2RPm1 < systolength) & (dist2RPm1 > 50)),
+                                   "diastole" = ((dist2RPm1 > (systolength + 50)) & (dist2RPp1 > 50)),
+                                   .method = "first",
+                                   .default = "buffer")) #Check PEP length!!
   
   # Add totTrial info:
   phys_dat <- rowid_to_column(phys_dat, var = "totTrial")
@@ -126,6 +219,8 @@ get_cardio_info <- function(fulldat, subj_ID) {
   
   return(phys_dat)
 }  
-  
+
+
+
   
   
