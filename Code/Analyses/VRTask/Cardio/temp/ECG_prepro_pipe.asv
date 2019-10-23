@@ -85,23 +85,14 @@ for f=1:size(files,1)
     end
     
     nameParts = string(strsplit(setname, '_'));
-    setnameFilt = [nameParts(1) '_filt_ecg_' nameParts(2)];
+    EEG.setname = [nameParts(1) 'filt_ecg'
     [ALLEEG EEG CURRENTSET] = pop_newset(ALLEEG, EEG, CURRENTSET, ...
-        'setname', setnameFilt, ...
+        'setname', setname, ...
         'gui','off'); 
     
-    % export as TXT file (decrese precision, transpose):
-    fnameFilt = fullfile(dirDataFiltered, [setnameFilt, '.txt']);
-    pop_export(EEG, fnameFilt, ...
-        'transpose', 'on', ... 
-        'time', 'on', ...  %column with time info
-        'elec', 'off', ... %no colnames
-        'timeunit', 1);    %time in sec
-
-    % old version (shifts data by 1ms imo):
-%     tsec=(1:size(ECGdata,2))*(1/EEG.srate);
-%     filename=[path '/Filtered_ecg/' 'VRCC_filt_ecg_' subname '.txt'];
-%     fid=fopen(filename,'w');
-%     fprintf(fid, '%f %f \n', [tsec' ECGdata']');
-%     fclose(fid);
+    tsec=(1:size(ECGdata,2))*(1/EEG.srate);
+    filename=[path '/Filtered_ecg/' 'VRCC_filt_ecg_' subname '.txt'];
+    fid=fopen(filename,'w');
+    fprintf(fid, '%f %f \n', [tsec' ECGdata']');
+    fclose(fid);
 end
