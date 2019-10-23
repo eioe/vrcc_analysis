@@ -84,6 +84,8 @@ for f=1:size(files,1)
          plot(ECGdata(1:lengthPreview))
     end
     
+    % overwrite data:
+    EEG.data = ECGdata; 
     nameParts = string(strsplit(setname, '_'));
     setnameFilt = [nameParts(1) '_filt_ecg_' nameParts(2)];
     [ALLEEG EEG CURRENTSET] = pop_newset(ALLEEG, EEG, CURRENTSET, ...
