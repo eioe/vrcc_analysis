@@ -10,11 +10,26 @@
 b_exportTXT = false;
 b_filterAndExp = false;
 b_addRPmarkers = false;
+
+% Plotting:
 b_showFilterResult = false;
 
-%% Prepare environment:
+% other:
+b_removePREPpath = false;
 
-% (set pwd to be the repository folder)
+%% Prepare environment:
+%remove PREP pipeline folder (problem with its findpeaks function):
+if b_removePREPpath
+    path_fp = which('findpeaks');
+    if contains(path_fp, 'PrepPipeline')
+        path_fp = strsplit(path_fp, 'findpeaks');
+        path_fp = path_fp{1};
+        rmpath(path_fp)
+        warning([path_fp ' was removed from your current MATLAB path.'])
+    end
+end
+
+% (set pwd to be the repository folder!)
 datFolder = fullfile('.', 'Data', 'VRTask', 'Cardio', 'ExpSubjects');
 
 dirDataTXT = fullfile(datFolder, 'TXTs');
@@ -70,7 +85,7 @@ for f=1:size(files,1)
         ECGdata = EEG.data;
         if b_showFilterResult
             lengthPreview = 30000;
-            plot(ECGdata(1:lengthPreview)
+            plot(ECGdata(1:lengthPreview))
             hold on
         end
         % high-pass filter 0.5 Hz:
@@ -118,6 +133,10 @@ for f=1:size(files,1)
     
     %% Add event markers for single R Peaks:
     
+    EEG = crop2blocks(EEG);
+    [ALLEEG EEG CURRENTSET] = eeg_store(ALLEEG, EEG); % store changes
+    
+    
     % get info from Kubios export:
     fpattern = fullfile(dirDataKubios, ['*' setname '*.mat']);
     fnameKub = dir(fpattern);
@@ -126,13 +145,19 @@ for f=1:size(files,1)
     dataKubios = load(fnameKub, 'Res');
     timesRPeak = dataKubios.Res.HRV.Data.T_RR;
     
-    for i=1:length(timesRPeak);
+    for i=1:length(timesRPeak)
         n_events=length(EEG.event);
         EEG.event(n_events+1).type='RP';
-        latency = (timesRPeak(i)*EEG.srate)-1;
+        % add 1 since latency is in samples, 
+        % i.e. latency 0 (ms) -> sample 1
+        latency = (timesRPeak(i)*EEG.srate) + 1;
         % check that transformation from time in s to samples is clean:
         if mod(latency, 1)
             t_shift = min([rem(latency, 1), 1-rem(latency, 1)]);
+            % our dataset (as of 24 Oct 2019) includes many latencies with 
+            % .5ms which probably stems from downsampling (in Kubios?). 
+            % Visual inspection reveals that rounding does better than 
+            % flooring (eeglab default).
             latency = round(latency);
             warning([setname ': R Peak timing was shifted by (ms): ' num2str(t_shift)])
         end            
@@ -151,9 +176,9 @@ for f=1:size(files,1)
         % demean:
         dat = dat - mean(dat);
         ddat(:,i) = dat;
-        pss = findpeaks(dat*-1, );
-        idx = find(abs(pss.loc - 100) < 10);
-        peaks(i) = ps(idx).loc;
+        pss = findpeaks(dat*-1, 4*std(dat));
+        idx = (abs(pss.loc - 100) < 10);
+        peaks(i) = pss.loc(idx);
         %plot(dat)
         %hold on
         %pps = vline(ps.loc);
