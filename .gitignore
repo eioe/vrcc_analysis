@@ -4,3 +4,7 @@ Data
 .RData
 .Rhistory
 # Code/Analyses/VRTask/VRCC_analysis_pipeline.Rmd
+
+# Ignore MATLAB autosaves:
+*.asv  # Windows
+*.m~   # OSX
