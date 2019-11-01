@@ -8,13 +8,27 @@
 
 %% Set which steps to run:
 b_exportTXT = false;
-b_filterAndExp = false;
-b_addRPmarkers = false;
-b_showFilterResult = false;
+b_filterAndExp = true;
+b_addRPmarkers = true;
 
+% Plotting:
+b_showFilterResult = true;
+
+% other:
+b_removePREPpath = true;
 %% Prepare environment:
+%remove PREP pipeline folder (problem with its findpeaks function):
+if b_removePREPpath
+    path_fp = which('findpeaks');
+    if contains(path_fp, 'PrepPipeline')
+        path_fp = strsplit(path_fp, 'findpeaks');
+        path_fp = path_fp{1};
+        rmpath(path_fp)
+        warning([path_fp ' was removed from your current MATLAB path.'])
+    end
+end
 
-% (set pwd to be the repository folder)
+% (set pwd to be the repository folder!)
 datFolder = fullfile('.', 'Data', 'VRTask', 'Cardio', 'ExpSubjects');
 
 dirDataTXT = fullfile(datFolder, 'TXTs');
@@ -54,6 +68,7 @@ for f=1:size(files,1)
     %     markerCountStruct(f).countS42 = markerCountS42;    
 
     %% Export TXTs:
+    % can probably be deprecated if HEPlab based R peak detection works
     if b_exportTXT
         % export as TXT file (decrese precision, transpose):
         fnameTXT = fullfile(dirDataTXT, [setname, '.txt']);
@@ -70,7 +85,7 @@ for f=1:size(files,1)
         ECGdata = EEG.data;
         if b_showFilterResult
             lengthPreview = 30000;
-            plot(ECGdata(1:lengthPreview)
+            plot(ECGdata(1:lengthPreview))
             hold on
         end
         % high-pass filter 0.5 Hz:
@@ -93,15 +108,14 @@ for f=1:size(files,1)
         if verLessThan('matlab', '9.1')
             nameParts = strsplit(setname, '_');           
         else
-            nameParts = string(strsplit(setname, '_'));
+            nameParts = strsplit(setname, '_');
         end
-        setnameFilt = [nameParts(1) '_filt_ecg_' nameParts(2)];
+        setnameFilt = strcat(char(nameParts(1)), '_filt_ecg_', char(nameParts(2)));
         [ALLEEG EEG CURRENTSET] = pop_newset(ALLEEG, EEG, CURRENTSET, ...
-            'setname', setnameFilt, ...
-            'gui','off'); 
+            'setname', setnameFilt); 
 
         % export as TXT file (decrese precision, transpose):
-        fnameFilt = fullfile(dirDataFiltered, [setnameFilt, '.txt']);
+        fnameFilt = fullfile(dirDataFiltered, strcat(setnameFilt, '.txt'));
         pop_export(EEG, fnameFilt, ...
             'transpose', 'on', ... 
             'time', 'on', ...  %column with time info
@@ -118,49 +132,44 @@ for f=1:size(files,1)
     
     %% Add event markers for single R Peaks:
     
-    % get info from Kubios export:
-    fpattern = fullfile(dirDataKubios, ['*' setname '*.mat']);
-    fnameKub = dir(fpattern);
-    fnameKub = fullfile(dirDataKubios, fnameKub.name);
+    EEG = crop2blocks(EEG);
+    [ALLEEG EEG CURRENTSET] = eeg_store(ALLEEG, EEG); % store changes
     
-    dataKubios = load(fnameKub, 'Res');
-    timesRPeak = dataKubios.Res.HRV.Data.T_RR;
+    pop_heplab();
     
-    for i=1:length(timesRPeak);
-        n_events=length(EEG.event);
-        EEG.event(n_events+1).type='RP';
-        latency = (timesRPeak(i)*EEG.srate)-1;
-        % check that transformation from time in s to samples is clean:
-        if mod(latency, 1)
-            t_shift = min([rem(latency, 1), 1-rem(latency, 1)]);
-            latency = round(latency);
-            warning([setname ': R Peak timing was shifted by (ms): ' num2str(t_shift)])
-        end            
-        EEG.event(n_events+1).latency = latency;
-        EEG.event(n_events+1).urevent = n_events+1; 
-    end
     
-    rpidx = [strcmp({EEG.event.type}, 'RP')];
-    rplats = [EEG.event(rpidx).latency];
-    figure
-    ddat = [];
-    peaks = [];
-    for i=1:length(rplats)
+    
+%     % get info from Kubios export:
+%     % can prob be deprecated once HEPlab version works
 
-        dat = EEG.data(1,rplats(i)-100 : rplats(i)+100);
-        % demean:
-        dat = dat - mean(dat);
-        ddat(:,i) = dat;
-        pss = findpeaks(dat*-1, 4*std(dat));
-        idx = (abs(pss.loc - 100) < 10);
-        peaks(i) = pss.loc(idx);
-        %plot(dat)
-        %hold on
-        %pps = vline(ps.loc);
-        %pps.Color = 'g';
-        %vline(101);
-    end
-   
+%     fpattern = fullfile(dirDataKubios, ['*' setname '*.mat']);
+%     fnameKub = dir(fpattern);
+%     fnameKub = fullfile(dirDataKubios, fnameKub.name);
+%     
+%     dataKubios = load(fnameKub, 'Res');
+%     timesRPeak = dataKubios.Res.HRV.Data.T_RR;
+%     
+%     for i=1:length(timesRPeak)
+%         n_events=length(EEG.event);
+%         EEG.event(n_events+1).type='RP';
+%         % add 1 since latency is in samples, 
+%         % i.e. latency 0 (ms) -> sample 1
+%         latency = (timesRPeak(i)*EEG.srate) + 1;
+%         % check that transformation from time in s to samples is clean:
+%         if mod(latency, 1)
+%             t_shift = min([rem(latency, 1), 1-rem(latency, 1)]);
+%             % our dataset (as of 24 Oct 2019) includes many latencies with 
+%             % .5ms which probably stems from downsampling (in Kubios?). 
+%             % Visual inspection reveals that rounding does better than 
+%             % flooring (eeglab default).
+%             latency = round(latency);
+%             warning([setname ': R Peak timing was shifted by (ms): ' num2str(t_shift)])
+%         end            
+%         EEG.event(n_events+1).latency = latency;
+%         EEG.event(n_events+1).urevent = n_events+1; 
+%     end
+% 
+%    
     
 
 end

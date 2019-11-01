@@ -8,15 +8,14 @@
 
 %% Set which steps to run:
 b_exportTXT = false;
-b_filterAndExp = false;
-b_addRPmarkers = false;
+b_filterAndExp = true;
+b_addRPmarkers = true;
 
 % Plotting:
-b_showFilterResult = false;
+b_showFilterResult = true;
 
 % other:
-b_removePREPpath = false;
-
+b_removePREPpath = true;
 %% Prepare environment:
 %remove PREP pipeline folder (problem with its findpeaks function):
 if b_removePREPpath
@@ -69,6 +68,7 @@ for f=1:size(files,1)
     %     markerCountStruct(f).countS42 = markerCountS42;    
 
     %% Export TXTs:
+    % can probably be deprecated if HEPlab based R peak detection works
     if b_exportTXT
         % export as TXT file (decrese precision, transpose):
         fnameTXT = fullfile(dirDataTXT, [setname, '.txt']);
@@ -108,15 +108,14 @@ for f=1:size(files,1)
         if verLessThan('matlab', '9.1')
             nameParts = strsplit(setname, '_');           
         else
-            nameParts = string(strsplit(setname, '_'));
+            nameParts = char(strsplit(setname, '_'));
         end
-        setnameFilt = [nameParts(1) '_filt_ecg_' nameParts(2)];
+        setnameFilt = strcat(nameParts(1), '_filt_ecg_', nameParts(2));
         [ALLEEG EEG CURRENTSET] = pop_newset(ALLEEG, EEG, CURRENTSET, ...
-            'setname', setnameFilt, ...
-            'gui','off'); 
+            'setname', setnameFilt); 
 
         % export as TXT file (decrese precision, transpose):
-        fnameFilt = fullfile(dirDataFiltered, [setnameFilt, '.txt']);
+        fnameFilt = fullfile(dirDataFiltered, strcat(setnameFilt, '.txt'));
         pop_export(EEG, fnameFilt, ...
             'transpose', 'on', ... 
             'time', 'on', ...  %column with time info
@@ -135,6 +134,9 @@ for f=1:size(files,1)
     
     EEG = crop2blocks(EEG);
     [ALLEEG EEG CURRENTSET] = eeg_store(ALLEEG, EEG); % store changes
+    
+    
+    
     
     
     % get info from Kubios export:
