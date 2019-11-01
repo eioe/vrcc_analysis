@@ -3,10 +3,6 @@
 % Read in file from BrainProducts format (vhdr) via eeglab and extract
 % relevant parameters.
 % 
-%
-% requires HEPLAB extension for EEGLAB.
-% Get it from here: https://github.com/perakakis/HEPLAB/releases
-% and put it manually in the plugin folder of your eeglab install.
 
 % 23 Oct 2019 -- Felix Klotzsche -- eioe
 
@@ -66,19 +62,19 @@ m0.answer = inputdlg(m0.prompt, m0.name, m0.numlines);
 if ~isempty(m0.answer)
     firstFile = m0.answer + 1;
 else
-    firstFile = 1;
+    firstFile = 1
 end
 
 b_stopexec = false;
-for isub = firstFile:size(files,1)
+for =1:size(files,1)
     
     % Check if we shall do another round:
     if b_stopexec
         break
     end
     
-    setname = files(isub).fname;
-    fnameRaw = files(isub).name;
+    setname = files(f).fname;
+    fnameRaw = files(f).name;
 
     % load file:
     EEG = pop_loadbv(datFolder, fnameRaw);
@@ -205,18 +201,18 @@ for isub = firstFile:size(files,1)
     
     % Check if we shall abort:
     b_done = false;
-    m2.prompt={sprintf('%s%s\n%s\n%s\n%s', ...
+    m1.prompt={sprintf('%s%s\n%s\n%s\n%s', ...
         'Done with subject ', setname, ...
         'Do you want to continue: (y)es or (n)o ', ...
         'y: continue with next subject', 'n: quit script')};
-    m2.name='More?';
-    m2.numlines=[1];
-    m2.defaultanswer={y};
+    m1.name='More?';
+    m1.numlines=[1];
+    m1.defaultanswer={y};
     while ~b_done
-        m2.answer = inputdlg(m2.prompt, m2.name, m2.numlines);
-        if strcmp(m2.answer, 'y')
+        answer = inputdlg(m1.prompt, m1.name, m1.numlines);
+        if strcmp(answer, 'y')
             b_done = true;
-        elseif strcmp(m2.answer, 'n')
+        elseif strcmp(answer, 'n')
             b_done = true;
             b_stopexec = true;                
         end
