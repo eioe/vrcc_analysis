@@ -7,25 +7,56 @@
 % requires HEPLAB extension for EEGLAB.
 % Get it from here: https://github.com/perakakis/HEPLAB/releases
 % and put it manually in the plugin folder of your eeglab install.
+% I recommend replacing l.85  in heplab_ecgplot.m with the following 4
+% lines to get better scaling of the plotted ECG:
+%   sig_span = max(signal) - min(signal);
+%   y_spacing = sig_span * 0.1;
+%   lims = [min(t) max(t) min(signal) - y_spacing, max(signal) + y_spacing];
+%   axis(lims);
 
-% 23 Oct 2019 -- Felix Klotzsche -- eioe
+% 01 Nov 2019 -- Felix Klotzsche -- eioe, 
+%                Pawel Motyka
 
 %% Set which steps to run:
-b_exportTXT = false;
-b_filter = true;
-b_exportFiltered = false;
-b_addRPmarkers = true;
+b_exportTXT = false; % should not be necessary anymore
+b_filter = true; % filter te data (0.5 - 30Hz)
+b_exportFiltered = false; %save filtered files as TXTs
+b_addRPmarkers = true; %add a marker for each R peak
 
 % Plotting:
-b_showFilterResult = true;
+b_showFilterResult = false;
 
 % other:
-b_removePREPpath = true;
+b_removePREPpath = true; % avoid masking of findpeaks function if you use PREP
+
 %% Prepare environment:
+
+% make sure you're on the right path:
+if ~(strfind(pwd, 'centralkollegs18') && exist(fullfile(pwd, '.git'), 'dir'))
+    b_done = false;
+    m.prompt = sprintf('%s\n%s\n%s\n%s\n', ...
+        'Your PWD is on path: ', pwd, ...
+        'It should be at the main directory of the centralkollegs18 repository for this script to work.', ...
+        'Do you want to continue? Enter (y)es or (n)o')
+    m.name='PWD correct?';
+    m.numlines=[1];
+    m.defaultanswer={'y'};
+    while ~b_done
+        m.answer = inputdlg(m.prompt, m.name, m.numlines);
+        if strcmp(m.answer, 'y')
+            b_done = true;
+        elseif strcmp(m.answer, 'n')
+            b_done = true;
+            warning(sprintf('\n\n%s\n', 'Script execution aborted on user input.'))
+            return                
+        end
+    end  
+end
+
 %remove PREP pipeline folder (problem with its findpeaks function):
 if b_removePREPpath
     path_fp = which('findpeaks');
-    if contains(path_fp, 'PrepPipeline')
+    if strfind(path_fp, 'PrepPipeline')
         path_fp = strsplit(path_fp, 'findpeaks');
         path_fp = path_fp{1};
         rmpath(path_fp)
@@ -38,15 +69,15 @@ datFolder = fullfile('.', 'Data', 'VRTask', 'Cardio', 'ExpSubjects');
 
 dirDataTXT = fullfile(datFolder, 'TXTs');
 mkdir(dirDataTXT)
-dirDataKubios = fullfile(datFolder, 'KubiosExports');
-dirDataPeaks = fullfile(datFolder, 'SETwithRPeaks');
-mkdir(dirDataPeaks)
-dirDataFiltered = fullfile(datFolder, 'Filtered_ecg');
+%dirDataKubios = fullfile(datFolder, 'KubiosExports');
+dirDataFiltered = fullfile(datFolder, '01_Filtered');
 mkdir(dirDataFiltered)
 dirDataPeaks = fullfile(datFolder, '02_Peaks');
 mkdir(dirDataPeaks)
 dirDataPeakEvents = fullfile(dirDataPeaks, 'Events');
 mkdir(dirDataPeakEvents)
+dirDataRaw = fullfile(datFolder, '00_Raw');
+mkdir(dirDataRaw)
 
 % Launch eeglab:
 [ALLEEG EEG CURRENTSET ALLCOM] = eeglab;
@@ -63,8 +94,8 @@ m0.name='More?';
 m0.numlines=[1];
 m0.defaultanswer=[];
 m0.answer = inputdlg(m0.prompt, m0.name, m0.numlines);
-if ~isempty(m0.answer)
-    firstFile = m0.answer + 1;
+if ~isempty(m0.answer{1})
+    firstFile = str2num(m0.answer{1}) + 1;
 else
     firstFile = 1;
 end
@@ -80,6 +111,34 @@ for isub = firstFile:size(files,1)
     setname = files(isub).fname;
     fnameRaw = files(isub).name;
 
+    % Check if there is already output for this subject:
+    if exist(fullfile(dirDataPeakEvents, [setname '.csv']), 'file')
+        b_done = false;
+        m.prompt = sprintf('%s%s\n%s\n%s\n%s\n%s\n%s\n', ...
+            'There exists already a file with R peak events for ', setname, ...
+            'Do you still want to run the script for this subject?', ...
+            'Choose option:',  ...
+            '(y)es run subject', ...
+            '(s)kip subject and proceed with next, ', ...
+            '(a)bort script execution');
+        m.name='Subject output exists';
+        m.numlines=[1];
+        m.defaultanswer={};
+        while ~b_done
+            m.answer = inputdlg(m.prompt, m.name, m.numlines);
+            if strcmp(m.answer, 'y')
+                b_done = true;
+            elseif strcmp(m.answer, 'a')
+                b_done = true;
+                return
+            elseif strcmp(m.answer, 's')
+                b_done = true;
+                continue
+            end
+        end
+    end
+    
+    
     % load file:
     EEG = pop_loadbv(datFolder, fnameRaw);
     
@@ -114,15 +173,19 @@ for isub = firstFile:size(files,1)
         
         ECGdata = EEG.data;
         if b_showFilterResult
-            lengthPreview = 30000;
+            lengthPreview = 300;
             plot(ECGdata(1:lengthPreview))
             hold on
         end
+        
+        fprintf('%s\n\n%s\n\n', '#########################################', ...
+            'Start filtering...');
+        
         % high-pass filter 0.5 Hz:
         [c, d] = butter(2,0.5/(EEG.srate/2), 'high'); 
         ECGdata = filtfilt(c,d,double(ECGdata)); 
         if b_showFilterResult
-            plot(ECGdata(1:30000))
+            plot(ECGdata(1:lengthPreview))
             hold on
         end
         % low-pass filter 30 Hz:
@@ -132,6 +195,9 @@ for isub = firstFile:size(files,1)
              plot(ECGdata(1:lengthPreview))
         end
 
+        fprintf('%s\n\n%s\n\n', 'Done with filtering...', ... 
+        '#########################################');
+        
         % overwrite data:
         EEG.data = ECGdata; 
         % set name:
@@ -165,7 +231,10 @@ for isub = firstFile:size(files,1)
     %% Add event markers for single R Peaks:
     
     EEG = crop2blocks(EEG);
+    % flip polarity: 
+    EEG.data = EEG.data * -1;
     [ALLEEG EEG CURRENTSET] = eeg_store(ALLEEG, EEG); % store changes
+    eeglab redraw;
     
     pop_heplab(); 
 
@@ -176,14 +245,20 @@ for isub = firstFile:size(files,1)
         'ex.: ', '3456.012, 3466.002', '4444.123, 44450.200')};
     m1.name='Done?';
     m1.numlines=[1; 20];
-    m1.defaultanswer={'no', ''};
+    m1.defaultanswer={'n', ''};
+    opts.WindowStyle = 'normal';
     while ~b_done
-        answer = inputdlg(m1.prompt, m1.name, m1.numlines);
-        if strcmp(answer, 'y')
+        answer = inputdlg(m1.prompt, ...
+            m1.name, ...
+            m1.numlines, ...
+            m1.defaultanswer, ...
+            opts);
+        
+        if strcmp(answer{1}, 'y')
             b_done = true;
         end
     end
-    
+        
     % save info about bad ECG signal stretches to SET:
     EEG.etc.badECG = str2num(answer{2});
     
@@ -211,7 +286,7 @@ for isub = firstFile:size(files,1)
         'y: continue with next subject', 'n: quit script')};
     m2.name='More?';
     m2.numlines=[1];
-    m2.defaultanswer={y};
+    m2.defaultanswer={'y'};
     while ~b_done
         m2.answer = inputdlg(m2.prompt, m2.name, m2.numlines);
         if strcmp(m2.answer, 'y')
@@ -221,6 +296,22 @@ for isub = firstFile:size(files,1)
             b_stopexec = true;                
         end
     end
+    
+    % move raw files to according subfolder:
+    f_list = dir(datFolder);
+    for ifile=1:length(f_list)
+        ffile = f_list(ifile);
+        if strfind(ffile.name, setname)
+            f2mv = fullfile(datFolder, ffile.name);
+            movefile(f2mv, dirDataRaw)
+        end
+    end
+            
+    w_msg = sprintf('%s%s%s\n%s', 'Moving the files of ', setname, ' to folder 00_Raw.' , ...
+        ['If you want to rerun this script for this subject, ' ... 
+        'please move them back manually to the parent folder ("ExpSubjects")']);
+    w1 = warndlg(w_msg);
+    waitfor(w1)
     
     
     % Following stuff can prob be discarded.

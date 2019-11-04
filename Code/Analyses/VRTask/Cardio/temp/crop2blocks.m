@@ -26,7 +26,12 @@ sessEndLat = EEG.event(idx_last).latency + offsetEnd * EEG.srate;
 
 trialStarts = [EEG.event(idx_trialStarts).latency];
 tDiffTrialStarts = trialStarts(2:end) - trialStarts(1:end-1);
-[diffs idx] = maxk(tDiffTrialStarts, 5);
+if verLessThan('matlab', '9.1')
+    [diffs idx] = sort(tDiffTrialStarts, 'descend');   
+else
+    [diffs idx] = maxk(tDiffTrialStarts, 5);
+end
+
 
 breakParts = [];
 for i = 1:5
