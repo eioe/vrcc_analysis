@@ -19,7 +19,7 @@
 
 %% Set which steps to run:
 b_exportTXT = false; % should not be necessary anymore
-b_filter = true; % filter te data (0.5 - 30Hz)
+b_filter = true; % filter te data (0.5 - 40Hz)
 b_exportFiltered = true; %save filtered files as TXTs
 b_addRPmarkers = true; %add a marker for each R peak
 
