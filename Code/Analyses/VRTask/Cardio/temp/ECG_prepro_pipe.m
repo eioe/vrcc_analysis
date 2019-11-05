@@ -2,7 +2,7 @@
 %% Extract ECG files for VRCC
 % Read in file from BrainProducts format (vhdr) via eeglab and extract
 % relevant parameters.
-% 
+%
 %
 % requires HEPLAB extension for EEGLAB.
 % Get it from here: https://github.com/perakakis/HEPLAB/releases
@@ -14,14 +14,13 @@
 %   lims = [min(t) max(t) min(signal) - y_spacing, max(signal) + y_spacing];
 %   axis(lims);
 
-% 01 Nov 2019 -- Felix Klotzsche -- eioe, 
-%                Pawel Motyka
+% 01 Nov 2019 -- Felix Klotzsche -- eioe
 
 %% Set which steps to run:
 b_exportTXT = false; % should not be necessary anymore
 b_filter = true; % filter te data (0.5 - 40Hz)
 b_exportFiltered = true; %save filtered files as TXTs
-b_addRPmarkers = true; %add a marker for each R peak
+b_addRPmarkers = false; %add a marker for each R peak
 
 % Plotting:
 b_showFilterResult = true;
@@ -48,9 +47,9 @@ if ~(strfind(pwd, 'centralkollegs18') && exist(fullfile(pwd, '.git'), 'dir'))
         elseif strcmp(m.answer, 'n')
             b_done = true;
             warning('\n\n%s\n', 'Script execution aborted on user input.')
-            return                
+            return
         end
-    end  
+    end
 end
 
 %remove PREP pipeline folder (problem with its findpeaks function):
@@ -87,9 +86,9 @@ files = FileFromFolder(datFolder, [], 'vhdr');
 
 % check if files shall be skipped:
 m0.prompt={sprintf('%s\n%s\n%s', ...
-        'Do you want to skip files? ', ...
-        'If yes enter the according number, ', ...
-        'else leave empty.')};
+    'Do you want to skip files? ', ...
+    'If yes enter the according number, ', ...
+    'else leave empty.')};
 m0.name='More?';
 m0.numlines=[1];
 m0.defaultanswer=[];
@@ -105,7 +104,7 @@ for isub = firstFile:size(files,1)
     % Get subject ID:
     setname = files(isub).fname;
     fnameRaw = files(isub).name;
-
+    
     % Check if there is already output for this subject:
     if exist(fullfile(dirDataPeakEvents, [setname '.csv']), 'file')
         b_done = false;
@@ -141,28 +140,28 @@ for isub = firstFile:size(files,1)
     EEG = pop_select( EEG,'channel',{'ECG'});
     [ALLEEG EEG CURRENTSET] = pop_newset(ALLEEG, EEG, CURRENTSET, ...
         'setname', setname,...
-        'gui','off'); 
-
+        'gui','off');
+    
     %% This section is for debugging / uncommnet for proper analysis
     %     markerCount = (sum(strcmp({EEG.event.type}, marker)));
     %     markerCountS42 = (sum(strcmp({EEG.event.type}, 'S 42')));
     %     fprintf([setname ' -- Found Marker ' marker ' %i times.'], markerCount);
     %     markerCountStruct(f).file = setname;
     %     markerCountStruct(f).count = markerCount;
-    %     markerCountStruct(f).countS42 = markerCountS42;    
-
+    %     markerCountStruct(f).countS42 = markerCountS42;
+    
     %% Export TXTs:
     % can probably be deprecated if HEPlab based R peak detection works
     if b_exportTXT
         % export as TXT file (decrese precision, transpose):
         fnameTXT = fullfile(dirDataTXT, [setname, '.txt']);
         pop_export(EEG, fnameTXT, ...
-            'transpose', 'on', ... 
+            'transpose', 'on', ...
             'time', 'on', ...  %column with time info
             'elec', 'off', ... %no colnames
             'timeunit', 1);    %time in sec
     end
-
+    
     %% Filter data and export TXT to facilitate T-wave detection:
     if b_filter
         if b_showFilterResult
@@ -179,15 +178,15 @@ for isub = firstFile:size(files,1)
         %######################
         
         % high-pass filter 0.5 Hz:
-        %[c, d] = butter(2,0.5/(EEG.srate/2), 'high'); 
-        %ECGdata = filtfilt(c,d,double(ECGdata)); 
-%         if b_showFilterResult
-%             plot(ECGdata(1:lengthPreview))
-%             hold on
-%         end
+        %[c, d] = butter(2,0.5/(EEG.srate/2), 'high');
+        %ECGdata = filtfilt(c,d,double(ECGdata));
+        %         if b_showFilterResult
+        %             plot(ECGdata(1:lengthPreview))
+        %             hold on
+        %         end
         % low-pass filter 30 Hz:
-        %[b, a] = butter(2,30/(EEG.srate/2)); 
-        %ECGdata = filtfilt(b, a, double(ECGdata)); 
+        %[b, a] = butter(2,30/(EEG.srate/2));
+        %ECGdata = filtfilt(b, a, double(ECGdata));
         
         %######################
         %######################
@@ -195,152 +194,154 @@ for isub = firstFile:size(files,1)
         % bandpass filter [0.5; 40] Hz
         EEG = pop_eegfiltnew(EEG, 'locutoff',0.5,'hicutoff',40,'plotfreqz',0);
         if b_showFilterResult
-             plot(EEG.data(1:lengthPreview))
+            plot(EEG.data(1:lengthPreview))
         end
-
-        fprintf('%s\n\n%s\n\n', 'Done with filtering...', ... 
-        '#########################################');
-         
+        
+        fprintf('%s\n\n%s\n\n', 'Done with filtering...', ...
+            '#########################################');
+        
+        % crop to relevant parts:
+        EEG = crop2blocks(EEG);
+        
+        % flip polarity:
+        EEG.data = EEG.data * -1;
+        [ALLEEG EEG CURRENTSET] = eeg_store(ALLEEG, EEG); % store changes
+        
         % set name:
         if verLessThan('matlab', '9.1')
-            nameParts = strsplit(setname, '_');           
+            nameParts = strsplit(setname, '_');
         else
             nameParts = strsplit(setname, '_');
         end
         setnameFilt = strcat(char(nameParts(1)), '_filt_ecg_', char(nameParts(2)));
         [ALLEEG EEG CURRENTSET] = pop_newset(ALLEEG, EEG, CURRENTSET, ...
-            'setname', setnameFilt); 
+            'setname', setnameFilt);
         
         if b_exportFiltered
             % export as TXT file (decrese precision, transpose):
             fnameFilt = fullfile(dirDataFiltered, strcat(setnameFilt, '.txt'));
             pop_export(EEG, fnameFilt, ...
-                'transpose', 'on', ... 
+                'transpose', 'on', ...
                 'time', 'on', ...  %column with time info
                 'elec', 'off', ... %no colnames
                 'timeunit', 1);    %time in sec
-
+            
             %######################
             % old version (shifts data by 1ms imo):
             %######################
-        %     tsec=(1:size(ECGdata,2))*(1/EEG.srate);
-        %     filename=[path '/Filtered_ecg/' 'VRCC_filt_ecg_' subname '.txt'];
-        %     fid=fopen(filename,'w');
-        %     fprintf(fid, '%f %f \n', [tsec' ECGdata']');
-        %     fclose(fid);
-        %######################
+            %     tsec=(1:size(ECGdata,2))*(1/EEG.srate);
+            %     filename=[path '/Filtered_ecg/' 'VRCC_filt_ecg_' subname '.txt'];
+            %     fid=fopen(filename,'w');
+            %     fprintf(fid, '%f %f \n', [tsec' ECGdata']');
+            %     fclose(fid);
+            %######################
         end
     end
     
     %% Add event markers for single R Peaks:
     
-    EEG = crop2blocks(EEG);
-    % flip polarity: 
-    EEG.data = EEG.data * -1;
-    [ALLEEG EEG CURRENTSET] = eeg_store(ALLEEG, EEG); % store changes
-    eeglab redraw;
-    
-    pop_heplab(); 
-
-    b_done = false;
-    m1.prompt={sprintf('Are you done with R Peak detection? (y)es or (n)o:'), ...
-        sprintf('%s\n%s\n%s\n%s\n%s', 'Enter bad segments here. Use matrix style: 1 segment per row; ',...
-        'seperate start latency (in s) from end latency by comma; ', ...
-        'ex.: ', '3456.012, 3466.002', '4444.123, 44450.200')};
-    m1.name='Done?';
-    m1.numlines=[1; 20];
-    m1.defaultanswer={'n', ''};
-    opts.WindowStyle = 'normal';
-    while ~b_done
-        answer = inputdlg(m1.prompt, ...
-            m1.name, ...
-            m1.numlines, ...
-            m1.defaultanswer, ...
-            opts);
+    if b_addRPmarkers
         
-        if strcmp(answer{1}, 'y')
-            b_done = true;
-        end
-    end
+        eeglab redraw;
         
-    % save info about bad ECG signal stretches to SET:
-    EEG.etc.badECG = str2num(answer{2});
-    
-    % save SET:
-    fNamePeaks = strcat(setname, '.set');
-    [ALLEEG, EEG, CURRENTSET] = eeg_store( ALLEEG, EEG, CURRENTSET);
-    EEG = pop_saveset( EEG, 'filename', fNamePeaks, ...
-        'filepath', dirDataPeaks);
+        pop_heplab();
         
-    % export events:
-    if sum(strcmp({EEG.event.type}, 'ECG')) > 0
-        fNameEvents = fullfile(dirDataPeakEvents, strcat(setname, '.csv'));
-        pop_expevents(EEG, fNameEvents, 'samples');
-    else
-        w1 = warndlg(['No R Peaks have been marked. Nothing exported for ',... 
-            setname]);
-        waitfor(w1)
-    end
-    
-    % move raw files to according subfolder:
-    f_list = dir(datFolder);
-    for ifile=1:length(f_list)
-        ffile = f_list(ifile);
-        if strfind(ffile.name, setname)
-            f2mv = fullfile(datFolder, ffile.name);
-            movefile(f2mv, dirDataRaw)
-        end
-    end
+        b_done = false;
+        m1.prompt={sprintf('Are you done with R Peak detection? (y)es or (n)o:'), ...
+            sprintf('%s\n%s\n%s\n%s\n%s', 'Enter bad segments here. Use matrix style: 1 segment per row; ',...
+            'seperate start latency (in s) from end latency by comma; ', ...
+            'ex.: ', '3456.012, 3466.002', '4444.123, 44450.200')};
+        m1.name='Done?';
+        m1.numlines=[1; 20];
+        m1.defaultanswer={'n', ''};
+        opts.WindowStyle = 'normal';
+        while ~b_done
+            answer = inputdlg(m1.prompt, ...
+                m1.name, ...
+                m1.numlines, ...
+                m1.defaultanswer, ...
+                opts);
             
-    w_msg = sprintf('%s%s%s\n%s', 'Moving the files of ', setname, ' to folder 00_Raw.' , ...
-        ['If you want to rerun this script for this subject, ' ... 
-        'please move them back manually to the parent folder ("ExpSubjects")']);
-    w1 = warndlg(w_msg);
-    waitfor(w1)
-    
-    
-    
+            if strcmp(answer{1}, 'y')
+                b_done = true;
+            end
+        end
         
+        % save info about bad ECG signal stretches to SET:
+        EEG.etc.badECG = str2num(answer{2});
+        
+        % save SET:
+        fNamePeaks = strcat(setname, '.set');
+        [ALLEEG, EEG, CURRENTSET] = eeg_store( ALLEEG, EEG, CURRENTSET);
+        EEG = pop_saveset( EEG, 'filename', fNamePeaks, ...
+            'filepath', dirDataPeaks);
+        
+        % export events:
+        if sum(strcmp({EEG.event.type}, 'ECG')) > 0
+            fNameEvents = fullfile(dirDataPeakEvents, strcat(setname, '.csv'));
+            pop_expevents(EEG, fNameEvents, 'samples');
+            % move raw files to according subfolder:
+            f_list = dir(datFolder);
+            for ifile=1:length(f_list)
+                ffile = f_list(ifile);
+                if strfind(ffile.name, setname)
+                    f2mv = fullfile(datFolder, ffile.name);
+                    movefile(f2mv, dirDataRaw)
+                    w_msg = sprintf('%s%s%s\n%s', 'Moving the files of ', setname, ' to folder 00_Raw.' , ...
+                        ['If you want to rerun this script for this subject, ' ...
+                        'please move them back manually to the parent folder ("ExpSubjects")']);
+                    w1 = warndlg(w_msg);
+                    waitfor(w1)
+                end
+            end
+        else
+            w1 = warndlg(['No R Peaks have been marked. Nothing exported for ',...
+                setname]);
+            waitfor(w1)
+        end
+    end
+    
+    
     % Following stuff can prob be discarded.
     
-%     % get info from Kubios export:
-%     % can prob be deprecated once HEPlab version works
-
-%     fpattern = fullfile(dirDataKubios, ['*' setname '*.mat']);
-%     fnameKub = dir(fpattern);
-%     fnameKub = fullfile(dirDataKubios, fnameKub.name);
-%     
-%     dataKubios = load(fnameKub, 'Res');
-%     timesRPeak = dataKubios.Res.HRV.Data.T_RR;
-%     
-%     for i=1:length(timesRPeak)
-%         n_events=length(EEG.event);
-%         EEG.event(n_events+1).type='RP';
-%         % add 1 since latency is in samples, 
-%         % i.e. latency 0 (ms) -> sample 1
-%         latency = (timesRPeak(i)*EEG.srate) + 1;
-%         % check that transformation from time in s to samples is clean:
-%         if mod(latency, 1)
-%             t_shift = min([rem(latency, 1), 1-rem(latency, 1)]);
-%             % our dataset (as of 24 Oct 2019) includes many latencies with 
-%             % .5ms which probably stems from downsampling (in Kubios?). 
-%             % Visual inspection reveals that rounding does better than 
-%             % flooring (eeglab default).
-%             latency = round(latency);
-%             warning([setname ': R Peak timing was shifted by (ms): ' num2str(t_shift)])
-%         end            
-%         EEG.event(n_events+1).latency = latency;
-%         EEG.event(n_events+1).urevent = n_events+1; 
-%     end
-% 
-%    
+    %     % get info from Kubios export:
+    %     % can prob be deprecated once HEPlab version works
+    
+    %     fpattern = fullfile(dirDataKubios, ['*' setname '*.mat']);
+    %     fnameKub = dir(fpattern);
+    %     fnameKub = fullfile(dirDataKubios, fnameKub.name);
+    %
+    %     dataKubios = load(fnameKub, 'Res');
+    %     timesRPeak = dataKubios.Res.HRV.Data.T_RR;
+    %
+    %     for i=1:length(timesRPeak)
+    %         n_events=length(EEG.event);
+    %         EEG.event(n_events+1).type='RP';
+    %         % add 1 since latency is in samples,
+    %         % i.e. latency 0 (ms) -> sample 1
+    %         latency = (timesRPeak(i)*EEG.srate) + 1;
+    %         % check that transformation from time in s to samples is clean:
+    %         if mod(latency, 1)
+    %             t_shift = min([rem(latency, 1), 1-rem(latency, 1)]);
+    %             % our dataset (as of 24 Oct 2019) includes many latencies with
+    %             % .5ms which probably stems from downsampling (in Kubios?).
+    %             % Visual inspection reveals that rounding does better than
+    %             % flooring (eeglab default).
+    %             latency = round(latency);
+    %             warning([setname ': R Peak timing was shifted by (ms): ' num2str(t_shift)])
+    %         end
+    %         EEG.event(n_events+1).latency = latency;
+    %         EEG.event(n_events+1).urevent = n_events+1;
+    %     end
+    %
+    %
     
     % clear environment:
     close all;
-    ALLEEG = []; 
-    EEG = []; 
+    ALLEEG = [];
+    EEG = [];
     CURRENTSET = [];
-
+    
     % Run another subj or abort?
     if isub < size(files,1)
         m.prompt = sprintf('%s\n%s\n%s\n%s\n', ...
@@ -351,6 +352,7 @@ for isub = firstFile:size(files,1)
         m.name = 'One more?';
         m.numlines = 1;
         m.defaultanswer={};
+        b_done = false;
         while ~b_done
             m.answer = inputdlg(m.prompt, m.name, m.numlines);
             if strcmp(m.answer, 'y')
@@ -362,7 +364,7 @@ for isub = firstFile:size(files,1)
             end
         end
     end
-
+    
 end
 
 fprintf('\n\n%s\n\n%s\n\n', '#########################################', ...
