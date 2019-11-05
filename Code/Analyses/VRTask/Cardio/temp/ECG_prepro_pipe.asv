@@ -11,8 +11,8 @@
 % lines to get better scaling of the plotted ECG:
 %   sig_span = max(signal) - min(signal);
 %   y_spacing = sig_span * 0.1;
-% lims = [min(t) max(t) min(signal) - y_spacing, max(signal) + y_spacing];
-% axis(lims);
+%   lims = [min(t) max(t) min(signal) - y_spacing, max(signal) + y_spacing];
+%   axis(lims);
 
 % 01 Nov 2019 -- Felix Klotzsche -- eioe, 
 %                Pawel Motyka
@@ -20,11 +20,11 @@
 %% Set which steps to run:
 b_exportTXT = false; % should not be necessary anymore
 b_filter = true; % filter te data (0.5 - 30Hz)
-b_exportFiltered = false; %save filtered files as TXTs
+b_exportFiltered = true; %save filtered files as TXTs
 b_addRPmarkers = true; %add a marker for each R peak
 
 % Plotting:
-b_showFilterResult = false;
+b_showFilterResult = true;
 
 % other:
 b_removePREPpath = true; % avoid masking of findpeaks function if you use PREP
@@ -37,7 +37,7 @@ if ~(strfind(pwd, 'centralkollegs18') && exist(fullfile(pwd, '.git'), 'dir'))
     m.prompt = sprintf('%s\n%s\n%s\n%s\n', ...
         'Your PWD is on path: ', pwd, ...
         'It should be at the main directory of the centralkollegs18 repository for this script to work.', ...
-        'Do you want to continue? Enter (y)es or (n)o')
+        'Do you want to continue? Enter (y)es or (n)o');
     m.name='PWD correct?';
     m.numlines=[1];
     m.defaultanswer={'y'};
@@ -47,7 +47,7 @@ if ~(strfind(pwd, 'centralkollegs18') && exist(fullfile(pwd, '.git'), 'dir'))
             b_done = true;
         elseif strcmp(m.answer, 'n')
             b_done = true;
-            warning(sprintf('\n\n%s\n', 'Script execution aborted on user input.'))
+            warning('\n\n%s\n', 'Script execution aborted on user input.')
             return                
         end
     end  
@@ -100,14 +100,9 @@ else
     firstFile = 1;
 end
 
-b_stopexec = false;
 for isub = firstFile:size(files,1)
     
-    % Check if we shall do another round:
-    if b_stopexec
-        break
-    end
-    
+    % Get subject ID:
     setname = files(isub).fname;
     fnameRaw = files(isub).name;
 
@@ -121,8 +116,8 @@ for isub = firstFile:size(files,1)
             '(y)es run subject', ...
             '(s)kip subject and proceed with next, ', ...
             '(a)bort script execution');
-        m.name='Subject output exists';
-        m.numlines=[1];
+        m.name = 'Subject output exists';
+        m.numlines = 1;
         m.defaultanswer={};
         while ~b_done
             m.answer = inputdlg(m.prompt, m.name, m.numlines);
@@ -170,36 +165,42 @@ for isub = firstFile:size(files,1)
 
     %% Filter data and export TXT to facilitate T-wave detection:
     if b_filter
-        
-        ECGdata = EEG.data;
         if b_showFilterResult
-            lengthPreview = 300;
-            plot(ECGdata(1:lengthPreview))
+            lengthPreview = 300*3;
+            plot(EEG.data(1:lengthPreview))
             hold on
         end
         
         fprintf('%s\n\n%s\n\n', '#########################################', ...
             'Start filtering...');
         
+        %######################
+        % Old filtering:
+        %######################
+        
         % high-pass filter 0.5 Hz:
-        [c, d] = butter(2,0.5/(EEG.srate/2), 'high'); 
-        ECGdata = filtfilt(c,d,double(ECGdata)); 
-        if b_showFilterResult
-            plot(ECGdata(1:lengthPreview))
-            hold on
-        end
+        %[c, d] = butter(2,0.5/(EEG.srate/2), 'high'); 
+        %ECGdata = filtfilt(c,d,double(ECGdata)); 
+%         if b_showFilterResult
+%             plot(ECGdata(1:lengthPreview))
+%             hold on
+%         end
         % low-pass filter 30 Hz:
-        [b, a] = butter(2,30/(EEG.srate/2)); 
-        ECGdata = filtfilt(b, a, double(ECGdata)); 
+        %[b, a] = butter(2,30/(EEG.srate/2)); 
+        %ECGdata = filtfilt(b, a, double(ECGdata)); 
+        
+        %######################
+        %######################
+        
+        % bandpass filter [0.5; 40] Hz
+        EEG = pop_eegfiltnew(EEG, 'locutoff',0.5,'hicutoff',40,'plotfreqz',0);
         if b_showFilterResult
-             plot(ECGdata(1:lengthPreview))
+             plot(EEG.data(1:lengthPreview))
         end
 
         fprintf('%s\n\n%s\n\n', 'Done with filtering...', ... 
         '#########################################');
-        
-        % overwrite data:
-        EEG.data = ECGdata; 
+         
         % set name:
         if verLessThan('matlab', '9.1')
             nameParts = strsplit(setname, '_');           
@@ -219,12 +220,15 @@ for isub = firstFile:size(files,1)
                 'elec', 'off', ... %no colnames
                 'timeunit', 1);    %time in sec
 
+            %######################
             % old version (shifts data by 1ms imo):
+            %######################
         %     tsec=(1:size(ECGdata,2))*(1/EEG.srate);
         %     filename=[path '/Filtered_ecg/' 'VRCC_filt_ecg_' subname '.txt'];
         %     fid=fopen(filename,'w');
         %     fprintf(fid, '%f %f \n', [tsec' ECGdata']');
         %     fclose(fid);
+        %######################
         end
     end
     
@@ -278,25 +282,6 @@ for isub = firstFile:size(files,1)
         waitfor(w1)
     end
     
-    % Check if we shall abort:
-    b_done = false;
-    m2.prompt={sprintf('%s%s\n%s\n%s\n%s', ...
-        'Done with subject ', setname, ...
-        'Do you want to continue: (y)es or (n)o ', ...
-        'y: continue with next subject', 'n: quit script')};
-    m2.name='More?';
-    m2.numlines=[1];
-    m2.defaultanswer={'y'};
-    while ~b_done
-        m2.answer = inputdlg(m2.prompt, m2.name, m2.numlines);
-        if strcmp(m2.answer, 'y')
-            b_done = true;
-        elseif strcmp(m2.answer, 'n')
-            b_done = true;
-            b_stopexec = true;                
-        end
-    end
-    
     % move raw files to according subfolder:
     f_list = dir(datFolder);
     for ifile=1:length(f_list)
@@ -314,6 +299,8 @@ for isub = firstFile:size(files,1)
     waitfor(w1)
     
     
+    
+        
     % Following stuff can prob be discarded.
     
 %     % get info from Kubios export:
@@ -348,5 +335,29 @@ for isub = firstFile:size(files,1)
 % 
 %    
     
+    % Run 
+    if isub < size(files,1)
+        m.prompt = sprintf('%s\n%s\n%s\n%s\n', ...
+            'Do you want to run another subject?', ...
+            'Choose option:',  ...
+            '(y)es run another subject', ...
+            '(a)bort script execution');
+        m.name = 'One more?';
+        m.numlines = 1;
+        m.defaultanswer={};
+        while ~b_done
+            m.answer = inputdlg(m.prompt, m.name, m.numlines);
+            if strcmp(m.answer, 'y')
+                b_done = true;
+            elseif strcmp(m.answer, 'a')
+                b_done = true;
+                return
+            end
+        end
+    end
 
 end
+
+fprintf('\n\n%s\n\n%s\n\n', '#########################################', ...
+    'All subjects are done.');
+
