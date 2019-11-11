@@ -244,7 +244,14 @@ for isub = firstFile:size(files,1)
         
         eeglab redraw;
         
+        % get latencies of automatically (via ecglabfast) detected R peaks:
+        latsAuto = heplab_fastdetect(EEG.data(1,:), EEG.srate);
+                
         pop_heplab();
+        
+        opts.WindowStyle = 'normal';
+        corRPans = questdlg('Do you want to set the R peaks to loc maxima?');
+        if 
         
         b_done = false;
         m1.prompt={sprintf('Are you done with R Peak detection? (y)es or (n)o:'), ...
@@ -269,6 +276,26 @@ for isub = firstFile:size(files,1)
         
         % save info about bad ECG signal stretches to SET:
         EEG.etc.badECG = str2num(answer{2});
+        
+        % save info how many R peaks have manually been changed:
+        idxRP = strcmp({EEG.event.type}, 'ECG');
+        latsMan = [EEG.event(idxRP).latency];
+        EEG.etc.RPeaksAuto = latsAuto;
+        EEG.etc.RPeaksManual = latsMan;
+        EEG.etc.RPeaksCorrectedPercent = 100 * sum(~ismember(latsAuto, latsMan))/length(latsAuto);
+        
+        % save to CSV:
+        discSamples = 0;
+        for irow = 1:size(EEG.etc.badECG)
+            row = EEG.etc.badECG(irow,:);
+            lat = row(2) - row(1);
+            discSamples = discSamples + lat;
+        end
+        summaryCSV = fullfile(dirDataPeaks, 'processing_summary.csv');
+        fid = fopen(summaryCSV, 'a+');
+        fprintf(fid, '%s,%f,%g\n', setname, EEG.etc.RPeaksCorrectedPerc, discSamples);
+        fclose(fid);
+        
         
         % save SET:
         fNamePeaks = strcat(setname, '.set');

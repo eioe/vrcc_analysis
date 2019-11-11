@@ -14,8 +14,7 @@
 %   lims = [min(t) max(t) min(signal) - y_spacing, max(signal) + y_spacing];
 %   axis(lims);
 
-% 01 Nov 2019 -- Felix Klotzsche -- eioe,
-%                Pawel Motyka
+% 01 Nov 2019 -- Felix Klotzsche -- eioe
 
 %% Set which steps to run:
 b_exportTXT = false; % should not be necessary anymore
@@ -245,6 +244,9 @@ for isub = firstFile:size(files,1)
         
         eeglab redraw;
         
+        % get latencies of automatically (via ecglabfast) detected R peaks:
+        latsAuto = heplab_fastdetect(EEG.data(1,:), EEG.srate);
+                
         pop_heplab();
         
         b_done = false;
@@ -270,6 +272,25 @@ for isub = firstFile:size(files,1)
         
         % save info about bad ECG signal stretches to SET:
         EEG.etc.badECG = str2num(answer{2});
+        
+        % save info how many R peaks have manually been changed:
+        idxRP = strcmp({EEG.event.type}, 'ECG');
+        latsMan = [EEG.event(idxRP).latency];
+        EEG.etc.RPeaksAuto = latsAuto;
+        EEG.etc.RPeaksManual = latsMan;
+        EEG.etc.RPeaksCorrectedPercent = 100 * sum(~ismember(latsAuto, latsMan))/length(latsAuto);
+        
+        % save to CSV:
+        discSamples = 0;
+        for row = 1:size(EEG.etc.badECG)
+            lat = row(2) - row(1);
+            discSamples = discSamples + lat;
+        end
+        summaryCSV = fullfile(dirDataPeaks, 'processing_summary.csv');
+        fid = fopen(summaryCSV, 'a+');
+        fprintf(fid, '%s,%d,%g\n', setname, EEG.etc.RPeaksCorrectedPerc, discSamples);
+        fclose(fid);
+        
         
         % save SET:
         fNamePeaks = strcat(setname, '.set');
@@ -353,7 +374,7 @@ for isub = firstFile:size(files,1)
         m.name = 'One more?';
         m.numlines = 1;
         m.defaultanswer={};
-        b_done = 
+        b_done = false;
         while ~b_done
             m.answer = inputdlg(m.prompt, m.name, m.numlines);
             if strcmp(m.answer, 'y')
