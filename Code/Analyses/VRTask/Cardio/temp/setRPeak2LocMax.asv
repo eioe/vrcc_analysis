@@ -7,14 +7,14 @@ function [ HEP ] = setRPeak2LocMax(HEP, winsize)
 for i=1:length(HEP.qrs)
     RP = HEP.qrs(i);
     if RP < winsize
-        dat = HEP.ecg(1:RP+winsize, 1);
+        dat = HEP.ecg(0:RP+winsize, 1);
     elseif RP + winsize > length(HEP.ecg)
         dat = HEP.ecg(RP-winsize:end);
     else
-        dat = HEP.ecg(RP-winsize:RP+winsize,1);
+        dat = HEP.ecg(RP-200:RP+200,1);
     end
     [~, idx] = max(dat);
-    HEP.qrs(i) = HEP.qrs(i) - winsize + idx - 1;
+    HEP.qrs(i) = HEP.qrs(i) - 201 + idx;
 end
 
 

@@ -248,6 +248,41 @@ for isub = firstFile:size(files,1)
         latsAuto = heplab_fastdetect(EEG.data(1,:), EEG.srate);
                 
         pop_heplab();
+        % load the latencies of the auto-detected R peaks:
+        HEP.qrs = latsAuto;
+        % and refresh:
+        heplab;
+        
+        opts.WindowStyle = 'normal';
+        corRPans = questdlg('Do you want to force the R peaks onto the local maxima?');
+        if strcmp(corRPans, 'Yes')
+            HEP = setRPeak2LocMax(HEP, 200);
+            heplab;
+        end
+        
+        
+        
+        m.prompt = sprintf('%s\n%s\n%s\n%s\n', ...
+            'Do you want to force the R peaks onto the local maxima?', ...
+            'Choose option:',  ...
+            '(y)es', ...
+            '(n)o');
+        m.name = 'Correct peaks?';
+        m.numlines = 1;
+        m.defaultanswer={};
+        b_done = false;
+        while ~b_done
+            m.answer = inputdlg(m.prompt, m.name, m.numlines);
+            if strcmp(m.answer, 'y')
+                HEP = setRPeak2LocMax(HEP, 200);
+                heplab;
+                b_done = true;
+            elseif strcmp(m.answer, 'n')
+                b_done = true;
+                
+                return
+            end
+        end
         
         b_done = false;
         m1.prompt={sprintf('Are you done with R Peak detection? (y)es or (n)o:'), ...
@@ -282,13 +317,14 @@ for isub = firstFile:size(files,1)
         
         % save to CSV:
         discSamples = 0;
-        for row = 1:size(EEG.etc.badECG)
+        for irow = 1:size(EEG.etc.badECG)
+            row = EEG.etc.badECG(irow,:);
             lat = row(2) - row(1);
             discSamples = discSamples + lat;
         end
         summaryCSV = fullfile(dirDataPeaks, 'processing_summary.csv');
         fid = fopen(summaryCSV, 'a+');
-        fprintf(fid, '%s,%d,%g\n', setname, EEG.etc.RPeaksCorrectedPerc, discSamples);
+        fprintf(fid, '%s,%f,%g\n', setname, EEG.etc.RPeaksCorrectedPerc, discSamples);
         fclose(fid);
         
         

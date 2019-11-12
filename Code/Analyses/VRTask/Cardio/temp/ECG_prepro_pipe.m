@@ -248,10 +248,32 @@ for isub = firstFile:size(files,1)
         latsAuto = heplab_fastdetect(EEG.data(1,:), EEG.srate);
                 
         pop_heplab();
+        % load the latencies of the auto-detected R peaks:
+        HEP.qrs = latsAuto;
+        % and refresh:
+        heplab;
         
+        m.prompt = sprintf('%s\n%s\n%s\n%s\n', ...
+            'Do you want to force the R peaks onto the local maxima?', ...
+            'Choose option:',  ...
+            '(y)es', ...
+            '(n)o');
+        m.name = 'Correct peaks?';
+        m.numlines = 1;
+        m.defaultanswer={'n'};
         opts.WindowStyle = 'normal';
-        corRPans = questdlg('Do you want to set the R peaks to loc maxima?');
-        if 
+        b_done = false;
+        while ~b_done
+            m.answer = inputdlg(m.prompt, m.name, m.numlines, m.defaultanswer, opts);
+            if strcmp(m.answer, 'y')
+                HEP = setRPeak2LocMax(HEP, 200);
+                heplab;
+                b_done = true;
+            elseif strcmp(m.answer, 'n')
+                b_done = true;
+                return
+            end
+        end
         
         b_done = false;
         m1.prompt={sprintf('Are you done with R Peak detection? (y)es or (n)o:'), ...
