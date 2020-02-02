@@ -20,7 +20,7 @@
 b_exportTXT = false; % should not be necessary anymore
 b_filter = true; % filter te data (0.5 - 40Hz)
 b_exportFiltered = true; %save filtered files as TXTs
-b_addRPmarkers = false; %add a marker for each R peak
+b_addRPmarkers = true; %add a marker for each R peak
 
 % Plotting:
 b_showFilterResult = true;
@@ -271,7 +271,6 @@ for isub = firstFile:size(files,1)
                 b_done = true;
             elseif strcmp(m.answer, 'n')
                 b_done = true;
-                return
             end
         end
         
@@ -315,7 +314,7 @@ for isub = firstFile:size(files,1)
         end
         summaryCSV = fullfile(dirDataPeaks, 'processing_summary.csv');
         fid = fopen(summaryCSV, 'a+');
-        fprintf(fid, '%s,%f,%g\n', setname, EEG.etc.RPeaksCorrectedPerc, discSamples);
+        fprintf(fid, '%s,%f,%g\n', setname, EEG.etc.RPeaksCorrectedPercent, discSamples);
         fclose(fid);
         
         
