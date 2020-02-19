@@ -345,7 +345,7 @@ for isub = firstFile:size(files,1)
             for ifile=1:length(f_list)
                 ffile = f_list(ifile);
                 if strfind(ffile.name, setname)
-                    f2mv = fullfile(dirDataOrigin, ffile.name);
+                    f2mv = fullfile(dirDataOri, ffile.name);
                     movefile(f2mv, dirDataRaw)
                     w_msg = sprintf('%s%s%s\n%s', 'Moving the files of ', setname, ' to folder 00_Raw.' , ...
                         ['If you want to rerun this script for this subject, ' ...
