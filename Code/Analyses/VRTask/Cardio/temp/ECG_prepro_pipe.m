@@ -17,7 +17,7 @@
 % 01 Nov 2019 -- Felix Klotzsche -- eioe
 
 %% Set which steps to run:
-b_processRepairedFiles = true; % grab files from subfolder "_repaired"
+b_processRepairedFiles = false; % grab files from subfolder "_repaired"
 b_exportTXT = false; % should not be necessary anymore
 b_filter = true; % filter te data (0.5 - 40Hz)
 b_exportFiltered = true; %save filtered files as TXTs
