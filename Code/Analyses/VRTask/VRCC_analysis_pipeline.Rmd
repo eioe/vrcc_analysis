@@ -2,7 +2,7 @@
 title: "VRCC Analysis Pipeline"
 author: "AM, FK, PM"
 date: "May 5, 2019"
-# contact: "klotzsche@cbs.mpg.de", "aleksander.molak@gmail.com"
+# contact: "klotzsche@cbs.mpg.de", "aleksander.molak@gmail.com", "pawel.motyka@psych.uw.edu.pl"
 output: html_document
 chunk_output_type: console
 self_contained: no
@@ -25,6 +25,7 @@ library(readr)
 library(tibble)
 library(purrr)
 library(mosaic)
+library(stringr)
 
 # Plotting and tables
 library(ggplot2)
@@ -46,20 +47,19 @@ source(here("./Code/Analyses/VRTask/Utils/read_utils.r"))
 
 <br>
 
-# Build the dataset
+# Build the fulldataset
 
 ```{r warning=FALSE}
 
-# Set up the data directory
+# Set up the fulldata directory
 VRCC_dir        <- here()
 data_dir        <- here("Data/VRTask/Logfiles/ExpSubjects")
-qstnr_data_path <- here("Data/VRTask/VRCC_questionnaires.xlsx")
+qstnr_data_path <- here("Data/VRTask/Questionnaires/questionnaires_summary_final.xlsx")
 
-# Build the dataset
+# Build the fulldataset
 fulldata <- build_dataset(data_dir)
 
-# Read and filter behavioral data
-qstnr_data <- read_questionnaire_data(qstnr_data_path, filter_pilot = TRUE)
+qstnr_data <- read_questionnaire_data(qstnr_data_path, sheet = 1, filter_pilot = F)
 
 ```
 
@@ -72,6 +72,7 @@ qstnr_data <- read_questionnaire_data(qstnr_data_path, filter_pilot = TRUE)
 # Drop unused levels
 fulldata <- droplevels(fulldata)
 
+
 ```
 
 <br>
@@ -80,7 +81,7 @@ fulldata <- droplevels(fulldata)
 
 ```{r}
 
-# Compute distance errors & add to the dataset
+# Compute distance errors & add to the fulldataset
 fulldata <- fulldata %>% 
   mutate(DistanceError = (EstimatedDistance - RealDistance),
          DistanceErrorAbs = abs(DistanceError),
@@ -93,25 +94,207 @@ fulldata <- fulldata %>%
 
 <br>
 
-* ### Add cardio information to the dataset
+* ### Add cardio information to the fulldataset
 
 ```{r warning=FALSE}
 
-subjects_list <- fulldata %>%
-                  select(ID) %>%
-                  distinct()
+## The  solution below does not work anymornce since sub_lists do not overlapp between behavioral and ecg fulldata 
+# subjects_list <- fullfulldata %>%
+#                   select(ID) %>%
+#                   distinct()
+
+## temporary manual solution (PM) - missing behavioral data for S09, 22, 36 
+#subjects_list <- c("S03", "S05", "S06", "S07", "S08", "S10", "S12", "S14", "S15", "S16", "S17", "S19", "S23", "S24", "S26", "S27", "S28", "S29", "S30", "S31", "S32", "S33", "S34", "S35", "S37", "S38", "S39", "S42", "S43", "S45", "S46")
+
+# temporary semi-automated solution (PM) (read sub_list based on ecg files)
+subjects_list <- list.files(here("Data/VRTask/Cardio/ExpSubjects/02_Peaks/Events"))
+subjects_list <- str_remove(subjects_list, "VRCC_")
+subjects_list <- str_remove(subjects_list, ".csv")
+subjects_list <- subjects_list[!subjects_list %in% c("S09", "S22", "S36")] # remove missing behavioral
+
 
 cardio_data   <- NULL
 
-for (subject in subjects_list$ID) {                               
-  cardio_temp <- get_cardio_info(fulldata, subject)
+# add cardio data
+for (subj_ID in subjects_list) {                               
+  cardio_temp <- get_cardio_info(fulldata, subj_ID)
   cardio_data <- bind_rows(cardio_data, cardio_temp)
 }
 
 # Join the data
 fulldata <- full_join(fulldata, cardio_data)                 
 
+
 ```
+
+
+```{r}
+# Add unique row ID
+fulldata$row_ID <- paste0(fulldata$ID, '_', fulldata$Round, '_', fulldata$Trial)
+```
+
+<br>
+
+## Exclusions based on distance estimates (behavioral analysis)
+
+
+```{r}
+##### TRIAL-BASED #####
+
+
+# Remove trials with untypically large Localization Errors within subject (LE): LE > avg(LE) + 3*sd(LE)
+thrshlds_b <- fulldata %>% 
+            group_by(ID) %>% 
+            summarize(thrsh_hi = mean(DistanceError, na.rm = TRUE) + 3 * sd(DistanceError, na.rm = TRUE),                        thrsh_lo = mean(DistanceError, na.rm = TRUE) - 3 * sd(DistanceError, na.rm = TRUE)) 
+
+fullfltrd_1b <- inner_join(fulldata, thrshlds_b, by = 'ID') %>% 
+               filter(DistanceError < thrsh_hi) %>% 
+               filter(DistanceError > thrsh_lo) %>%
+               select(-c(thrsh_lo, thrsh_hi))
+
+
+# How many trials were excluded in total?
+cat('How many trials were excluded in total?\n')
+cat(dim(fulldata)[1] - dim(fullfltrd_1b)[1])
+
+# What percent of trials should be removed at the subject level?
+
+incl_b      <- fulldata    %>% group_by(ID) %>% count()
+excl_trial_b <- fullfltrd_1b %>% group_by(ID) %>% count()
+comparison_b <- data.frame(incl_b, excl_trial_b)
+comparison_b <- comparison_b %>% select(ID, n, n.1)
+colnames(comparison_b) <- c('ID', 'INCL', 'EXCL')
+
+# What percent of trials were removed per subject?
+comparison_b$diff_trials <- comparison_b$INCL - comparison_b$EXCL
+comparison_b$percent_rm  <- comparison_b$diff_trials / comparison_b$INCL
+
+# How many subjects have more than 30% of trials removed?
+cat('How many subjects have more than 30% of trials removed?\n')
+cat(dim(comparison_b %>% filter(percent_rm > .3))[1])
+
+
+
+##### SUBJECT-BASED #####
+
+
+# Remove subjects with more than three standard deviations above or below the sample mean of Distance Error
+
+# Get subject means
+ID_means_b <- fullfltrd_1b %>% group_by(ID) %>% 
+                            summarize(mean_DE = mean(DistanceError, na.rm = TRUE))
+
+# Get sample mean & SD
+grand_mean_DistanceError <- mean(ID_means_b$mean_DE)
+
+grand_sd_DistanceError   <- sd(ID_means_b$mean_DE)
+
+# Filter-out subjects
+fltrd_IDs_b <- ID_means_b %>% filter(mean_DE < grand_mean_DistanceError + 3 * grand_sd_DistanceError) %>% 
+                          filter(mean_DE > grand_mean_DistanceError - 3 * grand_sd_DistanceError) 
+
+# Join frames on ID (filter the full data)
+fullfltrd_2b <- inner_join(fltrd_IDs_b, fullfltrd_1b, by = 'ID') %>%
+               select(-mean_DE)
+
+
+# How many participants were excluded?
+cat('How many participants were excluded?\n')
+cat(dim(fullfltrd_1b %>% group_by(ID) %>% count())[1] - dim(fullfltrd_2b %>% group_by(ID) %>% count())[1])
+
+# Which ones?
+cat('Which ones?\n')
+setdiff(ID_means_b, fltrd_IDs_b)
+
+```
+
+
+## Exclusions based on t_wave ends (for binary analysis)
+
+
+```{r}
+##### TRIAL-BASED #####
+
+# Remove trials with untypically large/short systole lengths
+thrshlds_t <- fulldata %>% 
+            group_by(ID) %>% 
+            summarize(thrsh_hi = mean(systolength, na.rm = TRUE) + 4 * sd(systolength, na.rm = TRUE),                        thrsh_lo = mean(systolength, na.rm = TRUE) - 4 * sd(systolength, na.rm = TRUE)) 
+
+# Remove rows with NA in cardiac data
+fulldata_filt <- fulldata %>%  filter(!(is.na(systolength)))
+
+fullfltrd_1t <- inner_join(fulldata_filt, thrshlds_t, by = 'ID') %>% 
+               filter(systolength < thrsh_hi) %>% 
+               filter(systolength > thrsh_lo) %>%
+               select(-c(thrsh_lo, thrsh_hi))
+
+
+# How many trials were excluded in total?
+cat('How many trials were excluded in total?\n')
+cat(dim(fulldata_filt)[1] - dim(fullfltrd_1t)[1])
+
+# What percent of trials should be removed at the subject level?
+
+incl_t      <- fulldata_filt    %>% group_by(ID) %>% count()
+excl_trial_t <- fullfltrd_1t %>% group_by(ID) %>% count()
+comparison_t <- data.frame(incl_t, excl_trial_t)
+comparison_t <- comparison_t %>% select(ID, n, n.1)
+colnames(comparison_t) <- c('ID', 'INCL', 'EXCL')
+
+# What percent of trials were removed per subject?
+comparison_t$diff_trials <- comparison_t$INCL - comparison_t$EXCL
+comparison_t$percent_rm  <- comparison_t$diff_trials / comparison_t$INCL
+
+# How many subjects have more than 30% of trials removed?
+cat('How many subjects have more than 30% of trials removed?\n')
+cat(dim(comparison_t %>% filter(percent_rm > .3))[1])
+
+
+##### SUBJECT-BASED #####
+
+
+# Remove subjects with more than three standard deviations above or below the sample mean of systole length
+
+# Get subject means
+ID_means_t <- fullfltrd_1t %>% group_by(ID) %>% 
+                            summarize(mean_SL = mean(systolength, na.rm = TRUE))
+
+# Get sample mean & SD
+grand_mean_SystoleLength <- mean(ID_means_t$mean_SL)
+
+grand_sd_SystoleLength  <- sd(ID_means_t$mean_SL)
+
+# Filter-out subjects
+fltrd_IDs_t <- ID_means_t %>% filter(mean_SL < grand_mean_SystoleLength + 4 * grand_sd_SystoleLength) %>% 
+                          filter(mean_SL > grand_mean_SystoleLength - 4 * grand_sd_SystoleLength) 
+
+# Join frames on ID (filter the full data)
+fullfltrd_2t <- inner_join(fltrd_IDs_t, fullfltrd_1t, by = 'ID') %>%
+               select(-mean_SL)
+
+
+# How many participants were excluded?
+cat('How many participants were excluded?\n')
+cat(dim(fullfltrd_1t %>% group_by(ID) %>% count())[1] - dim(fullfltrd_2t %>% group_by(ID) %>% count())[1])
+
+# Which ones?
+cat('Which ones?\n')
+setdiff(ID_means_t, fltrd_IDs_t)
+
+```
+
+
+## Join data after exclusions
+
+```{r}
+ids_2b <- fullfltrd_2b %>% group_by(row_ID) %>% select(row_ID) %>% unique()
+ids_2t <- fullfltrd_2t %>% group_by(row_ID) %>% select(row_ID) %>% unique()
+ids    <- inner_join(ids_2b, ids_2t, by = 'row_ID')
+
+fullfltrd_binary <- inner_join(ids, fullfltrd_2b, by = 'row_ID', copy = FALSE)
+```
+
+
 
 <br>
 
@@ -121,23 +304,23 @@ fulldata <- full_join(fulldata, cardio_data)
 
 # VRCC_behav_pilots includes other attempts of approaching this issue
 
-for (p in unique(fulldata$ID)) {
-
-subdata <- fulldata[fulldata$ID == p,]
-  
-Figure <- ggplot(data = subdata, aes(x = RealDistance, y = DistanceError)) + 
-  geom_point(col = "grey 15", alpha = 0.3, size = 2.5, shape = 18) + 
-  geom_smooth(col = "grey8", method = "loess", level=0.95, alpha = 0.8) + 
-  labs(y = "Distance Error", x = "True Distance") +   
-  ggtitle(p) +
-  theme_classic() + 
-  theme(plot.title = element_text(hjust = 0.5, face = "bold", size = 17), axis.text=element_text(size=15),  axis.title=element_text(size=15)) +
-  scale_x_continuous(limits= c(min(fulldata$RealDistance), max(fulldata$RealDistance)), expand = c(0.01,0.01)) +
-  scale_y_continuous(limits= c(min(fulldata$DistanceError), max(fulldata$DistanceError)), expand = c(0.01,0.01)) 
-
-plot(Figure)
-
-}
+# for (p in unique(fulldata$ID)) {
+# 
+# subdata <- fulldata[fulldata$ID == p,]
+#   
+# Figure <- ggplot(data = subdata, aes(x = RealDistance, y = DistanceError)) + 
+#   geom_point(col = "grey 15", alpha = 0.3, size = 2.5, shape = 18) + 
+#   geom_smooth(col = "grey8", method = "loess", level=0.95, alpha = 0.8) + 
+#   labs(y = "Distance Error", x = "True Distance") +   
+#   ggtitle(p) +
+#   theme_classic() + 
+#   theme(plot.title = element_text(hjust = 0.5, face = "bold", size = 17), axis.text=element_text(size=15),  axis.title=element_text(size=15)) +
+#   scale_x_continuous(limits= c(min(fulldata$RealDistance), max(fulldata$RealDistance)), expand = c(0.01,0.01)) +
+#   scale_y_continuous(limits= c(min(fulldata$DistanceError), max(fulldata$DistanceError)), expand = c(0.01,0.01)) 
+# 
+# plot(Figure)
+# 
+# }
 
 
 ```
@@ -164,11 +347,53 @@ qqPlot(fulldata$DistanceError)
 
 ## Testing the hypothesis 1. (T-test)
 
+
+####### SAMPLE DATA ########### REMOVE AFTER ###########
+sampled_ids  <- sample(unique(fullfltrd_binary$ID), 20)
+sampled_data <- fullfltrd_binary %>% filter(ID %in% sampled_ids)
+########################################################
+
 # Derive individual means of distance error for threatening and non-threatening objects
-data_ID <- fulldata %>%
+
+data_by_id <- sampled_data %>%
   group_by(ID) %>%
   summarize(mean_threat     = mean(DistanceError[FearObject == "True"]), # threatening objects
             mean_non_threat = mean(DistanceError[FearObject == "False"])) # non-threatening objects
+
+data_by_id_2 <- sampled_data %>%
+  group_by(ID) %>%
+  summarize(mean_threat_syst      = mean(DistanceError[FearObject == "True" & c_phase == 'systole']), 
+            mean_non_threat_syst  = mean(DistanceError[FearObject == "False" & c_phase == 'systole']),
+            mean_threat_diast     = mean(DistanceError[FearObject == "True" & c_phase == 'diastole']), 
+            mean_non_threat_diast = mean(DistanceError[FearObject == "False" & c_phase == 'diastole'])
+            ) 
+
+d <- data_by_id_2 
+d$diff <- d$mean_threat_syst - d$mean_threat_diast
+mean(d$mean_threat_syst)
+mean(d$mean_threat_diast)
+hist(d$diff)
+
+#shapiro.test(data_ID$mean_threat)
+#shapiro.test(data_ID$mean_non_threat)
+
+# Employ paired t-test to determine whether distance error differs between the threatening and non-threatening objects
+t.test(data_by_id$mean_threat, data_by_id$mean_non_threat, alt = "two.sided", conf = 0.95, paired = T) 
+
+t.test(data_by_id_2$mean_threat_syst, data_by_id_2$mean_threat_diast, alt = "two.sided", conf = 0.95, paired = T) 
+## PM: we could even consider "one.sided" test here
+# Perfom Wilcoxon signed-rank test:  
+#wilcox.test(data_ID$mean_threat, data_ID$mean_threat, paired = T)
+
+# Calculate Cohen's d
+cohen.d(data_ID$mean_threat, data_ID$mean_non_threat, paired = T)
+
+# Show summary statistics for threatening and non-threatening objects:
+mean(data_ID$mean_threat)
+sd(data_ID$mean_threat)
+
+mean(data_ID$mean_non_threat)
+sd(data_ID$mean_non_threat)
 
 # Check the normality of dependent variable distribution
 #shapiro.test(data_ID$mean_threat)
@@ -209,6 +434,8 @@ summary(model_H1)
 <br>
 
 * ### Hypothesis 1: Multilevel model - null model
+
+### REMEMBER TO EXCLUDE `c_phase == 'buffer'` FROM BINARY ANALYSIS ####
 
 <br>
 

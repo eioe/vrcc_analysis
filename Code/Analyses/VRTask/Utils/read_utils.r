@@ -12,11 +12,39 @@ library(dplyr)
 library(openxlsx)
 
 
-get_folders <- function(path) {
+get_folders <- function(path, ignore = '_') {
   
   # We read files to get a list of all available data folders with participant's data (e.g. "S06", "S19")
   
-  list.files(path)
+  folders = list.files(path)
+  
+  folders_ready = list()
+  
+  j = 1
+  
+  # The code below removes folders which have names starting with `ignore` string.
+  # This lets the script to work in an uninterupted manner without removeing `_problematic` folder from 
+  # the data folder
+  
+  if (!is.null(ignore)) {
+    
+    warning('\nWARNING: get_folders() set to ignore folders starting with ', ignore, '\n\n')
+    
+    for (i in seq_along(folders)) {
+      
+      if (!startsWith(folders[i], ignore)) {
+        
+        folders_ready[j] = folders[i]
+        j = j + 1
+      }
+    }
+    
+    folders_ready
+    
+  } else {
+    
+    folders
+  }
 }
 
 #---------------------------------------------------------------------------------------#
@@ -87,8 +115,9 @@ build_dataset <- function(path) {
     df <- get_single_table(file.path(path, folders[i]))
     df <- filter_data(df)
     df$PhaseLenght <- as.numeric(df$PhaseLenght)    # There are some values that force type == factor
-    
+    df$EstimatedDistance <- as.numeric(df$EstimatedDistance)
     tables[i] <- list(df)
+    
   }
   
   bind_rows(tables)   
@@ -96,7 +125,7 @@ build_dataset <- function(path) {
 }
 
 
-read_questionnaire_data <- function(path, sheet = 'Scores', filter_pilot = TRUE) {
+read_questionnaire_data <- function(path, sheet = 'Aggregated Scores', filter_pilot = TRUE) {
   
   data <- readWorkbook(path, sheet = sheet)
   
