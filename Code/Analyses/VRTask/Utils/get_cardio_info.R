@@ -108,16 +108,15 @@ get_cardio_info <- function(fulldat, subj_ID) {
   
   for (i in 1:nTrials) { ## Loop: Cardiac parameters for each trial
     
-    ## Encode R_peak related variables:
-    idx <- max(which(RPeakLats-StimOnsets[i] < 0))
-    ECG_dat$RPm1[i] <- RPeakLats[idx] # R peak just before stimulus onset (m1: minus 1)
-    ECG_dat$RPm2[i] <- RPeakLats[idx-1] # minus 2
-    # ECG_dat$RPm3[i] <- RPeakLats[idx-2] 
-    ECG_dat$RPm3[i] <- ifelse(length(RPeakLats[idx-2]) == 1, RPeakLats[idx-2], NA) # minus 3 (catch missing data for the first trial)
-    ECG_dat$RPp1[i] <- RPeakLats[idx+1] # R peak just after stimulus onset (p1: plus 1)
-    ECG_dat$RPp2[i] <- RPeakLats[idx+2] # plus 2
-    ECG_dat$RPp3[i] <- RPeakLats[idx+3] # plus 3
-    ECG_dat$RPp4[i] <- RPeakLats[idx+4] # plus 4 
+    ## Encode R_peaks before and after the stimulus onset:
+    idx <- max(which(RPeakLats-StimOnsets[i] < 0)) #position of R peak just before stimulus onset
+    ECG_dat$RPm1[i] <- RPeakLats[idx] # R peak (latency) just before stimulus onset ("m1"- minus 1)
+    ECG_dat$RPm2[i] <- RPeakLats[idx-1] # minus2
+    ECG_dat$RPm3[i] <- ifelse(length(RPeakLats[idx-2]) == 1, RPeakLats[idx-2], NA) # minus3 (catch missing R-peak for the first trial - perform only if it's present)
+    ECG_dat$RPp1[i] <- RPeakLats[idx+1] # R peak just after stimulus onset ("p1" - plus 1)
+    ECG_dat$RPp2[i] <- RPeakLats[idx+2] # plus2
+    ECG_dat$RPp3[i] <- RPeakLats[idx+3] # plus3
+    ECG_dat$RPp4[i] <- RPeakLats[idx+4] # plus4 
     ECG_dat$RRLength[i] <- ECG_dat$RPp1[i] - ECG_dat$RPm1[i] # RR interval length
     ECG_dat$dist2RPm1[i] <- StimOnsets[i] - ECG_dat$RPm1[i] # time from the previous R peak to stimulus
     ECG_dat$dist2RPp1[i] <- ECG_dat$RPp1[i] - StimOnsets[i] # time from the stimulus to the next R peak
@@ -179,19 +178,18 @@ get_cardio_info <- function(fulldat, subj_ID) {
     ECG_dat$systolength[i] <- twave2[tend,1]- ECG_dat$RPm1[i] # Length of systole 
     
     # ## Optional: Plot visualizations of T-wave end for each trial and export them as jpg files
-    # jpeg(file = paste('N:/vrcc_t_wave_plots/VRCC_twave_ID_',subj_ID,'_trial', i,".jpg"), width=1024, height=600)
-    # par(mfrow=c(1,2))
-    # plot(twave_long,col='black',xlab='time(ms)', ylab= 'electric potential (normalized)')
-    # points(twave_int[tmaxpos,1],twave_int[tmaxpos,2],col='magenta',pch='+',cex=4)
-    # points(twave2[tend,1],twave2[tend,2],col='green',pch='+',cex=4)
-    # plot(twave2,col='black', xlab='time(s)', ylab='electric potential (normalized)')
-    # title(paste('ID',subj_ID,'_trial ', i, sep=''),line=-2, outer=TRUE)
-    # points(twave2[xm,1],twave2[xm,2],col='blue',pch='+',cex=2)
-    # points(twave2[xr,1],twave2[xr,2],col='blue',pch='+',cex=3)
-    # points(twave2[tend,1],twave2[tend,2],col='green',pch='+',cex=4)
-    # points(twave_int[tmaxpos,1],twave_int[tmaxpos,2],col='magenta',pch='+',cex=3)
-    # dev.off()
-    # 
+    jpeg(file = paste0(here(),'/Data/VRTask/Cardio/ExpSubjects/T_waves_plots/VRCC_t_wave_',subj_ID,'_trial', i,".jpg"), width=1024, height=600)
+    par(mfrow=c(1,2))
+    plot(twave_long,col='black',xlab='time(ms)', ylab= 'electric potential (normalized)')
+    points(twave_int[tmaxpos,1],twave_int[tmaxpos,2],col='magenta',pch='+',cex=4)
+    points(twave2[tend,1],twave2[tend,2],col='green',pch='+',cex=4)
+    plot(twave2,col='black', xlab='time(s)', ylab='electric potential (normalized)')
+    title(paste('ID',subj_ID,'_trial ', i, sep=''),line=-2, outer=TRUE)
+    points(twave2[xm,1],twave2[xm,2],col='blue',pch='+',cex=2)
+    points(twave2[xr,1],twave2[xr,2],col='blue',pch='+',cex=3)
+    points(twave2[tend,1],twave2[tend,2],col='green',pch='+',cex=4)
+    points(twave_int[tmaxpos,1],twave_int[tmaxpos,2],col='magenta',pch='+',cex=3)
+    dev.off()
     
     } else {
       

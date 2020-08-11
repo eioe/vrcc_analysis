@@ -56,10 +56,27 @@ VRCC_dir        <- here()
 data_dir        <- here("Data/VRTask/Logfiles/ExpSubjects")
 qstnr_data_path <- here("Data/VRTask/Questionnaires/questionnaires_summary_final.xlsx")
 
-# Build the fulldataset
+# Build the fulldataset (Behavioral/VR data)
 fulldata <- build_dataset(data_dir)
 
-qstnr_data <- read_questionnaire_data(qstnr_data_path, sheet = 1, filter_pilot = F)
+# Get the summary of questionnaire data
+q_data <- read_questionnaire_data(qstnr_data_path, sheet = 1, filter_pilot = F)
+
+
+### Removing the subjects with no cardiac data (temporary - to be decided) 
+# # Drop unused data from five subjects
+pre_exclusions <- c("S11", "S13", "S18", "S21", "S44")
+
+# from behavioral data:
+length(unique(fulldata$ID)) # sample size before
+fulldata <- fulldata[!(fulldata$ID %in% pre_exclusions), ]
+length(unique(fulldata$ID))  # sample size after
+
+# from questionnaire data:
+length(unique(q_data$SUBJECT)) # sample size before
+q_data <- q_data[!(q_data$SUBJECT %in% pre_exclusions), ]
+length(unique(q_data$SUBJECT))
+
 
 ```
 
@@ -98,20 +115,10 @@ fulldata <- fulldata %>%
 
 ```{r warning=FALSE}
 
-## The  solution below does not work anymornce since sub_lists do not overlapp between behavioral and ecg fulldata 
-# subjects_list <- fullfulldata %>%
-#                   select(ID) %>%
-#                   distinct()
-
-## temporary manual solution (PM) - missing behavioral data for S09, 22, 36 
-#subjects_list <- c("S03", "S05", "S06", "S07", "S08", "S10", "S12", "S14", "S15", "S16", "S17", "S19", "S23", "S24", "S26", "S27", "S28", "S29", "S30", "S31", "S32", "S33", "S34", "S35", "S37", "S38", "S39", "S42", "S43", "S45", "S46")
-
-# temporary semi-automated solution (PM) (read sub_list based on ecg files)
+# get the list of subjects with full ecg data
 subjects_list <- list.files(here("Data/VRTask/Cardio/ExpSubjects/02_Peaks/Events"))
 subjects_list <- str_remove(subjects_list, "VRCC_")
 subjects_list <- str_remove(subjects_list, ".csv")
-subjects_list <- subjects_list[!subjects_list %in% c("S09", "S22", "S36")] # remove missing behavioral
-
 
 cardio_data   <- NULL
 
@@ -123,6 +130,12 @@ for (subj_ID in subjects_list) {
 
 # Join the data
 fulldata <- full_join(fulldata, cardio_data)                 
+
+# Save the preprocessed data
+#write.csv(fulldata, paste0(VRCC_dir, "/Data/VRTask/VRCC_fulldata_consolidated"), row.names = F)
+
+# Read the preprocessed data
+#fulldata <- read.csv(file = paste0(VRCC_dir,"/Data/VRTask/VRCC_fulldata_consolidated"))
 
 
 ```
