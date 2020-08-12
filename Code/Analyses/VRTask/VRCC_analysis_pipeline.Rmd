@@ -94,7 +94,7 @@ fulldata <- droplevels(fulldata)
 
 <br>
 
-* ### Compute distance errors
+# Compute distance errors
 
 ```{r}
 
@@ -141,19 +141,17 @@ fulldata <- full_join(fulldata, cardio_data)
 ```
 
 
-```{r}
-# Add unique row ID
-fulldata$row_ID <- paste0(fulldata$ID, '_', fulldata$Round, '_', fulldata$Trial)
-```
-
 <br>
 
 ## Exclusions based on distance estimates (behavioral analysis)
 
 
 ```{r}
-##### TRIAL-BASED #####
 
+# Add unique row ID
+fulldata$row_ID <- paste0(fulldata$ID, '_', fulldata$Round, '_', fulldata$Trial)
+
+##### TRIAL-BASED #####
 
 # Remove trials with untypically large Localization Errors within subject (LE): LE > avg(LE) + 3*sd(LE)
 thrshlds_b <- fulldata %>% 
@@ -171,7 +169,6 @@ cat('How many trials were excluded in total?\n')
 cat(dim(fulldata)[1] - dim(fullfltrd_1b)[1])
 
 # What percent of trials should be removed at the subject level?
-
 incl_b      <- fulldata    %>% group_by(ID) %>% count()
 excl_trial_b <- fullfltrd_1b %>% group_by(ID) %>% count()
 comparison_b <- data.frame(incl_b, excl_trial_b)
@@ -189,7 +186,6 @@ cat(dim(comparison_b %>% filter(percent_rm > .3))[1])
 
 
 ##### SUBJECT-BASED #####
-
 
 # Remove subjects with more than three standard deviations above or below the sample mean of Distance Error
 
