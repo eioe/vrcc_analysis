@@ -92,6 +92,9 @@ get_cardio_info <- function(fulldat, subj_ID) {
   ecg <- read.table(here(filtered_ecg_fpath)) 
   ecg[,1] <- ecg[,1] * 1000 # frequency: 1000 Hz
   
+  # Invert ecg signal for subject "S16"
+  if(subj_ID == "S16") {ecg$V2 <- ecg$V2 * -1} 
+  
   # Create a data frame with cardiac variables
   ECG_dat <- tibble(RPm1 = numeric(nTrials),
                     RPm2 = numeric(nTrials),
@@ -177,24 +180,18 @@ get_cardio_info <- function(fulldat, subj_ID) {
     ECG_dat$tend[i] <- twave2[tend,1] # T wave end position
     ECG_dat$systolength[i] <- twave2[tend,1]- ECG_dat$RPm1[i] # Length of systole 
     
-    # ## Optional: Plot visualizations of T-wave end for each trial and export them as jpg files
+    #Optional: Plot visualizations of T-wave end for each trial and export them as jpg files
     jpeg(file = paste0(here(),'/Data/VRTask/Cardio/ExpSubjects/T_waves_plots/VRCC_t_wave_',subj_ID,'_trial', i,".jpg"), width=1024, height=600)
-    par(mfrow=c(1,2))
-    plot(twave_long,col='black',xlab='time(ms)', ylab= 'electric potential (normalized)')
-    points(twave_int[tmaxpos,1],twave_int[tmaxpos,2],col='magenta',pch='+',cex=4)
-    points(twave2[tend,1],twave2[tend,2],col='green',pch='+',cex=4)
-    plot(twave2,col='black', xlab='time(s)', ylab='electric potential (normalized)')
-    title(paste('ID',subj_ID,'_trial ', i, sep=''),line=-2, outer=TRUE)
-    points(twave2[xm,1],twave2[xm,2],col='blue',pch='+',cex=2)
-    points(twave2[xr,1],twave2[xr,2],col='blue',pch='+',cex=3)
-    points(twave2[tend,1],twave2[tend,2],col='green',pch='+',cex=4)
-    points(twave_int[tmaxpos,1],twave_int[tmaxpos,2],col='magenta',pch='+',cex=3)
+    plot(twave_long,col='black',xlab='Time (ms)', ylab= 'Electric potential (ECG)', cex.lab = 1.5, cex.axis = 1.4)
+    points(twave_int[tmaxpos,1],twave_int[tmaxpos,2],col='purple3',pch='+',cex=6)
+    points(twave2[tend,1],twave2[tend,2],col='orangered',pch='+',cex=6)
+    title(paste('ID',subj_ID,'_trial ', i, sep=''),cex.main = 2, line=-2, outer=TRUE)
     dev.off()
     
     } else {
       
     ECG_dat$tend[i] <- NA # T wave end position
-    ECG_dat$systolength[i] <- NA
+    ECG_dat$systolength[i] <- NA # Length of systole
       
     }
     
