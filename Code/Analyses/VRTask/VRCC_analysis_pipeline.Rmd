@@ -105,7 +105,7 @@ fulldata <- fulldata %>%
          DistanceErrorAbs = abs(DistanceError),
          DistanceErrorNorm = DistanceError / RealDistance,
          DistanceErrorNormAbs = abs(DistanceErrorNorm),
-         EuclideanDistanceError = compute_euclidean_distances(EstimatedPosition, TruePosition),
+         LocalizationError = compute_euclidean_distances(EstimatedPosition, TruePosition),
          AngularErrorRad = compute_angles(EstimatedPosition, TruePosition)) %>% 
   mutate(totTrial = Trial + (Round - 1) * max(Trial)) # Labels the trials with sequential numbers over the whole experiment (1-720)   
 
@@ -159,12 +159,11 @@ fulldata$row_ID <- paste0(fulldata$ID, '_', fulldata$Round, '_', fulldata$Trial)
 # Remove trials with untypically large Localization Errors within subject (LE): LE > avg(LE) + 3*sd(LE)
 thrshlds_b <- fulldata %>% 
             group_by(ID) %>% 
-            summarize(thrsh_hi = mean(DistanceError, na.rm = TRUE) + 3 * sd(DistanceError, na.rm = TRUE),                        thrsh_lo = mean(DistanceError, na.rm = TRUE) - 3 * sd(DistanceError, na.rm = TRUE)) 
+            summarize(thrsh_hi = mean(LocalizationError, na.rm = TRUE) + 3 * sd(LocalizationError, na.rm = TRUE)) 
 
 fullfltrd_1b <- inner_join(fulldata, thrshlds_b, by = 'ID') %>% 
-               filter(DistanceError < thrsh_hi) %>% 
-               filter(DistanceError > thrsh_lo) %>%
-               select(-c(thrsh_lo, thrsh_hi))
+               filter(LocalizationError < thrsh_hi) %>% 
+               select(-c(thrsh_hi))
 
 
 # How many trials were excluded in total?
@@ -217,6 +216,7 @@ cat(dim(fullfltrd_1b %>% group_by(ID) %>% count())[1] - dim(fullfltrd_2b %>% gro
 # Which ones?
 cat('Which ones?\n')
 setdiff(ID_means_b, fltrd_IDs_b)
+
 
 ```
 
