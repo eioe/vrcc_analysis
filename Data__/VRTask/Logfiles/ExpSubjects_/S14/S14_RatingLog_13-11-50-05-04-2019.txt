@@ -1,0 +1,63 @@
+***SESSION HEADER***
+{
+  "Participant": "S14",
+  "Timestamp": "13-11-50-05-04-2019"
+}
+---SESSION HEADER---
+Time; round; ratingFlag; PresentedAnimal;FearObject;BigObject
+90.3266;0;1;Deer;False;False;
+120.7513;0;1;Crocodile;True;True;
+141.1357;0;1;Rabbit;False;False;
+157.9682;0;1;Turtle;False;False;
+171.0921;0;1;Scorpio;True;False;
+188.3936;0;1;FinalWolf;True;False;
+203.3829;0;1;Pig;False;True;
+218.2606;0;1;FinalSnake;True;False;
+248.5411;0;2;FinalSnake;True;False;
+255.4660;0;2;Pig;False;True;
+260.3921;0;2;Deer;False;False;
+265.1837;0;2;Crocodile;True;True;
+270.0421;0;2;FinalWolf;True;False;
+274.6440;0;2;Scorpio;True;False;
+279.1564;0;2;Rabbit;False;False;
+283.6354;0;2;Turtle;False;False;
+1236.1010;1;2;Deer;False;False;
+1243.8180;1;2;FinalSnake;True;False;
+1247.5050;1;2;FinalWolf;True;False;
+1253.8600;1;2;Turtle;False;False;
+1256.9540;1;2;Scorpio;True;False;
+1259.6570;1;2;Pig;False;True;
+1262.9970;1;2;Rabbit;False;False;
+1265.7670;1;2;Crocodile;True;True;
+1905.5090;2;2;Pig;False;True;
+1910.7700;2;2;FinalWolf;True;False;
+1914.4670;2;2;Rabbit;False;False;
+1917.3600;2;2;FinalSnake;True;False;
+1921.2250;2;2;Turtle;False;False;
+1924.0060;2;2;Scorpio;True;False;
+1927.3450;2;2;Crocodile;True;True;
+1930.4170;2;2;Deer;False;False;
+2539.6110;3;2;Deer;False;False;
+2545.6870;3;2;Rabbit;False;False;
+2548.8480;3;2;Turtle;False;False;
+2551.9200;3;2;Pig;False;True;
+2556.2310;3;2;Scorpio;True;False;
+2559.3140;3;2;Crocodile;True;True;
+2562.5090;3;2;FinalWolf;True;False;
+2566.0380;3;2;FinalSnake;True;False;
+3138.0040;4;2;Crocodile;True;True;
+3143.4880;4;2;Scorpio;True;False;
+3147.4870;4;2;Turtle;False;False;
+3151.0390;4;2;FinalWolf;True;False;
+3157.3940;4;2;Rabbit;False;False;
+3162.4090;4;2;FinalSnake;True;False;
+3169.6920;4;2;Pig;False;True;
+3176.6280;4;2;Deer;False;False;
+3755.3630;5;2;Deer;False;False;
+3761.7970;5;2;Scorpio;True;False;
+3766.6220;5;2;Pig;False;True;
+3769.8170;5;2;FinalSnake;True;False;
+3772.6200;5;2;Turtle;False;False;
+3775.6130;5;2;FinalWolf;True;False;
+3778.3390;5;2;Rabbit;False;False;
+3781.0750;5;2;Crocodile;True;True;

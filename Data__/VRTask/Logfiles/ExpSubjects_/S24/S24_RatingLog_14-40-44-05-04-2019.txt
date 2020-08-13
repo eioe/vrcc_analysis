@@ -1,0 +1,63 @@
+***SESSION HEADER***
+{
+  "Participant": "S24",
+  "Timestamp": "14-40-44-05-04-2019"
+}
+---SESSION HEADER---
+Time; round; ratingFlag; PresentedAnimal;FearObject;BigObject
+88.9341;0;1;Turtle;False;False;
+112.8123;0;1;Pig;False;True;
+131.6334;0;1;Scorpio;True;False;
+150.1968;0;1;Deer;False;False;
+169.4866;0;1;FinalWolf;True;False;
+185.4588;0;1;Rabbit;False;False;
+200.9401;0;1;FinalSnake;True;False;
+221.7259;0;1;Crocodile;True;True;
+256.1170;0;2;Crocodile;True;True;
+262.9635;0;2;Pig;False;True;
+271.1848;0;2;Deer;False;False;
+276.4005;0;2;Turtle;False;False;
+281.4601;0;2;FinalSnake;True;False;
+285.8832;0;2;Scorpio;True;False;
+290.7755;0;2;Rabbit;False;False;
+295.9469;0;2;FinalWolf;True;False;
+1084.0500;1;2;Turtle;False;False;
+1092.2150;1;2;FinalSnake;True;False;
+1099.4530;1;2;FinalWolf;True;False;
+1104.3340;1;2;Crocodile;True;True;
+1107.8520;1;2;Scorpio;True;False;
+1112.3320;1;2;Deer;False;False;
+1118.1280;1;2;Pig;False;True;
+1121.6470;1;2;Rabbit;False;False;
+1670.1110;2;2;FinalSnake;True;False;
+1674.7800;2;2;Pig;False;True;
+1678.1980;2;2;Rabbit;False;False;
+1681.5150;2;2;Turtle;False;False;
+1684.7100;2;2;Deer;False;False;
+1687.9600;2;2;Scorpio;True;False;
+1690.9530;2;2;Crocodile;True;True;
+1695.1980;2;2;FinalWolf;True;False;
+2257.3230;3;2;Scorpio;True;False;
+2262.9750;3;2;Turtle;False;False;
+2267.2860;3;2;Pig;False;True;
+2271.6310;3;2;Crocodile;True;True;
+2275.6070;3;2;Deer;False;False;
+2279.4500;3;2;Rabbit;False;False;
+2283.9060;3;2;FinalSnake;True;False;
+2288.0610;3;2;FinalWolf;True;False;
+2908.9050;4;2;Crocodile;True;True;
+2917.3150;4;2;Pig;False;True;
+2922.0290;4;2;Deer;False;False;
+2926.3510;4;2;Rabbit;False;False;
+2930.0370;4;2;Scorpio;True;False;
+2934.2370;4;2;Turtle;False;False;
+2937.9230;4;2;FinalSnake;True;False;
+2942.1670;4;2;FinalWolf;True;False;
+3439.3200;5;2;Rabbit;False;False;
+3448.0100;5;2;FinalWolf;True;False;
+3453.6730;5;2;Pig;False;True;
+3457.4150;5;2;Scorpio;True;False;
+3460.7540;5;2;FinalSnake;True;False;
+3465.4120;5;2;Crocodile;True;True;
+3469.4670;5;2;Deer;False;False;
+3473.2640;5;2;Turtle;False;False;

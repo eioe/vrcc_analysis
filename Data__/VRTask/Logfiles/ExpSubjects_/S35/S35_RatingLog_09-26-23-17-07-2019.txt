@@ -1,0 +1,63 @@
+***SESSION HEADER***
+{
+  "Participant": "S35",
+  "Timestamp": "09-26-23-17-07-2019"
+}
+---SESSION HEADER---
+Time; round; ratingFlag; PresentedAnimal;FearObject;BigObject
+90.1528;0;1;Scorpio;True;False;
+123.8726;0;1;FinalSnake;True;False;
+144.4354;0;1;Deer;False;False;
+175.4193;0;1;Pig;False;True;
+193.0893;0;1;FinalWolf;True;False;
+208.1571;0;1;Turtle;False;False;
+219.9964;0;1;Crocodile;True;True;
+235.9684;0;1;Rabbit;False;False;
+272.8281;0;2;FinalWolf;True;False;
+279.2950;0;2;FinalSnake;True;False;
+284.1536;0;2;Scorpio;True;False;
+289.8724;0;2;Crocodile;True;True;
+294.7756;0;2;Pig;False;True;
+299.2882;0;2;Turtle;False;False;
+302.3597;0;2;Rabbit;False;False;
+306.1686;0;2;Deer;False;False;
+963.3310;1;2;Rabbit;False;False;
+967.5309;1;2;FinalWolf;True;False;
+972.4342;1;2;Turtle;False;False;
+975.6625;1;2;Crocodile;True;True;
+979.0240;1;2;Pig;False;True;
+982.7885;1;2;Deer;False;False;
+986.4409;1;2;Scorpio;True;False;
+990.0372;1;2;FinalSnake;True;False;
+1460.9610;2;2;Scorpio;True;False;
+1467.0480;2;2;FinalWolf;True;False;
+1470.6670;2;2;Crocodile;True;True;
+1473.6610;2;2;Deer;False;False;
+1476.9330;2;2;Turtle;False;False;
+1479.7480;2;2;FinalSnake;True;False;
+1482.6750;2;2;Rabbit;False;False;
+1485.3440;2;2;Pig;False;True;
+2030.7790;3;2;Rabbit;False;False;
+2038.2510;3;2;Turtle;False;False;
+2041.5010;3;2;FinalWolf;True;False;
+2044.4170;3;2;Deer;False;False;
+2047.4440;3;2;Pig;False;True;
+2051.2190;3;2;Crocodile;True;True;
+2054.4690;3;2;Scorpio;True;False;
+2058.4340;3;2;FinalSnake;True;False;
+2514.3690;4;2;Crocodile;True;True;
+2518.0780;4;2;FinalWolf;True;False;
+2521.7750;4;2;Pig;False;True;
+2524.2210;4;2;Turtle;False;False;
+2526.5440;4;2;Scorpio;True;False;
+2529.8280;4;2;FinalSnake;True;False;
+2532.8660;4;2;Rabbit;False;False;
+2535.4900;4;2;Deer;False;False;
+3051.0030;5;2;Rabbit;False;False;
+3056.3420;5;2;Scorpio;True;False;
+3059.4010;5;2;Crocodile;True;True;
+3062.0270;5;2;FinalWolf;True;False;
+3065.0100;5;2;Turtle;False;False;
+3067.6010;5;2;FinalSnake;True;False;
+3070.3150;5;2;Deer;False;False;
+3073.1630;5;2;Pig;False;True;

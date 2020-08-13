@@ -1,0 +1,63 @@
+***SESSION HEADER***
+{
+  "Participant": "S03",
+  "Timestamp": "16-37-24-10-04-2019"
+}
+---SESSION HEADER---
+Time; round; ratingFlag; PresentedAnimal;FearObject;BigObject
+97.1342;0;1;FinalWolf;True;False;
+125.3587;0;1;Rabbit;False;False;
+144.1120;0;1;FinalSnake;True;False;
+166.1496;0;1;Deer;False;False;
+202.0368;0;1;Pig;False;True;
+227.5591;0;1;Turtle;False;False;
+249.0153;0;1;Crocodile;True;True;
+279.1167;0;1;Scorpio;True;False;
+317.4505;0;2;Scorpio;True;False;
+329.7145;0;2;Deer;False;False;
+336.8516;0;2;Rabbit;False;False;
+351.1039;0;2;FinalSnake;True;False;
+356.5322;0;2;Crocodile;True;True;
+362.3403;0;2;Turtle;False;False;
+374.0349;0;2;Pig;False;True;
+379.3176;0;2;FinalWolf;True;False;
+1193.3810;1;2;Scorpio;True;False;
+1200.4960;1;2;FinalWolf;True;False;
+1211.0850;1;2;Rabbit;False;False;
+1217.9530;1;2;Pig;False;True;
+1224.4100;1;2;Deer;False;False;
+1230.5310;1;2;FinalSnake;True;False;
+1236.0370;1;2;Turtle;False;False;
+1242.0580;1;2;Crocodile;True;True;
+1754.9570;2;2;Deer;False;False;
+1925.2920;2;2;Scorpio;True;False;
+1932.4630;2;2;FinalWolf;True;False;
+1935.8580;2;2;FinalSnake;True;False;
+1938.8410;2;2;Pig;False;True;
+1941.9340;2;2;Rabbit;False;False;
+1945.0620;2;2;Turtle;False;False;
+1949.1720;2;2;Crocodile;True;True;
+2400.6080;3;2;Turtle;False;False;
+2407.2880;3;2;FinalSnake;True;False;
+2412.6270;3;2;Scorpio;True;False;
+2417.9880;3;2;Pig;False;True;
+2422.6240;3;2;Crocodile;True;True;
+2430.1850;3;2;FinalWolf;True;False;
+2440.4500;3;2;Rabbit;False;False;
+2444.2810;3;2;Deer;False;False;
+3159.3050;4;2;Turtle;False;False;
+3166.2080;4;2;FinalSnake;True;False;
+3169.8830;4;2;Pig;False;True;
+3173.7360;4;2;Rabbit;False;False;
+3177.5460;4;2;Deer;False;False;
+3182.4930;4;2;FinalWolf;True;False;
+3186.5250;4;2;Crocodile;True;True;
+3190.4350;4;2;Scorpio;True;False;
+3634.6560;5;2;Scorpio;True;False;
+3640.9210;5;2;FinalSnake;True;False;
+3644.0270;5;2;Deer;False;False;
+3646.9540;5;2;Pig;False;True;
+3649.8120;5;2;FinalWolf;True;False;
+3653.0740;5;2;Crocodile;True;True;
+3656.1120;5;2;Rabbit;False;False;
+3659.9200;5;2;Turtle;False;False;

@@ -1,0 +1,63 @@
+***SESSION HEADER***
+{
+  "Participant": "S29",
+  "Timestamp": "11-19-07-17-07-2019"
+}
+---SESSION HEADER---
+Time; round; ratingFlag; PresentedAnimal;FearObject;BigObject
+86.0119;0;1;Scorpio;True;False;
+119.4968;0;1;Turtle;False;False;
+138.6856;0;1;Pig;False;True;
+155.2724;0;1;FinalWolf;True;False;
+171.1109;0;1;FinalSnake;True;False;
+195.0578;0;1;Crocodile;True;True;
+220.5465;0;1;Rabbit;False;False;
+241.5784;0;1;Deer;False;False;
+269.5467;0;2;Pig;False;True;
+276.2481;0;2;Turtle;False;False;
+282.1902;0;2;FinalWolf;True;False;
+287.6857;0;2;Deer;False;False;
+292.6336;0;2;Rabbit;False;False;
+298.7769;0;2;FinalSnake;True;False;
+303.3785;0;2;Crocodile;True;True;
+309.4326;0;2;Scorpio;True;False;
+981.3275;1;2;Deer;False;False;
+986.5101;1;2;FinalWolf;True;False;
+993.7144;1;2;Pig;False;True;
+1001.6560;1;2;Scorpio;True;False;
+1007.1510;1;2;Rabbit;False;False;
+1012.3340;1;2;Crocodile;True;True;
+1016.6230;1;2;FinalSnake;True;False;
+1020.5430;1;2;Turtle;False;False;
+1611.1590;2;2;Turtle;False;False;
+1616.0730;2;2;FinalWolf;True;False;
+1620.0270;2;2;Crocodile;True;True;
+1624.1370;2;2;Pig;False;True;
+1627.7680;2;2;Scorpio;True;False;
+1631.4650;2;2;FinalSnake;True;False;
+1635.9550;2;2;Deer;False;False;
+1640.2550;2;2;Rabbit;False;False;
+2151.3550;3;2;Crocodile;True;True;
+2162.2570;3;2;Pig;False;True;
+2170.3440;3;2;Turtle;False;False;
+2176.2410;3;2;FinalSnake;True;False;
+2181.0210;3;2;FinalWolf;True;False;
+2185.3660;3;2;Rabbit;False;False;
+2189.5320;3;2;Scorpio;True;False;
+2193.2080;3;2;Deer;False;False;
+2745.0650;4;2;Crocodile;True;True;
+2749.4320;4;2;Pig;False;True;
+2752.4150;4;2;Scorpio;True;False;
+2758.0660;4;2;FinalWolf;True;False;
+2761.4730;4;2;FinalSnake;True;False;
+2764.9470;4;2;Turtle;False;False;
+2767.8400;4;2;Deer;False;False;
+2774.4180;4;2;Rabbit;False;False;
+3269.1560;5;2;FinalWolf;True;False;
+3275.5110;5;2;Pig;False;True;
+3278.7610;5;2;Scorpio;True;False;
+3282.7040;5;2;Crocodile;True;True;
+3286.2000;5;2;Turtle;False;False;
+3289.5730;5;2;Rabbit;False;False;
+3293.7620;5;2;Deer;False;False;
+3296.9900;5;2;FinalSnake;True;False;

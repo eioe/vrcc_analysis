@@ -1,0 +1,63 @@
+***SESSION HEADER***
+{
+  "Participant": "S05",
+  "Timestamp": "14-43-30-11-04-2019"
+}
+---SESSION HEADER---
+Time; round; ratingFlag; PresentedAnimal;FearObject;BigObject
+81.0785;0;1;FinalWolf;True;False;
+116.1944;0;1;Rabbit;False;False;
+160.0682;0;1;Scorpio;True;False;
+177.9950;0;1;FinalSnake;True;False;
+193.6882;0;1;Crocodile;True;True;
+208.4875;0;1;Pig;False;True;
+222.7956;0;1;Turtle;False;False;
+231.4182;0;1;Deer;False;False;
+256.5721;0;2;Pig;False;True;
+261.2854;0;2;Turtle;False;False;
+264.0222;0;2;Rabbit;False;False;
+266.7254;0;2;Crocodile;True;True;
+269.2382;0;2;Deer;False;False;
+271.6285;0;2;FinalSnake;True;False;
+274.2533;0;2;FinalWolf;True;False;
+277.7941;0;2;Scorpio;True;False;
+821.3656;1;2;Crocodile;True;True;
+830.4244;1;2;Rabbit;False;False;
+834.2111;1;2;Deer;False;False;
+836.8019;1;2;Pig;False;True;
+839.6615;1;2;Turtle;False;False;
+847.2118;1;2;FinalWolf;True;False;
+850.6517;1;2;FinalSnake;True;False;
+853.4218;1;2;Scorpio;True;False;
+1551.2890;2;2;Pig;False;True;
+1555.8470;2;2;Rabbit;False;False;
+1559.2640;2;2;FinalSnake;True;False;
+1562.0570;2;2;FinalWolf;True;False;
+1565.2180;2;2;Deer;False;False;
+1567.6410;2;2;Turtle;False;False;
+1570.8020;2;2;Crocodile;True;True;
+1573.5720;2;2;Scorpio;True;False;
+1991.0880;3;2;FinalWolf;True;False;
+1999.9340;3;2;Turtle;False;False;
+2003.7090;3;2;Crocodile;True;True;
+2009.5280;3;2;FinalSnake;True;False;
+2013.6720;3;2;Deer;False;False;
+2020.8650;3;2;Scorpio;True;False;
+2025.0770;3;2;Rabbit;False;False;
+2030.1920;3;2;Pig;False;True;
+2442.8940;4;2;FinalSnake;True;False;
+2448.1540;4;2;FinalWolf;True;False;
+2451.7840;4;2;Deer;False;False;
+2455.0460;4;2;Rabbit;False;False;
+2459.1120;4;2;Turtle;False;False;
+2463.2000;4;2;Scorpio;True;False;
+2466.2820;4;2;Pig;False;True;
+2470.4820;4;2;Crocodile;True;True;
+2915.6980;5;2;Rabbit;False;False;
+2919.8650;5;2;FinalSnake;True;False;
+2923.4500;5;2;Turtle;False;False;
+2926.1640;5;2;Crocodile;True;True;
+2928.6440;5;2;Pig;False;True;
+2931.1570;5;2;Deer;False;False;
+2933.7820;5;2;FinalWolf;True;False;
+2938.4510;5;2;Scorpio;True;False;

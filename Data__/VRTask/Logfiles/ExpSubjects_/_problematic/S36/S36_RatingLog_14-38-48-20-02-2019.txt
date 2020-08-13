@@ -1,0 +1,63 @@
+***SESSION HEADER***
+{
+  "Participant": "S36",
+  "Timestamp": "14-38-48-20-02-2019"
+}
+---SESSION HEADER---
+Time; round; ratingFlag; PresentedAnimal;FearObject;BigObject
+441.1083;0;1;FinalSnake;True;False;
+477.6201;0;1;Pig;False;True;
+499.2440;0;1;Turtle;False;False;
+518.8685;0;1;Deer;False;False;
+536.3821;0;1;Crocodile;True;True;
+558.2853;0;1;Scorpio;True;False;
+579.9761;0;1;Rabbit;False;False;
+599.3772;0;1;FinalWolf;True;False;
+632.0592;0;2;Scorpio;True;False;
+639.9335;0;2;Crocodile;True;True;
+658.2289;0;2;FinalWolf;True;False;
+665.4668;0;2;FinalSnake;True;False;
+672.5369;0;2;Rabbit;False;False;
+678.6577;0;2;Deer;False;False;
+684.6557;0;2;Pig;False;True;
+690.5976;0;2;Turtle;False;False;
+1567.7840;1;2;FinalWolf;True;False;
+1576.1280;1;2;Pig;False;True;
+1581.6570;1;2;Turtle;False;False;
+1585.7560;1;2;Rabbit;False;False;
+1589.6430;1;2;Crocodile;True;True;
+1593.7210;1;2;Deer;False;False;
+1597.7180;1;2;Scorpio;True;False;
+1601.4490;1;2;FinalSnake;True;False;
+2338.6740;2;2;Rabbit;False;False;
+2345.8780;2;2;Deer;False;False;
+2352.2450;2;2;FinalWolf;True;False;
+2357.9070;2;2;Scorpio;True;False;
+2363.7270;2;2;Pig;False;True;
+2368.8200;2;2;Crocodile;True;True;
+2373.6790;2;2;Turtle;False;False;
+2379.0510;2;2;FinalSnake;True;False;
+3067.1310;3;2;Scorpio;True;False;
+3072.5930;3;2;Turtle;False;False;
+3076.7810;3;2;Pig;False;True;
+3081.3060;3;2;Deer;False;False;
+3084.9020;3;2;FinalWolf;True;False;
+3088.6100;3;2;Crocodile;True;True;
+3092.8880;3;2;FinalSnake;True;False;
+3097.2100;3;2;Rabbit;False;False;
+3833.2070;4;2;Pig;False;True;
+3838.1890;4;2;Rabbit;False;False;
+3841.5400;4;2;FinalWolf;True;False;
+3844.6560;4;2;Deer;False;False;
+3847.7500;4;2;Scorpio;True;False;
+3851.7040;4;2;Turtle;False;False;
+3855.9040;4;2;Crocodile;True;True;
+3859.3890;4;2;FinalSnake;True;False;
+4489.5780;5;2;Scorpio;True;False;
+4495.3190;5;2;Crocodile;True;True;
+4499.2060;5;2;FinalWolf;True;False;
+4502.5340;5;2;Pig;False;True;
+4505.6610;5;2;FinalSnake;True;False;
+4509.0680;5;2;Rabbit;False;False;
+4513.1780;5;2;Turtle;False;False;
+4516.4620;5;2;Deer;False;False;

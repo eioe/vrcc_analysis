@@ -1,0 +1,63 @@
+***SESSION HEADER***
+{
+  "Participant": "S02",
+  "Timestamp": "11-27-18-22-02-2019"
+}
+---SESSION HEADER---
+Time; round; ratingFlag; PresentedAnimal;FearObject;BigObject
+130.3747;0;1;Rabbit;False;False;
+185.2380;0;1;Pig;False;True;
+203.6561;0;1;Turtle;False;False;
+224.9561;0;1;Crocodile;True;True;
+257.1688;0;1;FinalWolf;True;False;
+277.9884;0;1;FinalSnake;True;False;
+299.1321;0;1;Deer;False;False;
+321.3814;0;1;Scorpio;True;False;
+356.2972;0;2;Rabbit;False;False;
+367.1653;0;2;Turtle;False;False;
+372.6041;0;2;Scorpio;True;False;
+377.7196;0;2;Deer;False;False;
+383.2487;0;2;Pig;False;True;
+387.7723;0;2;FinalSnake;True;False;
+392.3403;0;2;Crocodile;True;True;
+398.8856;0;2;FinalWolf;True;False;
+1135.5390;1;2;Rabbit;False;False;
+1148.2170;1;2;FinalSnake;True;False;
+1155.1530;1;2;Turtle;False;False;
+1159.1620;1;2;Deer;False;False;
+1167.5390;1;2;FinalWolf;True;False;
+1172.5540;1;2;Scorpio;True;False;
+1178.0160;1;2;Crocodile;True;True;
+1185.8230;1;2;Pig;False;True;
+1687.6190;2;2;Scorpio;True;False;
+1694.2650;2;2;FinalWolf;True;False;
+1699.7930;2;2;Pig;False;True;
+1704.7190;2;2;Rabbit;False;False;
+1712.9180;2;2;FinalSnake;True;False;
+1719.3510;2;2;Turtle;False;False;
+1723.4730;2;2;Deer;False;False;
+1728.8900;2;2;Crocodile;True;True;
+2284.1980;3;2;Pig;False;True;
+2291.9040;3;2;FinalSnake;True;False;
+2299.4780;3;2;FinalWolf;True;False;
+2304.1010;3;2;Scorpio;True;False;
+2312.1660;3;2;Rabbit;False;False;
+2317.7840;3;2;Turtle;False;False;
+2323.3350;3;2;Crocodile;True;True;
+2330.4500;3;2;Deer;False;False;
+3142.8110;4;2;Deer;False;False;
+3149.0770;4;2;Crocodile;True;True;
+3155.6340;4;2;Rabbit;False;False;
+3161.1740;4;2;Scorpio;True;False;
+3167.3060;4;2;FinalSnake;True;False;
+3171.9300;4;2;Turtle;False;False;
+3176.2530;4;2;FinalWolf;True;False;
+3180.7870;4;2;Pig;False;True;
+3691.5300;5;2;FinalWolf;True;False;
+3695.9640;5;2;Scorpio;True;False;
+3700.5660;5;2;Deer;False;False;
+3705.5810;5;2;FinalSnake;True;False;
+3709.9930;5;2;Pig;False;True;
+3716.0910;5;2;Crocodile;True;True;
+3720.8600;5;2;Rabbit;False;False;
+3728.2320;5;2;Turtle;False;False;

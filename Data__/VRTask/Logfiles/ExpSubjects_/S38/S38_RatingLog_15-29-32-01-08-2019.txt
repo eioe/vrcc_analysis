@@ -1,0 +1,63 @@
+***SESSION HEADER***
+{
+  "Participant": "S38",
+  "Timestamp": "15-29-32-01-08-2019"
+}
+---SESSION HEADER---
+Time; round; ratingFlag; PresentedAnimal;FearObject;BigObject
+75.6277;0;1;Crocodile;True;True;
+138.7452;0;1;Pig;False;True;
+154.5947;0;1;Turtle;False;False;
+170.5668;0;1;FinalWolf;True;False;
+196.7703;0;1;Deer;False;False;
+212.4078;0;1;FinalSnake;True;False;
+238.4659;0;1;Scorpio;True;False;
+269.4496;0;1;Rabbit;False;False;
+295.7314;0;2;Pig;False;True;
+302.1648;0;2;Crocodile;True;True;
+308.2857;0;2;FinalSnake;True;False;
+313.0997;0;2;Rabbit;False;False;
+320.7841;0;2;Deer;False;False;
+327.8658;0;2;FinalWolf;True;False;
+332.5233;0;2;Scorpio;True;False;
+338.8005;0;2;Turtle;False;False;
+1088.9930;1;2;FinalWolf;True;False;
+1097.7610;1;2;Rabbit;False;False;
+1106.5290;1;2;Pig;False;True;
+1111.6890;1;2;FinalSnake;True;False;
+1117.0280;1;2;Crocodile;True;True;
+1123.2500;1;2;Turtle;False;False;
+1130.1970;1;2;Scorpio;True;False;
+1136.1390;1;2;Deer;False;False;
+1674.7160;2;2;Pig;False;True;
+1686.4770;2;2;Turtle;False;False;
+1691.9950;2;2;FinalWolf;True;False;
+1697.4010;2;2;FinalSnake;True;False;
+1703.6670;2;2;Scorpio;True;False;
+1708.6820;2;2;Deer;False;False;
+1718.6340;2;2;Crocodile;True;True;
+1723.2580;2;2;Rabbit;False;False;
+2477.3710;3;2;Pig;False;True;
+2482.7100;3;2;Deer;False;False;
+2487.5470;3;2;Rabbit;False;False;
+2492.2150;3;2;FinalSnake;True;False;
+2498.4260;3;2;FinalWolf;True;False;
+2503.7870;3;2;Scorpio;True;False;
+2509.0140;3;2;Turtle;False;False;
+2515.8280;3;2;Crocodile;True;True;
+3027.9110;4;2;FinalWolf;True;False;
+3035.0930;4;2;Turtle;False;False;
+3039.8620;4;2;Crocodile;True;True;
+3046.5970;4;2;Scorpio;True;False;
+3056.4600;4;2;Pig;False;True;
+3064.7140;4;2;FinalSnake;True;False;
+3069.9410;4;2;Deer;False;False;
+3078.4970;4;2;Rabbit;False;False;
+4209.3000;5;2;Pig;False;True;
+4213.5880;5;2;FinalWolf;True;False;
+4218.3360;5;2;Scorpio;True;False;
+4223.5070;5;2;Rabbit;False;False;
+4229.5170;5;2;Turtle;False;False;
+4233.9170;5;2;FinalSnake;True;False;
+4240.5410;5;2;Crocodile;True;True;
+4247.7560;5;2;Deer;False;False;

@@ -42,6 +42,7 @@ require(effsize)
 # Load helper functions
 source(here("./Code/Analyses/VRTask/Utils/get_cardio_info.R"))
 source(here("./Code/Analyses/VRTask/Utils/read_utils.r"))
+source(here("./Code/Analyses/VRTask/Utils/distance_utils.r"))
 
 ```
 
@@ -54,7 +55,7 @@ source(here("./Code/Analyses/VRTask/Utils/read_utils.r"))
 # Set up the fulldata directory
 VRCC_dir        <- here()
 data_dir        <- here("Data/VRTask/Logfiles/ExpSubjects")
-qstnr_data_path <- here("Data/VRTask/Questionnaires/questionnaires_summary_final.xlsx")
+qstnr_data_path <- here("Data/VRTask/Questionnaires/aggregates_clean.xlsx")
 
 # Build the fulldataset (Behavioral/VR data)
 fulldata <- build_dataset(data_dir)
@@ -103,8 +104,10 @@ fulldata <- fulldata %>%
   mutate(DistanceError = (EstimatedDistance - RealDistance),
          DistanceErrorAbs = abs(DistanceError),
          DistanceErrorNorm = DistanceError / RealDistance,
-         DistanceErrorNormAbs = abs(DistanceErrorNorm)) %>% 
-  mutate(totTrial = Trial + (Round - 1) * max(Trial)) #Labels the trials with sequential numbers over the whole experiment (1-720)   
+         DistanceErrorNormAbs = abs(DistanceErrorNorm),
+         EuclideanDistanceError = compute_euclidean_distances(EstimatedPosition, TruePosition),
+         AngularError = compute_angles(EstimatedPosition, TruePosition)) %>% 
+  mutate(totTrial = Trial + (Round - 1) * max(Trial)) # Labels the trials with sequential numbers over the whole experiment (1-720)   
 
 
 ```
@@ -248,7 +251,7 @@ cat(dim(fulldata_filt)[1] - dim(fullfltrd_1t)[1])
 
 # What percent of trials should be removed at the subject level?
 
-incl_t      <- fulldata_filt    %>% group_by(ID) %>% count()
+incl_t       <- fulldata_filt %>% group_by(ID) %>% count()
 excl_trial_t <- fullfltrd_1t %>% group_by(ID) %>% count()
 comparison_t <- data.frame(incl_t, excl_trial_t)
 comparison_t <- comparison_t %>% select(ID, n, n.1)

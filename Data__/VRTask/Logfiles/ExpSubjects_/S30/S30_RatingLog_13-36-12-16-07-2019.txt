@@ -1,0 +1,63 @@
+***SESSION HEADER***
+{
+  "Participant": "S30",
+  "Timestamp": "13-36-12-16-07-2019"
+}
+---SESSION HEADER---
+Time; round; ratingFlag; PresentedAnimal;FearObject;BigObject
+61.9213;0;1;FinalSnake;True;False;
+96.0312;0;1;Turtle;False;False;
+111.6240;0;1;Deer;False;False;
+128.0092;0;1;Crocodile;True;True;
+146.0143;0;1;FinalWolf;True;False;
+165.3710;0;1;Scorpio;True;False;
+181.9463;0;1;Rabbit;False;False;
+195.5509;0;1;Pig;False;True;
+222.2008;0;2;Deer;False;False;
+228.0087;0;2;Crocodile;True;True;
+234.0959;0;2;Pig;False;True;
+239.6026;0;2;FinalWolf;True;False;
+244.8076;0;2;FinalSnake;True;False;
+251.1185;0;2;Scorpio;True;False;
+255.4853;0;2;Rabbit;False;False;
+260.1430;0;2;Turtle;False;False;
+1100.1160;1;2;FinalWolf;True;False;
+1105.3430;1;2;Scorpio;True;False;
+1109.0730;1;2;Turtle;False;False;
+1114.1340;1;2;FinalSnake;True;False;
+1118.1550;1;2;Rabbit;False;False;
+1121.4050;1;2;Deer;False;False;
+1124.5770;1;2;Crocodile;True;True;
+1127.8490;1;2;Pig;False;True;
+1891.3450;2;2;Turtle;False;False;
+1896.8860;2;2;Pig;False;True;
+1900.6160;2;2;Crocodile;True;True;
+1905.3290;2;2;Deer;False;False;
+1908.3670;2;2;FinalSnake;True;False;
+1914.5550;2;2;Scorpio;True;False;
+1921.1450;2;2;Rabbit;False;False;
+1924.4850;2;2;FinalWolf;True;False;
+2633.6750;3;2;FinalSnake;True;False;
+2640.6000;3;2;Pig;False;True;
+2644.3980;3;2;Deer;False;False;
+2648.2730;3;2;FinalWolf;True;False;
+2651.8140;3;2;Turtle;False;False;
+2655.6340;3;2;Crocodile;True;True;
+2659.4090;3;2;Scorpio;True;False;
+2663.6090;3;2;Rabbit;False;False;
+3515.1870;4;2;Crocodile;True;True;
+3521.6210;4;2;Deer;False;False;
+3524.9490;4;2;Scorpio;True;False;
+3530.0870;4;2;Pig;False;True;
+3534.8560;4;2;Turtle;False;False;
+3537.8620;4;2;FinalSnake;True;False;
+3541.2900;4;2;FinalWolf;True;False;
+3544.5850;4;2;Rabbit;False;False;
+4296.6660;5;2;Rabbit;False;False;
+4301.5350;5;2;Pig;False;True;
+4305.1540;5;2;Crocodile;True;True;
+4309.4880;5;2;Deer;False;False;
+4313.0840;5;2;FinalWolf;True;False;
+4316.8820;5;2;Scorpio;True;False;
+4320.0990;5;2;FinalSnake;True;False;
+4323.8410;5;2;Turtle;False;False;

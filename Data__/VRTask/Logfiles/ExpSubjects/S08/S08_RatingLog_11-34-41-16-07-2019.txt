@@ -1,0 +1,63 @@
+***SESSION HEADER***
+{
+  "Participant": "S08",
+  "Timestamp": "11-34-41-16-07-2019"
+}
+---SESSION HEADER---
+Time; round; ratingFlag; PresentedAnimal;FearObject;BigObject
+1689.4940;0;1;Rabbit;False;False;
+1723.6160;0;1;Scorpio;True;False;
+1747.8310;0;1;FinalWolf;True;False;
+1766.7180;0;1;Crocodile;True;True;
+1787.2030;0;1;Pig;False;True;
+1804.5160;0;1;Deer;False;False;
+1823.4810;0;1;Turtle;False;False;
+1846.9590;0;1;FinalSnake;True;False;
+1887.9290;0;2;Scorpio;True;False;
+1896.8860;0;2;FinalSnake;True;False;
+1910.2560;0;2;Turtle;False;False;
+1919.6610;0;2;FinalWolf;True;False;
+1928.7200;0;2;Pig;False;True;
+1937.3760;0;2;Crocodile;True;True;
+1947.6400;0;2;Deer;False;False;
+1955.5820;0;2;Rabbit;False;False;
+2755.6900;1;2;FinalSnake;True;False;
+2767.0160;1;2;Crocodile;True;True;
+2773.0920;1;2;Deer;False;False;
+2779.7270;1;2;Turtle;False;False;
+2786.4730;1;2;FinalWolf;True;False;
+2792.7730;1;2;Scorpio;True;False;
+2799.4070;1;2;Rabbit;False;False;
+2809.6940;1;2;Pig;False;True;
+3394.1000;2;2;Scorpio;True;False;
+3401.7730;2;2;FinalWolf;True;False;
+3407.9610;2;2;Pig;False;True;
+3415.4000;2;2;Turtle;False;False;
+3421.6990;2;2;Crocodile;True;True;
+3429.8080;2;2;Deer;False;False;
+3436.4090;2;2;FinalSnake;True;False;
+3444.0160;2;2;Rabbit;False;False;
+4425.5270;3;2;Rabbit;False;False;
+4431.7920;3;2;Pig;False;True;
+4437.1210;3;2;Scorpio;True;False;
+4442.4260;3;2;Crocodile;True;True;
+4447.5190;3;2;FinalSnake;True;False;
+4453.6070;3;2;Deer;False;False;
+4459.8500;3;2;Turtle;False;False;
+4464.9210;3;2;FinalWolf;True;False;
+5034.6170;4;2;FinalSnake;True;False;
+5040.8830;4;2;FinalWolf;True;False;
+5048.1880;4;2;Rabbit;False;False;
+5058.2960;4;2;Crocodile;True;True;
+5066.4160;4;2;Pig;False;True;
+5073.5970;4;2;Scorpio;True;False;
+5080.9140;4;2;Turtle;False;False;
+5087.4930;4;2;Deer;False;False;
+5575.3940;5;2;Pig;False;True;
+5581.7390;5;2;Turtle;False;False;
+5587.5020;5;2;Crocodile;True;True;
+5593.4880;5;2;Rabbit;False;False;
+5598.9620;5;2;FinalWolf;True;False;
+5604.1440;5;2;Deer;False;False;
+5609.7510;5;2;FinalSnake;True;False;
+5615.7380;5;2;Scorpio;True;False;

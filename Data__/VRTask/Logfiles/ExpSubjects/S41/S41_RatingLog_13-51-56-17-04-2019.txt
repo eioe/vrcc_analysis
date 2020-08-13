@@ -1,0 +1,63 @@
+***SESSION HEADER***
+{
+  "Participant": "S41",
+  "Timestamp": "13-51-56-17-04-2019"
+}
+---SESSION HEADER---
+Time; round; ratingFlag; PresentedAnimal;FearObject;BigObject
+77.4269;0;1;Pig;False;True;
+82.6133;0;1;Rabbit;False;False;
+87.4945;0;1;FinalWolf;True;False;
+92.8000;0;1;Crocodile;True;True;
+132.2728;0;1;Scorpio;True;False;
+138.4495;0;1;Deer;False;False;
+143.7441;0;1;FinalSnake;True;False;
+149.0603;0;1;Turtle;False;False;
+157.3369;0;2;Crocodile;True;True;
+161.8271;0;2;Pig;False;True;
+164.3628;0;2;Deer;False;False;
+169.1875;0;2;Rabbit;False;False;
+172.2481;0;2;Scorpio;True;False;
+174.5938;0;2;FinalSnake;True;False;
+176.3695;0;2;Turtle;False;False;
+177.9335;0;2;FinalWolf;True;False;
+1132.8920;1;2;Scorpio;True;False;
+1138.2540;1;2;Turtle;False;False;
+1142.2860;1;2;FinalWolf;True;False;
+1145.0780;1;2;Crocodile;True;True;
+1147.9930;1;2;Deer;False;False;
+1151.2550;1;2;Rabbit;False;False;
+1155.2310;1;2;FinalSnake;True;False;
+1159.2300;1;2;Pig;False;True;
+1755.3720;2;2;Deer;False;False;
+1762.4760;2;2;Turtle;False;False;
+1767.9710;2;2;FinalSnake;True;False;
+1771.3890;2;2;Rabbit;False;False;
+1774.6510;2;2;Pig;False;True;
+1777.5320;2;2;Crocodile;True;True;
+1784.6030;2;2;Scorpio;True;False;
+1788.6900;2;2;FinalWolf;True;False;
+3610.3730;3;2;Turtle;False;False;
+3615.4770;3;2;Scorpio;True;False;
+3618.9950;3;2;Crocodile;True;True;
+3622.8490;3;2;Pig;False;True;
+3626.2220;3;2;Deer;False;False;
+3629.1710;3;2;FinalWolf;True;False;
+3632.8900;3;2;FinalSnake;True;False;
+3637.4920;3;2;Rabbit;False;False;
+4183.9540;4;2;Crocodile;True;True;
+4188.7340;4;2;FinalWolf;True;False;
+4191.3710;4;2;Deer;False;False;
+4195.0790;4;2;Scorpio;True;False;
+4197.9380;4;2;Turtle;False;False;
+4200.7300;4;2;Pig;False;True;
+4205.8910;4;2;Rabbit;False;False;
+4209.1300;4;2;FinalSnake;True;False;
+4817.3130;5;2;Turtle;False;False;
+4821.3780;5;2;Rabbit;False;False;
+4826.1250;5;2;Pig;False;True;
+4831.1520;5;2;FinalWolf;True;False;
+4834.6920;5;2;Deer;False;False;
+4837.4290;5;2;Scorpio;True;False;
+4841.2380;5;2;FinalSnake;True;False;
+4845.2920;5;2;Crocodile;True;True;
