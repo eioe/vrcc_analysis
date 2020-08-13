@@ -1,6 +1,7 @@
 # Ignore:
 Notes
 Data
+Data__
 .RData
 .Rhistory
 # Code/Analyses/VRTask/VRCC_analysis_pipeline.Rmd
