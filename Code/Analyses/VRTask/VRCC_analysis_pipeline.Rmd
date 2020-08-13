@@ -106,7 +106,7 @@ fulldata <- fulldata %>%
          DistanceErrorNorm = DistanceError / RealDistance,
          DistanceErrorNormAbs = abs(DistanceErrorNorm),
          EuclideanDistanceError = compute_euclidean_distances(EstimatedPosition, TruePosition),
-         AngularError = compute_angles(EstimatedPosition, TruePosition)) %>% 
+         AngularErrorRad = compute_angles(EstimatedPosition, TruePosition)) %>% 
   mutate(totTrial = Trial + (Round - 1) * max(Trial)) # Labels the trials with sequential numbers over the whole experiment (1-720)   
 
 
