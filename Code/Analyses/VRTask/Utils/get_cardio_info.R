@@ -126,25 +126,36 @@ get_cardio_info <- function(fulldat, subj_ID) {
     
     ## Encode the T-wave end end related variables:
     
+    # buffer at the end of heartbeat interval
+    buffer_post = 60
+    # optimize for an outlier with respect to ECG signal
+    if(subj_ID == "S46") {buffer_post = 150} 
+    
     # Define an endpoint for the interval of interest (the post-stimulus R peak - 60 ms) to exclude the possibility of misreading the next R peak as T_wave   
-    t_limit <- ECG_dat$RPm1[i] + ECG_dat$RRLength[i] - 60 # 60 ms
+    t_limit <- ECG_dat$RPm1[i] + ECG_dat$RRLength[i] - buffer_post # 60 ms
     
     if(!is.na(t_limit)) {
+      
+    # buffer at the begining of heartbeat inverval
+    buffer_pre = 100
     
     # Extract a relevant part of RR-interval for visualization purposes (from the pre-stimulus R peak (-100 ms) until the endpoint).
-    twave_long <- ecg[(ECG_dat$RPm1[i]- 100):t_limit,]
+    twave_long <- ecg[(ECG_dat$RPm1[i]- buffer_pre):t_limit,]
     #plot(twave_long)
     
-    # Extract an interval from: 50 ms after R peak to t_limit
-    twave_int <- ecg[(ECG_dat$RPm1[i]+ 100):t_limit,] # previous 50
+    # Extract an interval from: 100 ms after R peak to t_limit
+    twave_int <- ecg[(ECG_dat$RPm1[i]+ buffer_pre):t_limit,] 
     #plot(twave_int)
     
-    # Search for the maximum within the interval up to 350 ms after the R peak (50 + 300)
-    tmaxpos <- which.max(twave_int[1:200, 2]) # previous 300
-    ## Alternative solution:
-    #tmaxpos1 <- which.max(twave_int[1:((ECG_dat$RRLength[i] - 50)/3),2]) # alternative/previous solution that looks over ~1/3 of individual RR length (excluding the next R peak)
-    # side note: outcomes of both seem matched almost perfectly for S06, although I think that the second one might be to restrictive (too short interval taken into consideration - visual checks seem to support it) 
+    # Interval to be add to buffer after the R peak (likely T-wave peak area)
+    t_wave_peak_interval = 200
+    # optimize for an outlier with respect to ECG signal
+    if(subj_ID == "S46") {t_wave_peak_interval = 150} 
     
+    # Search for the maximum within the interval up to 300 ms after the R peak (100 + 200)
+    tmaxpos <- which.max(twave_int[1:t_wave_peak_interval, 2]) 
+    ## Alternative solution:
+   
     twave2=twave_int[tmaxpos:dim(twave_int)[1],]
     #plot(twave2)
     
@@ -187,7 +198,7 @@ get_cardio_info <- function(fulldat, subj_ID) {
     # points(twave2[tend,1],twave2[tend,2],col='orangered',pch='+',cex=6)
     # title(paste('ID',subj_ID,'_trial ', i, sep=''),cex.main = 2, line=-2, outer=TRUE)
     # dev.off()
-    
+
     } else {
       
     ECG_dat$tend[i] <- NA # T wave end position
