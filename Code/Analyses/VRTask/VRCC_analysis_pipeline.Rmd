@@ -109,6 +109,9 @@ fulldata <- fulldata %>%
          AngularErrorRad = compute_angles(EstimatedPosition, TruePosition)) %>% 
   mutate(totTrial = Trial + (Round - 1) * max(Trial)) # Labels the trials with sequential numbers over the whole experiment (1-720)   
 
+# insert NAs when no estimation was made
+fulldata$LocalizationError[is.na(fulldata$EstimatedDistance)] <- NA
+fulldata$AngularErrorRad[is.na(fulldata$EstimatedDistance)] <- NA
 
 ```
 
