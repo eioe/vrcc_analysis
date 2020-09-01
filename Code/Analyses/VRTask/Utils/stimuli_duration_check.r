@@ -1,16 +1,8 @@
 
-# Author         : Aleksander Molak
-# Date           : May 4, 2019
-
-###############################################################################
-#                                                                             #
-# This file contains a set of functions for reading and transforming the data #
-#                                                                             #
-###############################################################################
-
 library(dplyr)
 library(openxlsx)
 
+data_dir <- here("Data/VRTask/Logfiles/ExpSubjects")
 
 get_folders <- function(path, ignore = '_') {
   
@@ -58,14 +50,14 @@ get_single_table <- function(path,
                         pattern = pattern)
   
   filepath <- file.path(path, in_file)
-    
-    
+  
+  
   # In this read.table() call we deal with an artifact of data collection - 
   # an extra semicolon at the end of each data row (but not header). 
   # read.table() interprets the extra semicolon as an indicator that an extra col exists. 
   # That's why we need to use the scan() part - to manually adjust column names, 
   # preventing read_table() to interpret `Timestamp` column as `row.names`.
-    
+  
   df <- read.table(filepath,
                    skip      = 7,
                    header    = F,
@@ -78,15 +70,15 @@ get_single_table <- function(path,
                                       n    = 18,
                                       skip = 6),
                                  "!col_to_remove"))[-19]    # Beacuse of the data artifact we add this column 
-                                                            # to make # of cols consistent 
+  # to make # of cols consistent 
 
-    
   # To make subjects identifiable we add ID to the table
   
   df$ID <- substr(in_file, 1, 3)
   
   df
 }
+
 
 #---------------------------------------------------------------------------------------#
 
@@ -96,8 +88,8 @@ filter_data <- function(df) {
   # To get the rows relevant to the further analysis we filter the data 
   # according to the original criteria from `VRCC_behav_pilots.Rmd`
   
-  df %>% filter(Phase == "Estimation" & 
-                Round > 0)
+  df %>% filter(Phase == "Stimuli" & 
+                  Round > 0)
 }
 
 #---------------------------------------------------------------------------------------#
@@ -105,17 +97,18 @@ filter_data <- function(df) {
 build_dataset <- function(path) {
   
   # To get the full dataset we iterate over folders, read, transform and concatenate the data
-  
+
   folders <- get_folders(path)
   
   tables  <- list()
   
   for (i in seq_along(folders)) {
+    print(i)
     
     df <- get_single_table(file.path(path, folders[i]))
     df <- filter_data(df)
-    ifelse(df$ID == "S41" |  df$ID == "S44" | df$ID == "S11" , df$PhaseLenght <- as.double(levels(df$PhaseLenght))[df$PhaseLenght],  df$PhaseLenght <- as.numeric(df$PhaseLenght))  # participant-specific adjustment: for 3 subjects PhaseLenght column was saved as integer value
-    ifelse(df$ID == "S09" |  df$ID == "S18" | df$ID == "S22" | df$ID == "S36", df$EstimatedDistance <- as.double(levels(df$EstimatedDistance))[df$EstimatedDistance],  df$EstimatedDistance <- as.numeric(df$EstimatedDistance)) # for 4 subjects EstimatedDistance column was saved as integer value
+    ifelse(df$ID == "S41" |  df$ID == "S44" | df$ID == "S11" , df$PhaseLenght <- as.double(levels(df$PhaseLenght))[df$PhaseLenght],  df$PhaseLenght <- as.numeric(df$PhaseLenght))
+    ifelse(df$ID == "S09" |  df$ID == "S18" | df$ID == "S22" | df$ID == "S36", df$EstimatedDistance <- as.double(levels(df$EstimatedDistance))[df$EstimatedDistance],  df$EstimatedDistance <- as.numeric(df$EstimatedDistance))
     tables[i] <- list(df)
     
   }
@@ -124,17 +117,11 @@ build_dataset <- function(path) {
   
 }
 
+# Checking whether duration of stimuli presentation equaled ~100 ms in each trial
+data_check <- build_dataset(data_dir)
 
-read_questionnaire_data <- function(path, sheet = 'Aggregated Scores', filter_pilot = TRUE) {
-  
-  data <- readWorkbook(path, sheet = sheet)
-  
-  if (filter_pilot == TRUE) {
-    data <- data %>% filter(SUBJECT != "PILOT")
-    
-  }
-  
-  data
-
-}
+# Explore the data
+plot(data_check$PhaseLenght)
+hist(data_check$PhaseLenght, xlim = c(0.07,0.13), breaks = 100)
+View(data_check$PhaseLenght)
 
