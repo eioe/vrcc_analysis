@@ -13,12 +13,18 @@ get_cardio_info <- function(fulldat, subj_ID) {
   
   # 04/04/2019: FK --- eioe, PM
   
+  # print ID
+  print(subj_ID)
+  
+  # Set paths to ecg files
   fpath <- paste0("Data/VRTask/Cardio/ExpSubjects/02_Peaks/Events/VRCC_", 
                   subj_ID, ".csv")
+  fpath_noisy_ecg <- paste0("Data/VRTask/Cardio/ExpSubjects/02_Peaks/TimesBadECG/VRCC_", 
+                  subj_ID, ".txt")
   
   # Get marker info from ECG file:
   mrks <- read_delim(here(fpath), delim = '\t')
-  
+  noisy_ecg <- read_delim(here(fpath_noisy_ecg), delim = ',')
   
   # Get relevant columns and rows, add info column about type of marker:
   mrks <- mrks %>% 
@@ -112,7 +118,18 @@ get_cardio_info <- function(fulldat, subj_ID) {
   for (i in 1:nTrials) { ## Loop: Cardiac parameters for each trial
     
     ## Encode R_peaks before and after the stimulus onset:
-    idx <- max(which(RPeakLats-StimOnsets[i] < 0)) #position of R peak just before stimulus onset
+    StimOnset <- StimOnsets[i]
+    
+    # start_check: insert NAs for onsets which occurred during noisy ecg interval (then NAs are inserted automaically for other variables)
+    
+    if (length(row(noisy_ecg)) > 0 & !is.na(StimOnset)) { # perform the check if there were any noisy intervals and if onset is not NA
+    for (r in 1:nrow(noisy_ecg)) { 
+    if(StimOnset > noisy_ecg[r,1]  & StimOnset < noisy_ecg[r,2]) {StimOnset <- NA}
+    if(is.na(StimOnset)) {break} # stop the loop after finding the value within one of noisy intervals
+    } # stop checking
+    } # skip checking
+    
+    idx <- max(which(RPeakLats-StimOnset < 0)) #position of R peak just before stimulus onset
     ECG_dat$RPm1[i] <- RPeakLats[idx] # R peak (latency) just before stimulus onset ("m1"- minus 1)
     ECG_dat$RPm2[i] <- RPeakLats[idx-1] # minus2
     ECG_dat$RPm3[i] <- ifelse(length(RPeakLats[idx-2]) == 1, RPeakLats[idx-2], NA) # minus3 (catch missing R-peak for the first trial - perform only if it's present)

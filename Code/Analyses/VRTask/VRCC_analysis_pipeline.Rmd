@@ -119,7 +119,7 @@ fulldata$AngularErrorRad[is.na(fulldata$EstimatedDistance)] <- NA
 
 * ### Add cardio information to the fulldataset
 
-```{r warning=FALSE}
+```{r warning=FALSE, message = FALSE}
 
 # get the list of subjects with full ecg data
 subjects_list <- list.files(here("Data/VRTask/Cardio/ExpSubjects/02_Peaks/Events"))
