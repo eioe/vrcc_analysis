@@ -10,6 +10,7 @@
 
 library(dplyr)
 library(openxlsx)
+library(tidyr)
 
 
 get_folders <- function(path, ignore = '_') {
@@ -125,16 +126,90 @@ build_dataset <- function(path) {
 }
 
 
-read_questionnaire_data <- function(path, sheet = 'Aggregated Scores', filter_pilot = TRUE) {
+
+get_questnr_data <- function(qstnr_filepath, sess_info_folder) {
   
-  data <- readWorkbook(path, sheet = sheet)
+  # Gets and joins questionnaire data and animal information
   
-  if (filter_pilot == TRUE) {
-    data <- data %>% filter(SUBJECT != "PILOT")
+  all_sheets = getSheetNames(qstnr_filepath)
+  
+  final_df = data.frame()
+  
+  for (subject in all_sheets) {
+    
+    if (startsWith(subject, 'S')) {
+      
+      # Get session info paths
+      sess_info_pattern = paste0(subject, '_RatingLog_')
+      sess_info_file = list.files(file.path(sess_info_folder, subject), pattern = sess_info_pattern)
+      sess_info_path = file.path(sess_info_folder, subject, sess_info_file)
+      
+      if (length(sess_info_path) > 0) {
+        # cat('Reading session info for subject', subject, 'from:', sess_info_path, '\n')
+        
+        # Read-in the neccessary files
+        qstnr_file = read.xlsx(qstnr_filepath, sheet = subject)
+        sess_info_data = read.table(sess_info_path,
+                                    skip      = 7,
+                                    sep       = ";",
+                                    row.names = NULL)
+        
+        # Read colnames for sess_info_data -> needed because of a data artifact
+        sess_info_colnames = gsub(' ', '', scan(sess_info_path, 
+                                                sep  = ';', 
+                                                what = '', 
+                                                n    = 6, 
+                                                skip = 6))
+        
+        
+        sess_info_data = sess_info_data %>% select(-7) 
+        colnames(sess_info_data) = sess_info_colnames
+        
+        # Get and fill round information
+        round_info = qstnr_file %>% tidyr::fill(Animal) %>% select(Animal)
+        qstnr_file$round_info = round_info
+        
+        # Filter and join the data
+        sheet_cleaned = qstnr_file %>% filter(is.na(Animal))
+        
+        # Check dimensions
+        if (dim(sheet_cleaned)[1] != dim(sess_info_data)[1]) {
+          cat('\n!!! WARNING! Ignoring', subject, 'due to dimension mismatch! !!!\n\n')
+          warning('Dimension mismatch for ', subject, '.\n  !!! `sess_info_data` has ', dim(sess_info_data)[1], ' rows, while questionnaire data has ', dim(sheet_cleaned)[1], ' rows. !!!\n')
+          next
+        }
+        
+        # Add info from session info
+        sheet_cleaned$Animal = sess_info_data$PresentedAnimal
+        sheet_cleaned$subject = subject
+        sheet_cleaned$rating_flag = sess_info_data$ratingFlag
+        sheet_cleaned$fear_object = sess_info_data$FearObject
+        sheet_cleaned$big_object = sess_info_data$BigObject
+        sheet_cleaned$Vision.Assesment = sheet_cleaned$Vision.Assesment[1]
+        
+        # Clean colnames
+        colnames(sheet_cleaned) = gsub('\\.', '_', tolower(colnames(sheet_cleaned)))
+        
+        # Remove notes if exist
+        sheet_cleaned = sheet_cleaned %>% select(!contains("notes"))
+        
+        final_df = bind_rows(final_df, sheet_cleaned)
+        
+      } else {
+        
+        cat('\n!!! WARNING! No session data available for subject', subject, ' !!!\n\n')
+        warning('!!! No session info available for subject ', subject, ' !!!\n')
+        
+      }
+      
+    }
     
   }
   
-  data
-
+  
+  final_df
+  
 }
+
+
 

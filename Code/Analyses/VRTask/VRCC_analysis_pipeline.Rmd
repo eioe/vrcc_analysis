@@ -54,15 +54,18 @@ source(here("./Code/Analyses/VRTask/Utils/distance_utils.r"))
 ```{r warning=FALSE}
 
 # Set up the fulldata directory
-VRCC_dir        <- here()
-data_dir        <- here("Data/VRTask/Logfiles/ExpSubjects")
-qstnr_data_path <- here("Data/VRTask/Questionnaires/questionnaires_summary_final.xlsx")
+VRCC_dir         <- here()
+data_dir         <- here("Data/VRTask/Logfiles/ExpSubjects")
+qstnr_data_path  <- here("./Data/VRTask/Ratings/Backup_15-07-2019.xlsx")
+sess_info_folder <- here('./Data/VRTask/Logfiles/ExpSubjects')
 
 # Build the fulldataset (Behavioral/VR data)
+cat('\n\nReading bahavioral and VR data...\n\n')
 fulldata <- build_dataset(data_dir)
 
 # Get the summary of questionnaire data
-q_data <- read_questionnaire_data(qstnr_data_path, sheet = 1, filter_pilot = F)
+cat('\n\nReading questionnaire data...\n\n')
+q_data <- get_questnr_data(qstnr_data_path, sess_info_folder)
 
 
 ### Removing the subjects with no cardiac data (temporary - to be decided) 
@@ -75,9 +78,9 @@ fulldata <- fulldata[!(fulldata$ID %in% pre_exclusions), ]
 length(unique(fulldata$ID))  # sample size after
 
 # from questionnaire data:
-length(unique(q_data$SUBJECT)) # sample size before
-q_data <- q_data[!(q_data$SUBJECT %in% pre_exclusions), ]
-length(unique(q_data$SUBJECT))
+length(unique(q_data$subject)) # sample size before
+q_data <- q_data[!(q_data$subject %in% pre_exclusions), ]
+length(unique(q_data$subject))
 
 
 ```
