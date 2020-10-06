@@ -82,15 +82,6 @@ length(unique(q_data$subject)) # sample size before
 q_data <- q_data[!(q_data$subject %in% pre_exclusions), ]
 length(unique(q_data$subject))
 
-
-```
-
-<br>
-
-# Apply further transformations and create additional variables
-
-```{r}
-
 # Drop unused levels
 fulldata <- droplevels(fulldata)
 
@@ -107,15 +98,18 @@ fulldata <- droplevels(fulldata)
 fulldata <- fulldata %>% 
   mutate(DistanceError = (EstimatedDistance - RealDistance),
          DistanceErrorAbs = abs(DistanceError),
-         DistanceErrorNorm = DistanceError / RealDistance,
+         DistanceErrorNorm = (DistanceError / RealDistance) * 100,
          DistanceErrorNormAbs = abs(DistanceErrorNorm),
          LocalizationError = compute_euclidean_distances(EstimatedPosition, TruePosition),
+         LocalizationErrorNorm = (LocalizationError / RealDistance) * 100,
          AngularErrorRad = compute_angles(EstimatedPosition, TruePosition)) %>% 
   mutate(totTrial = Trial + (Round - 1) * max(Trial)) # Labels the trials with sequential numbers over the whole experiment (1-720)   
 
 # insert NAs when no estimation was made
 fulldata$LocalizationError[is.na(fulldata$EstimatedDistance)] <- NA
+fulldata$LocalizationErrorNorm[is.na(fulldata$EstimatedDistance)] <- NA
 fulldata$AngularErrorRad[is.na(fulldata$EstimatedDistance)] <- NA
+
 
 ```
 
@@ -142,10 +136,10 @@ for (subj_ID in subjects_list) {
 fulldata <- full_join(fulldata, cardio_data)                 
 
 # Save the preprocessed data
-#write.csv(fulldata, paste0(VRCC_dir, "/Data/VRTask/VRCC_fulldata_consolidated"), row.names = F)
+#write.csv(fulldata, paste0(VRCC_dir, "/Data/VRTask/VRCC_data_unfiltered"), row.names = F)
 
 # Read the preprocessed data
-#fulldata <- read.csv(file = paste0(VRCC_dir,"/Data/VRTask/VRCC_fulldata_consolidated"))
+#fulldata <- read.csv(file = paste0(VRCC_dir,"/Data/VRTask/VRCC_data_unfiltered"))
 
 
 ```
@@ -176,7 +170,8 @@ data <- data_filt_ecg
 rm(data_filt_behav)
 rm(data_filt_ecg)
 
-##### TRIAL-BASED #####
+##### TRIAL-BASED ##### 
+#(!) Pawel: - to be decided: Localization Errors or LocalizationErrorsNorm
 
 # Remove trials with untypically large Localization Errors within subject (LE): LE > avg(LE) + 3*sd(LE)
 thrshlds_b <- data %>% 
@@ -206,11 +201,6 @@ comparison_b$percent_rm  <- (comparison_b$diff_trials / comparison_b$INCL) * 100
 describe(comparison_b$percent_rm) # outliers in %
 describe(comparison_b$diff_trials) # outlier in absolute numbers
 hist(comparison_b$diff_trials, breaks = 20, xlab = "Number of outlier trials - LE", ylab = "Number of subjects", main = "")
-
-# How many subjects have more than 30% of trials removed?
-#cat('How many subjects have more than 30% of trials removed?\n')
-#cat(dim(comparison_b %>% filter(percent_rm > .3))[1])
-
 
 # assign a variable specyfing whether LE value is outlier (alternative/double check)
 for (s in unique(data$ID)){
@@ -298,7 +288,7 @@ setdiff(ID_means_b, fltrd_IDs_b)
 # Remove trials with untypically large/short systole lengths
 thrshlds_t <- data %>% 
             group_by(ID) %>% 
-            summarize(thrsh_hi = mean(systolength, na.rm = TRUE) + 4 * sd(systolength, na.rm = TRUE),                        thrsh_lo = mean(systolength, na.rm = TRUE) - 4 * sd(systolength, na.rm = TRUE)) 
+            summarize(thrsh_hi = mean(systolength, na.rm = TRUE) + 3 * sd(systolength, na.rm = TRUE),                        thrsh_lo = mean(systolength, na.rm = TRUE) - 3 * sd(systolength, na.rm = TRUE)) 
 
 # Remove rows with NA in cardiac data
 data_filt <- data %>%  filter(!(is.na(systolength)))
@@ -326,12 +316,7 @@ comparison_t$diff_trials <- comparison_t$INCL - comparison_t$EXCL
 comparison_t$percent_rm  <- (comparison_t$diff_trials / comparison_t$INCL) * 100
 describe(comparison_t$diff_trials)
 describe(comparison_t$percent_rm)
-hist(comparison_t$diff_trials, breaks = 20, xlab = "Number of outlier systole lengths", ylab = "Subjects count", main = "", col = "firebrick4")
-
-# How many subjects have more than 30% of trials removed?
-# cat('How many subjects have more than 30% of trials removed?\n')
-# cat(dim(comparison_t %>% filter(percent_rm > .3))[1])
-
+hist(comparison_t$diff_trials, breaks = 20, xlab = "Number of outlier systole lengths", ylab = "Subjects count", main = "", col = "gray40")
 
 # assign a variable specyfing whether LE value is outlier (alternative/double check)
 for (s in unique(data$ID)){
@@ -361,324 +346,30 @@ d <- data[data$SYS_outlier == "non_outlier",]
 
 scatter.smooth(d$RRLength, d$systolength, xlim = c(min(d$RRLength),max(d$RRLength)), ylim = c(min(d$systolength),max(d$systolength)), cex = 0.1, col = scales::alpha("gray20", 0.3), xlab = "RR interval", ylab = "Systole length")
 
-
-
 ```
 
-
-
+## Remove individual trials (outliers)
 
 ```{r}
 
-##### SUBJECT-BASED #####
+data <- data[data$LE_outlier == "non_outlier",]
+data <- data[data$SYS_outlier == "non_outlier",]
 
+# identify irregular R peaks (physiologically implausible length of the RR interval; e.g., due to recording errors, motion artefacts, or ventricular extrasystoles)
+range(data$RRLength)
+hist(data$RRLength, breaks = 100)
 
-# Remove subjects with more than three standard deviations above or below the sample mean of systole length
+# Check whether any of participants had more than 30% of trials excluded based on trial-level criteria or due to data loss (e.g., after early termination of the experiment).
+trials_per_subject <- data %>% group_by(ID) %>% count()
+trials_per_subject$percent <- (trials_per_subject$n/720) * 100
 
-# Get subject means
-ID_means_t <- fullfltrd_1t %>% group_by(ID) %>% 
-                            summarize(mean_SL = mean(systolength, na.rm = TRUE))
+exclusion_list <- unique(trials_per_subject$ID[trials_per_subject$percent < 70])
+data <- data[!(data$ID %in% exclusion_list), ]
+range(trials_per_subject$percent) # all subjects had more than 70 % of trials
 
-# Get sample mean & SD
-grand_mean_SystoleLength <- mean(ID_means_t$mean_SL)
-
-grand_sd_SystoleLength  <- sd(ID_means_t$mean_SL)
-
-# Filter-out subjects
-fltrd_IDs_t <- ID_means_t %>% filter(mean_SL < grand_mean_SystoleLength + 4 * grand_sd_SystoleLength) %>% 
-                          filter(mean_SL > grand_mean_SystoleLength - 4 * grand_sd_SystoleLength) 
-
-# Join frames on ID (filter the full data)
-fullfltrd_2t <- inner_join(fltrd_IDs_t, fullfltrd_1t, by = 'ID') %>%
-               select(-mean_SL)
-
-
-# How many participants were excluded?
-cat('How many participants were excluded?\n')
-cat(dim(fullfltrd_1t %>% group_by(ID) %>% count())[1] - dim(fullfltrd_2t %>% group_by(ID) %>% count())[1])
-
-# Which ones?
-cat('Which ones?\n')
-setdiff(ID_means_t, fltrd_IDs_t)
-```
-
-
-## Join data after exclusions
-
-```{r}
-ids_2b <- fullfltrd_2b %>% group_by(row_ID) %>% select(row_ID) %>% unique()
-ids_2t <- fullfltrd_2t %>% group_by(row_ID) %>% select(row_ID) %>% unique()
-ids    <- inner_join(ids_2b, ids_2t, by = 'row_ID')
-
-fullfltrd_binary <- inner_join(ids, fullfltrd_2b, by = 'row_ID', copy = FALSE)
-```
-
-
-
-<br>
-
-* ### Explore the relationship between Distance Error and Real Distance (possibly the side-branch in the final code)
-
-```{r, fig.height = 3, fig.width = 4}
-
-# VRCC_behav_pilots includes other attempts of approaching this issue
-
-# for (p in unique(fulldata$ID)) {
-# 
-# subdata <- fulldata[fulldata$ID == p,]
-#   
-# Figure <- ggplot(data = subdata, aes(x = RealDistance, y = DistanceError)) + 
-#   geom_point(col = "grey 15", alpha = 0.3, size = 2.5, shape = 18) + 
-#   geom_smooth(col = "grey8", method = "loess", level=0.95, alpha = 0.8) + 
-#   labs(y = "Distance Error", x = "True Distance") +   
-#   ggtitle(p) +
-#   theme_classic() + 
-#   theme(plot.title = element_text(hjust = 0.5, face = "bold", size = 17), axis.text=element_text(size=15),  axis.title=element_text(size=15)) +
-#   scale_x_continuous(limits= c(min(fulldata$RealDistance), max(fulldata$RealDistance)), expand = c(0.01,0.01)) +
-#   scale_y_continuous(limits= c(min(fulldata$DistanceError), max(fulldata$DistanceError)), expand = c(0.01,0.01)) 
-# 
-# plot(Figure)
-# 
-# }
+# drop non-essential columns 
+data <- select(data, -Training, -Phase, -LE_outlier, -SYS_outlier)
+write.csv(data, paste0(VRCC_dir, "/Data/VRTask/VRCC_data_consolidated"), row.names = F)
 
 
 ```
-
-<br>
-
-# Main analysis - Hypothesis 1
-
-<br>
-
-* ### Check if the distance error ($DE$) differs between threatening and non-threatening trials
-
-```{r message=FALSE}
-
-## Exploratory plots
-
-# Check the distribution of DE (all data points - not averaged for individuals)
-ggplot(fulldata, aes(x = DistanceError, fill = FearObject)) + 
-                           geom_histogram(alpha = .7) + 
-                           xlab('Distance Error') + 
-                           ylab('Value') + 
-                           theme_minimal()
-qqPlot(fulldata$DistanceError)
-
-## Testing the hypothesis 1. (T-test)
-
-
-####### SAMPLE DATA ########### REMOVE AFTER ###########
-sampled_ids  <- sample(unique(fullfltrd_binary$ID), 20)
-sampled_data <- fullfltrd_binary %>% filter(ID %in% sampled_ids)
-########################################################
-
-# Derive individual means of distance error for threatening and non-threatening objects
-
-data_by_id <- sampled_data %>%
-  group_by(ID) %>%
-  summarize(mean_threat     = mean(DistanceError[FearObject == "True"]), # threatening objects
-            mean_non_threat = mean(DistanceError[FearObject == "False"])) # non-threatening objects
-
-data_by_id_2 <- sampled_data %>%
-  group_by(ID) %>%
-  summarize(mean_threat_syst      = mean(DistanceError[FearObject == "True" & c_phase == 'systole']), 
-            mean_non_threat_syst  = mean(DistanceError[FearObject == "False" & c_phase == 'systole']),
-            mean_threat_diast     = mean(DistanceError[FearObject == "True" & c_phase == 'diastole']), 
-            mean_non_threat_diast = mean(DistanceError[FearObject == "False" & c_phase == 'diastole'])
-            ) 
-
-d <- data_by_id_2 
-d$diff <- d$mean_threat_syst - d$mean_threat_diast
-mean(d$mean_threat_syst)
-mean(d$mean_threat_diast)
-hist(d$diff)
-
-#shapiro.test(data_ID$mean_threat)
-#shapiro.test(data_ID$mean_non_threat)
-
-# Employ paired t-test to determine whether distance error differs between the threatening and non-threatening objects
-t.test(data_by_id$mean_threat, data_by_id$mean_non_threat, alt = "two.sided", conf = 0.95, paired = T) 
-
-t.test(data_by_id_2$mean_threat_syst, data_by_id_2$mean_threat_diast, alt = "two.sided", conf = 0.95, paired = T) 
-## PM: we could even consider "one.sided" test here
-# Perfom Wilcoxon signed-rank test:  
-#wilcox.test(data_ID$mean_threat, data_ID$mean_threat, paired = T)
-
-# Calculate Cohen's d
-cohen.d(data_ID$mean_threat, data_ID$mean_non_threat, paired = T)
-
-# Show summary statistics for threatening and non-threatening objects:
-mean(data_ID$mean_threat)
-sd(data_ID$mean_threat)
-
-mean(data_ID$mean_non_threat)
-sd(data_ID$mean_non_threat)
-
-# Check the normality of dependent variable distribution
-#shapiro.test(data_ID$mean_threat)
-#shapiro.test(data_ID$mean_non_threat)
-
-# Employ paired t-test to determine whether distance error differs between the threatening and non-threatening objects
-t.test(data_ID$mean_threat, data_ID$mean_non_threat, alt = "two.sided", conf = 0.95, paired = T) ## PM: we could even consider "one.sided" test here
-# Perfom Wilcoxon signed-rank test:  
-#wilcox.test(data_ID$mean_threat, data_ID$mean_threat, paired = T)
-
-# Calculate Cohen's d
-cohen.d(data_ID$mean_threat, data_ID$mean_non_threat, paired = T)
-
-# Show summary statistics for threatening and non-threatening objects:
-mean(data_ID$mean_threat)
-sd(data_ID$mean_threat)
-
-mean(data_ID$mean_non_threat)
-sd(data_ID$mean_non_threat)
-
-# show number of participants with lower distance error values for threatening objects
-nrow(data_ID[data_ID$mean_threat < data_ID$mean_non_threat,])
-
-# Calculate Bayes Factor
-ttestBF(data_ID$mean_threat, data_ID$mean_non_threat, paired = T)
-
-
-## Testing the hypothesis 1. (Regression) #PM: This is to some extent analogous to further sections (and only a draft for now); We need to discuss our approach towards testing H1 with regression
-
-null_model_H1 <- lmer(DistanceError ~ 1 + (1 + RealDistance | ID), data = fulldata)
-summary(null_model_H1)
-
-model_H1 <- lmer(DistanceError ~ FearObject + (1 + RealDistance | ID), data = fulldata)
-summary(model_H1)
-
-```
-
-<br>
-
-* ### Hypothesis 1: Multilevel model - null model
-
-### REMEMBER TO EXCLUDE `c_phase == 'buffer'` FROM BINARY ANALYSIS ####
-
-<br>
-
-```{r}
-# Null model
-null_model_1 <- lmer(DistanceError ~ (1|ID), 
-                     data = fulldata)
-# **FK 23-07-19**: In the prereg we put forward a slightly different null model (p. 8) for testing
-#                  the 2nd hypothesis:
-#                  DistErr ~ 1 + (1 + DistTrue | ID)
-#                  Wouldn't it be coherent to use the same one here as well? Opinions welcome.
-# **AM 27-07-19**: In my understanding adding (1 + DistTrue ....) would mean that we add random slopes of true 
-#                  distance grouped by ID to the model. I'm not sure if I understand the rationle behind this at the 
-#                  moment. What would that mean to us?
-
-summary_1_1 <- summary(null_model_1)
-summary_1_1 
-
-```
-
-<br>
-
-* #### Compute ICC of a null model to check if multilevel structure is justified
-
-<br>
-
-```{r}
-# AM (2019-07-21): This will be moved to utility functions. This function only works properly for null models.
-
-ICC <- function(model) {
-  
-  variances = data.frame(summary(model)$varcor)
-  
-  tau_00    = variances %>% 
-                filter(var1 == '(Intercept)') %>% 
-                select(vcov) %>% 
-                .$vcov
-  sigma_2   = variances %>% 
-                filter(grp == 'Residual') %>% 
-                select(vcov) %>% 
-                .$vcov
-  
-  tau_00 / (tau_00 + sigma_2)
-}
-
-# AM (2019-07-21): The below code should stay here:
-
-ICC(null_model_1)
-
-```
-
-<br>
-
-* ### Hypothesis 1: Multilevel model - full model
-
-<br>
-
-```{r}
-# Null model
-full_model_1 <- lmer(DistanceError ~ FearObject + (1 + FearObject|ID), 
-                     data = fulldata)
-# **FK 23-07-19**: If we change the null model, the rand. effect DistTrue should probably go in here
-#                  as well. Also this makes the model comp. with the next model (2a) possible as they
-#                  then are nested. (Pls correct me if I'm bullshitting.)
-# **AM 27-07-19**: Yes, totally agree. I propose that we discuss the null model and act here accordingly.
-
-summary_1_2 <- summary(full_model_1)
-
-```
-
-<br>
-
-* ### Hypothesis 1: Compare the two models
-
-```{r}
-
-lrtest(null_model_1, full_model_1)
-
-```
-
-<br>
-
-## Testing the main hypothesis (2a) using multilevel modeling and a circular predictor
-
-<br>
-
-```{r}
-print('Implement this...')
-
-```
-
-<br>
-
-## Testing the main hypothesis (2b) using mutlilevel modeling and a binary predictor
-
-<br>
-
-```{r}
-print('Implement this...')
-
-```
-
-<br>
-
-# Exploratory / additional analyses
-
-```{r}
-
-# Needs aggregation of depedent variables for each ID
-
-mean_error_per_fear <- fulldata %>%
-                          group_by(FearObject) %>%
-                            summarise(MeanDistanceError = mean(DistanceError, na.rm=T),
-                                      MeanDistanceErrorNorm = mean(DistanceErrorNorm, na.rm=T),
-                                      MeanDistanceErrorAbs = mean(DistanceErrorAbs, na.rm=T))
-
-mean_error_per_animal <- fulldata %>%
-                          group_by(Stimulus) %>%
-                            summarise(MeanDistanceError = mean(DistanceError, na.rm=T),
-                                      MeanDistanceErrorNorm = mean(DistanceErrorNorm, na.rm=T),
-                                      MeanDistanceErrorAbs = mean(DistanceErrorAbs, na.rm=T))
-# 
-# mean_dist_per_fear
-# mean_dist_per_animal
-      
-```
-

@@ -1,0 +1,58 @@
+---
+title: "VRCC Analysis - Testing"
+author: "AM, FK, PM"
+date: "May 5, 2019"
+# contact: "klotzsche@cbs.mpg.de", "aleksander.molak@gmail.com", "pawel.motyka@psych.uw.edu.pl"
+output: html_document
+chunk_output_type: console
+self_contained: no
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+basic_color <- '#195e8c'
+```
+
+# Import libraries & setup directories
+
+```{r message=FALSE, warning=FALSE}
+
+# Utils
+library(dplyr) 
+library(here)
+library(haven)
+library(readr)
+library(tibble)
+library(purrr)
+library(mosaic)
+library(stringr)
+
+# Plotting and tables
+library(ggplot2)
+library(sjPlot)
+
+# Statistical tools
+library(lme4)
+library(lmtest)
+library(lmerTest)
+library(car)
+library(BayesFactor)
+library(effsize)
+library(psych)
+
+```
+
+<br>
+
+# Build the fulldataset
+
+```{r warning=FALSE, fig.height = 3, fig.width = 4}
+
+# Set up the fulldata directory
+VRCC_dir         <- here()
+
+      
+```
+
