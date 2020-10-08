@@ -375,8 +375,8 @@ f2 # export size: 5 x 5
 
 ```{r}
 
-d <- data[data$FearObject == "True",]
-d <- d[d$c_phase == "systole" | d$c_phase == "diastole", ]
+#d <- data[data$FearObject == "True",]
+d <- data[data$c_phase == "systole" | d$c_phase == "diastole", ]
 
 d <- d %>% 
   group_by(ID, Stimulus, c_phase) %>%
@@ -396,6 +396,28 @@ t.test(d$FinalSnake_systole, d$FinalSnake_diastole, paired = T)
 boxplot(d$Crocodile_systole, d$Crocodile_diastole, ylim = c(-100,100))
 t.test(d$Crocodile_systole, d$Crocodile_diastole, paired = T)
 
+### DE in relation to real distance
+library(colorspace)
+
+d <- data[data$c_phase == "systole" | data$c_phase == "diastole", ]
+
+for (p in unique(d$Stimulus)) {
+
+subdata <- d[d$Stimulus == p,]
+
+Figure <- ggplot(data = subdata, aes(x = RealDistance, y = DistanceError, color = c_phase)) + geom_smooth(method = "loess", level=0.95, alpha = 0.4, aes(fill=c_phase)) +
+  labs(y = "Distance Error", x = "Real Distance") +
+  ggtitle(p) + scale_color_manual(values = c('systole' = darken("#ff7167", amount = 0.4), 'diastole' = darken("#6a80ff", amount = 0.6))) + scale_fill_manual(values = c('systole' = darken("#ff7167", amount = 0.27), 'diastole' = darken("#6a80ff", amount = 0.65))) +
+  theme_classic() +
+  theme(plot.title = element_text(hjust = 0.5, face = "bold", size = 17), axis.text=element_text(size=15),  axis.title=element_text(size=15)) +
+  scale_x_continuous(limits= c(min(data$RealDistance), max(data$RealDistance)), expand = c(0.01,0.01)) +
+  scale_y_continuous(limits= c(-15, 15), expand = c(0.01,0.01)) 
+
+plot(Figure)
+
+
+
+}
 
 
 d <- data %>% 
