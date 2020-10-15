@@ -1,0 +1,199 @@
+---
+title: "VRCC Analysis - Linear Reggresions"
+author: "AM, FK, PM"
+date: "May 5, 2019"
+# contact: "klotzsche@cbs.mpg.de", "aleksander.molak@gmail.com", "pawel.motyka@psych.uw.edu.pl"
+output: html_document
+chunk_output_type: console
+self_contained: no
+editor_options: 
+
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+basic_color <- '#195e8c'
+```
+
+# Import libraries & setup directories & read the data
+
+```{r message=FALSE, warning=FALSE}
+
+# Utils
+library(dplyr) 
+library(here)
+library(tidyr)
+
+# Plotting and tables
+library(ggplot2)
+library(sjPlot)
+library(gghalves)
+
+# Statistical tools
+library(lme4)
+library(lmtest)
+library(lmerTest)
+library(car)
+library(effsize)
+library(psych)
+
+
+# Set up the fulldata directory
+VRCC_dir         <- here()
+# Read the preprocessed data
+data <- read.csv(file = paste0(VRCC_dir,"/Data/VRTask/VRCC_data_consolidated"))
+#data <- read.csv(file = paste0("N:/centralkollegs18/Data/VRTask/VRCC_data_consolidated"))
+
+# convert distances from m to cm
+data <- data %>%
+mutate(EstimatedDistance = EstimatedDistance * 100, RealDistance = RealDistance * 100, DistanceError = DistanceError * 100 , DistanceErrorAbs = DistanceErrorAbs * 100, LocalizationError = LocalizationError * 100)
+
+```
+
+
+# Perceived distance to threatening animals presented at systole vs presented at diastole (Testing hypothesis 2)
+
+```{r warning=FALSE}
+
+d <- data[data$c_phase == "systole" | data$c_phase == "diastole",]
+
+null_model <- lmer(DistanceError ~ 1 + (1 + RealDistance | ID), data = data)
+summary(null_model)
+
+full_model <- lmer(DistanceError ~ c_phase * FearObject + (1 + RealDistance|ID), data = d)
+summary(full_model)
+
+lrtest(null_model, full_model) # not working
+
+### exploratory
+simple_model <- lm(DistanceError ~ c_phase * FearObject, data = d)
+summary(simple_model)
+
+```
+
+
+
+!! EVERYTHING BELOW WAS COPIED FROM OUR (PM&AM) PREVIOUS CODE FILE CREATED IN WINTER (to be organized soon)
+
+
+```{r}
+## Testing the hypothesis 1. (Regression) #PM: This is to some extent analogous to further sections (and only a draft for now); We need to discuss our approach towards testing H1 with regression
+
+null_model_H1 <- lmer(DistanceError ~ 1 + (1 + RealDistance | ID), data = data)
+summary(null_model_H1)
+
+model_H1 <- lmer(DistanceError ~ FearObject + (1 + RealDistance | ID), data = data)
+summary(model_H1)
+```
+
+
+
+
+<br>
+
+* ### Hypothesis 1: Multilevel model - null model
+
+### REMEMBER TO EXCLUDE `c_phase == 'buffer'` FROM BINARY ANALYSIS ####
+
+<br>
+
+```{r}
+# Null model
+null_model_1 <- lmer(DistanceError ~ (1|ID), 
+                     data = data)
+# **FK 23-07-19**: In the prereg we put forward a slightly different null model (p. 8) for testing
+#                  the 2nd hypothesis:
+#                  DistErr ~ 1 + (1 + DistTrue | ID)
+#                  Wouldn't it be coherent to use the same one here as well? Opinions welcome.
+# **AM 27-07-19**: In my understanding adding (1 + DistTrue ....) would mean that we add random slopes of true 
+#                  distance grouped by ID to the model. I'm not sure if I understand the rationle behind this at the 
+#                  moment. What would that mean to us?
+
+summary_1_1 <- summary(null_model_1)
+summary_1_1 
+
+```
+
+<br>
+
+* #### Compute ICC of a null model to check if multilevel structure is justified
+
+<br>
+
+```{r}
+# AM (2019-07-21): This will be moved to utility functions. This function only works properly for null models.
+
+ICC <- function(model) {
+  
+  variances = data.frame(summary(model)$varcor)
+  
+  tau_00    = variances %>% 
+                filter(var1 == '(Intercept)') %>% 
+                select(vcov) %>% 
+                .$vcov
+  sigma_2   = variances %>% 
+                filter(grp == 'Residual') %>% 
+                select(vcov) %>% 
+                .$vcov
+  
+  tau_00 / (tau_00 + sigma_2)
+}
+
+# AM (2019-07-21): The below code should stay here:
+
+ICC(null_model_1)
+
+```
+
+<br>
+
+* ### Hypothesis 1: Multilevel model - full model
+
+<br>
+
+```{r}
+# Null model
+full_model_1 <- lmer(DistanceError ~ FearObject + (1 + FearObject|ID), 
+                     data = data)
+# **FK 23-07-19**: If we change the null model, the rand. effect DistTrue should probably go in here
+#                  as well. Also this makes the model comp. with the next model (2a) possible as they
+#                  then are nested. (Pls correct me if I'm bullshitting.)
+# **AM 27-07-19**: Yes, totally agree. I propose that we discuss the null model and act here accordingly.
+
+summary_1_2 <- summary(full_model_1)
+
+```
+
+<br>
+
+* ### Hypothesis 1: Compare the two models
+
+```{r}
+
+lrtest(null_model_1, full_model_1)
+
+```
+
+<br>
+
+## Testing the main hypothesis (2a) using multilevel modeling and a circular predictor
+
+<br>
+
+```{r}
+print('Implement this...')
+
+```
+
+<br>
+
+## Testing the main hypothesis (2b) using mutlilevel modeling and a binary predictor
+
+<br>
+
+```{r}
+print('Implement this...')
+
+```
+
+<br>

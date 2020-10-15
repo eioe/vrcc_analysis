@@ -239,9 +239,10 @@ get_cardio_info <- function(fulldat, subj_ID) {
            relPosRRrad = relPosRR *2*pi, # normalized stimulus onset position (pi)
            # # Infer whether stimulus onset was delivered during systole diastole or intermediate buffors 
            c_phase = derivedFactor("systole" = ((dist2RPm1 < systolength) & (dist2RPm1 > 50)),
+                                   "buffer" = ((dist2RPm1 >= systolength) & (dist2RPm1 <= (systolength + 50))),
                                    "diastole" = ((dist2RPm1 > (systolength + 50)) & (dist2RPp1 > 50)),
                                    .method = "first",
-                                   .default = "buffer")) #Check PEP length!!
+                                   .default = "rwave")) #remaining interval: R peak (+-50 ms)
   
   # Add totTrial info:
   phys_dat <- rowid_to_column(phys_dat, var = "totTrial")

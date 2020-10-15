@@ -85,7 +85,6 @@ length(unique(q_data$subject))
 # Drop unused levels
 fulldata <- droplevels(fulldata)
 
-
 ```
 
 <br>
@@ -154,7 +153,7 @@ fulldata <- full_join(fulldata, cardio_data)
 
 # Add unique row ID
 fulldata$row_ID <- paste0(fulldata$ID, '_', fulldata$Round, '_', fulldata$Trial)
-fulldata$ID <- as.factor(fulldata$ID)
+fulldata$ID <- as.factor(fulldatda$ID)
 
 # remove trials with no responses (NAs for distance estimations)
 data_filt_behav <- fulldata[!is.na(fulldata$EstimatedDistance),]
@@ -369,7 +368,7 @@ range(trials_per_subject$percent) # all subjects had more than 70 % of trials
 
 # drop non-essential columns 
 data <- select(data, -Training, -Phase, -LE_outlier, -SYS_outlier)
-write.csv(data, paste0(VRCC_dir, "/Data/VRTask/VRCC_data_consolidated"), row.names = F)
+#write.csv(data, paste0(VRCC_dir, "/Data/VRTask/VRCC_data_consolidated"), row.names = F)
 
 
 ```

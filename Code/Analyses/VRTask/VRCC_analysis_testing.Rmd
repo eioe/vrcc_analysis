@@ -28,6 +28,7 @@ library(tidyr)
 library(ggplot2)
 library(sjPlot)
 library(gghalves)
+library(scales)
 
 # Statistical tools
 library(lme4)
@@ -37,6 +38,7 @@ library(car)
 library(BayesFactor)
 library(effsize)
 library(psych)
+
 
 
 # Set up the fulldata directory
@@ -372,6 +374,7 @@ f2 # export size: 5 x 5
 
 ```
 
+Distances to particular animals (cardiac phase split)
 
 ```{r}
 
@@ -437,11 +440,397 @@ s
 
 ```
 
-
+# EXPLORATORY ANALYSIS: Including R wave (Distances to threatening and non-threatening animals)
 
 ```{r}
 
-# MORE COMPLEX PLOT (NOT WORKING YET or NOT NECESSARY)
+d <- data[data$c_phase == "systole" | data$c_phase == "diastole" | data$c_phase == "rwave", ]
+
+d <- d %>% 
+  group_by(ID, FearObject, c_phase) %>%
+  summarize(distance_error = mean(DistanceError))
+
+fit_all <- aov_ez(data = d, dv = "distance_error", id = "ID", within=c("c_phase", "FearObject"), return = afex_options("return_aov"), anova_table = list(), fun_aggregate = mean)
+fit_all 
+summary(fit_all) # see epsilon values
+ref <- emmeans::emmeans(fit_all, specs = c("c_phase", "FearObject"))
+ref
+emmeans::contrast(ref,method="pairwise",adjust="bonferroni")
+
+dn <- d[d$FearObject == "True",]
+boxplot(dn$distance_error[dn$c_phase == "rwave"], dn$distance_error[dn$c_phase == "systole"], dn$distance_error[dn$c_phase == "diastole"], names = c("QRS", "Systole", "Diastole"), main = "Distance error - threatening animals")
+dn <- d[d$FearObject == "False",]
+boxplot(dn$distance_error[dn$c_phase == "rwave"], dn$distance_error[dn$c_phase == "systole"], dn$distance_error[dn$c_phase == "diastole"], names = c("QRS", "Systole", "Diastole"),  main = "Distance error - non-threatening animals")
+
+
+```
+
+
+
+
+# EXPLORATORY ANALYSIS: Localization error at different cardiac phases
+
+```{r}
+d <- data[data$c_phase == "systole" | data$c_phase == "diastole" | data$c_phase == "rwave",]
+
+d <- select(d, ID, LocalizationError, c_phase)
+d <- d %>% group_by(ID, c_phase)  %>% summarize(LocalizationError = mean(LocalizationError))
+
+boxplot(d$LocalizationError[d$c_phase == "rwave"], d$LocalizationError[d$c_phase == "systole"], d$LocalizationError[d$c_phase == "diastole"], names = c("QRS", "Systole", "Diastole"))
+
+fit_all <- aov_ez(data = d, dv = "LocalizationError", id = "ID", within= "c_phase", return = afex_options("return_aov"), anova_table = list(), fun_aggregate = mean)
+fit_all 
+summary(fit_all) # see epsilon values
+ref <- emmeans::emmeans(fit_all, specs = "c_phase")
+ref
+emmeans::contrast(ref,method="pairwise",adjust="bonferroni")
+
+#normalized LE
+d <- data[data$c_phase == "systole" | data$c_phase == "diastole" | data$c_phase == "rwave",]
+
+d <- select(d, ID, LocalizationErrorNorm, c_phase)
+d <- d %>% group_by(ID, c_phase)  %>% summarize(LocalizationErrorNorm = mean(LocalizationErrorNorm))
+
+boxplot(d$LocalizationErrorNorm[d$c_phase == "rwave"], d$LocalizationErrorNorm[d$c_phase == "systole"], d$LocalizationErrorNorm[d$c_phase == "diastole"], names = c("QRS", "Systole", "Diastole"))
+
+fit_all <- aov_ez(data = d, dv = "LocalizationErrorNorm", id = "ID", within= "c_phase", return = afex_options("return_aov"), anova_table = list(), fun_aggregate = mean)
+fit_all 
+summary(fit_all) # see epsilon values
+ref <- emmeans::emmeans(fit_all, specs = "c_phase")
+ref
+emmeans::contrast(ref,method="pairwise",adjust="bonferroni")
+
+## Variance of LE
+d <- data[data$c_phase == "systole" | data$c_phase == "diastole" | data$c_phase == "rwave",]
+
+d <- select(d, ID, LocalizationError, c_phase)
+d <- d %>% group_by(ID, c_phase)  %>% summarize(LocalizationError = sd(LocalizationError))
+
+boxplot(d$LocalizationError[d$c_phase == "rwave"], d$LocalizationError[d$c_phase == "systole"], d$LocalizationError[d$c_phase == "diastole"], names = c("QRS", "Systole", "Diastole"), ylab = "Variance (sd) - Localization Error")
+
+fit_all <- aov_ez(data = d, dv = "LocalizationError", id = "ID", within= "c_phase", return = afex_options("return_aov"), anova_table = list(), fun_aggregate = mean)
+fit_all 
+summary(fit_all) # see epsilon values
+ref <- emmeans::emmeans(fit_all, specs = "c_phase")
+ref
+emmeans::contrast(ref,method="pairwise",adjust="bonferroni")
+#t.test(d$LocalizationError[d$c_phase == "rwave"], d$LocalizationError[d$c_phase == "systole"], paired = T)
+
+```
+
+
+# EXPLORATORY ANALYSIS: Localization error for different animals and at different cardiac phases
+
+```{r}
+
+# Two phases
+d <- data[data$c_phase == "systole" | data$c_phase == "diastole",]
+
+full_model <- lmer(LocalizationError ~ c_phase * FearObject + (1 + RealDistance|ID), data = d)
+summary(full_model)
+
+model1 <- lm(LocalizationError ~ c_phase * FearObject, data = d)
+summary(model1)
+
+d <- data[data$c_phase == "systole" | data$c_phase == "diastole",]
+d <- select(d, ID, LocalizationError, c_phase, FearObject)
+d <- d %>% group_by(ID, c_phase, FearObject)  %>% summarize(LocalizationError = mean(LocalizationError))
+
+require(afex, warn.conflicts = FALSE, quietly=TRUE)
+#(MEAN)
+
+fit_all <- aov_ez(data = d, dv = "LocalizationError", id = "ID", within=c("c_phase", "FearObject"), return = afex_options("return_aov"), anova_table = list(), fun_aggregate = mean)
+fit_all 
+summary(fit_all) # see epsilon values
+ref <- emmeans::emmeans(fit_all, specs = c("c_phase", "FearObject"))
+ref
+emmeans::contrast(ref,method="pairwise",adjust="bonferroni")
+
+
+# Three phases
+d <- data[data$c_phase == "systole" | data$c_phase == "diastole" | data$c_phase == "rwave", ]
+d <- select(d, ID, LocalizationError, c_phase, FearObject)
+d <- d %>% group_by(ID, c_phase, FearObject)  %>% summarize(LocalizationError = mean(LocalizationError))
+
+require(afex, warn.conflicts = FALSE, quietly=TRUE)
+#(MEAN)
+
+fit_all <- aov_ez(data = d, dv = "LocalizationError", id = "ID", within=c("c_phase", "FearObject"), return = afex_options("return_aov"), anova_table = list(), fun_aggregate = mean)
+fit_all 
+summary(fit_all) # see epsilon values
+ref <- emmeans::emmeans(fit_all, specs = c("c_phase", "FearObject"))
+ref
+emmeans::contrast(ref,method="pairwise",adjust="bonferroni")
+
+
+```
+
+Plot localization Error at different cardiac phases
+
+```{r}
+
+d <- data[data$FearObject == "True",]
+d <- d[d$c_phase == "systole" | d$c_phase == "diastole", ]
+
+d <- d %>% 
+  group_by(ID) %>%
+  summarize(m_systole     = mean(LocalizationError[c_phase == "systole"]), 
+            m_diastole = mean(LocalizationError[c_phase == "diastole"]))
+
+d2 <- d
+d2$diff <- d$m_diastole - d$m_systole
+hist(d2$diff, breaks = 20)
+length(d2$diff[d2$diff < 0]) # closer at diastole
+
+d <- gather(d, phase, localization_error, m_systole:m_diastole)
+d$phase_f[d$phase == "m_systole"] <- 1
+d$phase_f[d$phase == "m_diastole"] <- 2
+d$pos <- jitter(d$phase_f, amount=.04)
+
+fe1 <- ggplot(data = d, aes(y = localization_error)) +
+  
+  #Add geom_() objects
+  geom_point(data = d %>% filter(phase_f =="1"), aes(x = pos), color = 'firebrick3', size = 1.5, 
+             alpha = .6) +
+  geom_point(data = d %>% filter(phase_f =="2"), aes(x = pos), color = alpha("firebrick3", 0.5), size = 1.5, 
+             alpha = .6) +
+  geom_line(aes(x = pos, group = ID), color = 'gray60', alpha = .3) +
+  
+  geom_half_boxplot(
+    data = d %>% filter(phase_f=="1"), aes(x=phase_f, y = localization_error), position = position_nudge(x = -.25), 
+    side = "r",outlier.shape = NA, center = TRUE, errorbar.draw = FALSE, width = .2, 
+    fill = 'firebrick3') +
+  
+  geom_half_boxplot(
+    data = d %>% filter(phase_f=="2"), aes(x=phase_f, y = localization_error), position = position_nudge(x = .15), 
+    side = "r",outlier.shape = NA, center = TRUE, errorbar.draw = FALSE, width = .2, 
+    fill = alpha("firebrick3", 0.5)) +
+  geom_half_violin(
+    data = d %>% filter(phase_f=="1"),aes(x = phase_f, y = localization_error), position = position_nudge(x = -.3), 
+    side = "l", fill = 'firebrick3') +
+  
+  geom_half_violin(
+    data = d %>% filter(phase_f=="2"),aes(x = phase_f, y = localization_error), position = position_nudge(x= .3), 
+    side = "r", fill = alpha("firebrick3", 0.5)) +
+  #Define additional settings
+  scale_x_continuous(breaks=c(1,2), labels=c("Systole", "Diastole")) +
+  xlab("Cardiac phase") + ylab("Localization error") +
+  ggtitle('Threatening animals') +
+  theme_classic()+
+  coord_cartesian(ylim=c(min(d$localization_error), max(d$localization_error))) +
+   theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),panel.background = element_blank(), axis.line = element_line(colour = "black"), axis.title = element_text(face="bold",size=12, colour = "black"), axis.text = element_text(face="bold",size=13, colour = "black"))
+fe1 # export size: 5 x 5
+
+### Non_threatening
+
+d <- data[data$FearObject == "False",]
+d <- d[d$c_phase == "systole" | d$c_phase == "diastole", ]
+
+d <- d %>% 
+  group_by(ID) %>%
+  summarize(m_systole = mean(LocalizationError[c_phase == "systole"]), 
+            m_diastole = mean(LocalizationError[c_phase == "diastole"]))
+
+d2 <- d
+d2$diff <- d$m_diastole - d$m_systole
+hist(d2$diff, breaks = 20)
+length(d2$diff[d2$diff < 0])
+
+d <- gather(d, phase, localization_error, m_systole:m_diastole)
+d$phase_f[d$phase == "m_systole"] <- 1
+d$phase_f[d$phase == "m_diastole"] <- 2
+d$pos <- jitter(d$phase_f, amount=.04)
+
+f2 <- ggplot(data = d, aes(y = localization_error)) +
+  
+  #Add geom_() objects
+  geom_point(data = d %>% filter(phase_f =="1"), aes(x = pos), color = 'dodgerblue3', size = 1.5, 
+             alpha = .6) +
+  geom_point(data = d %>% filter(phase_f =="2"), aes(x = pos), color = alpha("dodgerblue3", 0.5), size = 1.5, 
+             alpha = .6) +
+  geom_line(aes(x = pos, group = ID), color = 'gray60', alpha = .3) +
+  
+  geom_half_boxplot(
+    data = d %>% filter(phase_f=="1"), aes(x=phase_f, y = localization_error), position = position_nudge(x = -.25), 
+    side = "r",outlier.shape = NA, center = TRUE, errorbar.draw = FALSE, width = .2, 
+    fill = 'dodgerblue3') +
+  
+  geom_half_boxplot(
+    data = d %>% filter(phase_f=="2"), aes(x=phase_f, y = localization_error), position = position_nudge(x = .15), 
+    side = "r",outlier.shape = NA, center = TRUE, errorbar.draw = FALSE, width = .2, 
+    fill = alpha("dodgerblue3", 0.5)) +
+  
+  geom_half_violin(
+    data = d %>% filter(phase_f=="1"),aes(x = phase_f, y = localization_error), position = position_nudge(x = -.3), 
+    side = "l", fill = 'dodgerblue3') +
+  
+  geom_half_violin(
+    data = d %>% filter(phase_f=="2"),aes(x = phase_f, y = localization_error), position = position_nudge(x= .3), 
+    side = "r", fill = alpha("dodgerblue3", 0.5)) +
+  #Define additional settings
+  scale_x_continuous(breaks=c(1,2), labels=c("Systole", "Diastole")) +
+  xlab("Cardiac phase") + ylab("Distance Error") +
+  ggtitle('Non-threatening animals') +
+  theme_classic()+
+  coord_cartesian(ylim=c(min(d$localization_error), max(d$localization_error))) +
+   theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),panel.background = element_blank(), axis.line = element_line(colour = "black"), axis.title = element_text(face="bold",size=12, colour = "black"), axis.text = element_text(face="bold",size=13, colour = "black"))
+f2 # export size: 5 x 5
+
+
+```
+
+Accuracy of estimations - raw data (Cartesian Graphs)
+
+```{r}
+library(plotrix)
+
+d <- data
+#plt.lns <- seq(d$LocalizationError)
+#plt.lns <- d$LocalizationError
+#angles <- d$AngleErrDeg
+#polar.plot(plt.lns, polar.pos=angles, labels="", rp.type = "polygon")
+
+d <- select(data, ID, FearObject, c_phase, LocalizationError, DistanceError, TruePosition, EstimatedPosition, row_ID)
+
+for (r in unique(d$row_ID)) {
+  
+true_pos <-  gsub('\\(|\\)', '', d$TruePosition[d$row_ID == r])
+true_pos <- unlist(strsplit(true_pos, ","))
+d$true_x[d$row_ID == r] <- as.numeric(true_pos[c(1)])
+d$true_y[d$row_ID == r] <- as.numeric(true_pos[c(3)])
+
+est_pos <-  gsub('\\(|\\)', '', d$EstimatedPosition[d$row_ID == r])
+est_pos <- unlist(strsplit(est_pos, ","))
+d$est_x[d$row_ID == r] <- as.numeric(est_pos[c(1)])
+d$est_y[d$row_ID == r] <- as.numeric(est_pos[c(3)])
+
+}
+
+d$pos_y <- (d$est_y - d$true_y) * 100
+d$pos_x <- (d$est_x - d$true_x) * 100
+
+library(scales)
+plot(d$pos_x, d$pos_y, col = scales::alpha("gray40",0.3), cex = 0.1)
+abline(v = 0, col = scales::alpha("black", 0.5))
+abline(h = 0, col = scales::alpha("black", 0.5))
+points(mean(d$pos_x), mean(d$pos_y), col = "gray90", pch = 13)
+
+
+#d <- d[d$FearObject == "True",]
+
+# Cardiac phase overall
+plot(d$pos_x[d$c_phase == "diastole"], d$pos_y[d$c_phase == "diastole"], col = scales::alpha("dodgerblue3",0.2), cex = 0.1, xlim = c(-100,100), ylim = c(-100,100), ylab = "", xlab = "")
+abline(v = 0, col = scales::alpha("black", 0.5))
+abline(h = 0, col = scales::alpha("black", 0.5))
+points(mean(d$pos_x[d$c_phase == "diastole"]), mean(d$pos_y[d$c_phase == "diastole"]), col = "dodgerblue4", pch = 13)
+
+plot(d$pos_x[d$c_phase == "systole"], d$pos_y[d$c_phase == "systole"], col = scales::alpha("firebrick3",0.2), cex = 0.1, xlim = c(-100,100), ylim = c(-100,100), ylab = "", xlab = "")
+abline(v = 0, col = scales::alpha("black", 0.5))
+abline(h = 0, col = scales::alpha("black", 0.5))
+points(mean(d$pos_x[d$c_phase == "systole"]), mean(d$pos_y[d$c_phase == "systole"]), col = "firebrick4", pch = 13)
+
+mean(d$pos_y[d$c_phase == "systole"])
+mean(d$pos_y[d$c_phase == "diastole"])
+mean(d$pos_x[d$c_phase == "systole"])
+mean(d$pos_x[d$c_phase == "diastole"])
+
+sd(d$pos_y[d$c_phase == "systole"])
+sd(d$pos_y[d$c_phase == "diastole"])
+sd(d$pos_x[d$c_phase == "systole"])
+sd(d$pos_x[d$c_phase == "diastole"])
+
+
+# Fear object
+plot(d$pos_x[d$FearObject == "True"], d$pos_y[d$FearObject == "True"], col = scales::alpha("darkorange",0.2), cex = 0.1, xlim = c(-100,100), ylim = c(-100,100), xlab = "", ylab = "")
+abline(v = 0, col = scales::alpha("black", 0.5))
+abline(h = 0, col = scales::alpha("black", 0.5))
+points(d$pos_x[d$FearObject == "False"], d$pos_y[d$FearObject == "False"], col = scales::alpha("lightgreen",0.2), cex = 0.1)
+points(mean(d$pos_x[d$FearObject == "True"]), mean(d$pos_y[d$FearObject == "True"]), col = "darkorange", pch = 13)
+points(mean(d$pos_x[d$FearObject == "False"]), mean(d$pos_y[d$FearObject == "False"]), col = "darkgreen", pch = 13)
+
+mean(d$pos_y[d$FearObject == "True"])
+mean(d$pos_y[d$FearObject == "False"])
+sd(d$pos_y[d$FearObject == "True"])
+sd(d$pos_y[d$FearObject == "False"])
+
+
+```
+
+Accuracy of estimations - subject level
+
+```{r}
+
+d <- d %>% 
+  group_by(ID, FearObject, c_phase) %>%
+  summarize(pos_x = mean(pos_x), pos_y = mean(pos_y))
+
+d <- d[d$c_phase!= "buffer",]
+
+Ts <- d[d$FearObject == "True" & d$c_phase == "systole",]
+Td <- d[d$FearObject == "True" & d$c_phase == "diastole",]
+Tr <- d[d$FearObject == "True" & d$c_phase == "rwave",]
+
+plot(Ts$pos_x, Ts$pos_y, col = scales::alpha("firebrick3",0.7), cex = 0.4, xlim = c(-15,15), ylim = c(-100,100), xlab = "", ylab = "", pch = 20)
+abline(v = 0, col = scales::alpha("black", 0.5))
+abline(h = 0, col = scales::alpha("black", 0.5))
+points(mean(Ts$pos_x), mean(Ts$pos_y), pch = 13, col = "firebrick4")
+points(Tr$pos_x, Tr$pos_y, col = scales::alpha("darkgoldenrod2",0.7), cex = 0.4,  pch = 20)
+points(mean(Tr$pos_x), mean(Tr$pos_y), pch = 13, col = "darkgoldenrod2")
+points(Td$pos_x, Td$pos_y, col = scales::alpha("dodgerblue3",0.7), cex = 0.4,  pch = 20)
+points(mean(Td$pos_x), mean(Td$pos_y), pch = 13, col = "dodgerblue4")
+
+
+NTs <- d[d$FearObject == "False" & d$c_phase == "systole",]
+NTd <- d[d$FearObject == "False" & d$c_phase == "diastole",]
+NTr <- d[d$FearObject == "False" & d$c_phase == "rwave",]
+plot(NTs$pos_x, NTs$pos_y, col = scales::alpha("firebrick3",0.7), cex = 0.4, xlim = c(-15,15), ylim = c(-100,100), xlab = "", ylab = "", pch = 20)
+abline(v = 0, col = scales::alpha("black", 0.5))
+abline(h = 0, col = scales::alpha("black", 0.5))
+points(mean(NTs$pos_x), mean(NTs$pos_y), pch = 13, col = "firebrick4")
+points(NTr$pos_x, NTr$pos_y, col = scales::alpha("darkgoldenrod2",0.7), cex = 0.4,  pch = 20)
+points(mean(NTr$pos_x), mean(NTr$pos_y), pch = 13, col = "darkgoldenrod2")
+points(NTd$pos_x, NTd$pos_y, col = scales::alpha("dodgerblue3",0.7), cex = 0.4,  pch = 20)
+points(mean(NTd$pos_x), mean(NTd$pos_y), pch = 13, col = "dodgerblue4")
+
+
+### VARIANCE (sd) instead of means # re-run calculation of "d" in the chunk above
+d <- d %>% 
+  group_by(ID, FearObject, c_phase) %>%
+  summarize(pos_x = sd(pos_x), pos_y = sd(pos_y))
+
+# Threatening
+Ts <- d[d$FearObject == "True" & d$c_phase == "systole",]
+Td <- d[d$FearObject == "True" & d$c_phase == "diastole",]
+Tr <- d[d$FearObject == "True" & d$c_phase == "rwave",]
+
+plot(Ts$pos_x, Ts$pos_y, col = scales::alpha("firebrick3",0.7), cex = 0.4, xlim = c(5,25), ylim = c(20,90), xlab = "Mean variance (sd) - x axis", ylab = "Mean variance (sd) - y axis", pch = 20)
+points(mean(Ts$pos_x), mean(Ts$pos_y), pch = 13, col = "firebrick4")
+points(Tr$pos_x, Tr$pos_y, col = scales::alpha("darkgoldenrod2",0.7), cex = 0.4,  pch = 20)
+points(mean(Tr$pos_x), mean(Tr$pos_y), pch = 13, col = "darkgoldenrod2")
+points(Td$pos_x, Td$pos_y, col = scales::alpha("dodgerblue3",0.7), cex = 0.4,  pch = 20)
+points(mean(Td$pos_x), mean(Td$pos_y), pch = 13, col = "dodgerblue4")
+
+# Non-threatening (caution: same naming left)
+Ts <- d[d$FearObject == "False" & d$c_phase == "systole",]
+Td <- d[d$FearObject == "False" & d$c_phase == "diastole",]
+Tr <- d[d$FearObject == "False" & d$c_phase == "rwave",]
+
+plot(Ts$pos_x, Ts$pos_y, col = scales::alpha("firebrick3",0.7), cex = 0.4, xlim = c(5,25), ylim = c(20,90), xlab = "Mean variance (sd) - x axis", ylab = "Mean variance (sd) - y axis", pch = 20)
+points(mean(Ts$pos_x), mean(Ts$pos_y), pch = 13, col = "firebrick4")
+points(Tr$pos_x, Tr$pos_y, col = scales::alpha("darkgoldenrod2",0.7), cex = 0.4,  pch = 20)
+points(mean(Tr$pos_x), mean(Tr$pos_y), pch = 13, col = "darkgoldenrod2")
+points(Td$pos_x, Td$pos_y, col = scales::alpha("dodgerblue3",0.7), cex = 0.4,  pch = 20)
+points(mean(Td$pos_x), mean(Td$pos_y), pch = 13, col = "dodgerblue4")
+
+
+```
+
+
+
+MORE COMPLEX PLOT FOR H2 (NOT WORKING YET or probably will not be used anyway)
+
+```{r}
+
 d <- data %>% 
   group_by(ID) %>%
   summarize(threat_systole   = mean(DistanceError[FearObject == "True" & c_phase == "systole"]), 

@@ -1,0 +1,115 @@
+---
+title: "VRCC Analysis - Testing"
+author: "AM, FK, PM"
+date: "May 5, 2019"
+# contact: "klotzsche@cbs.mpg.de", "aleksander.molak@gmail.com", "pawel.motyka@psych.uw.edu.pl"
+output: html_document
+chunk_output_type: console
+self_contained: no
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+basic_color <- '#195e8c'
+```
+
+# Import libraries & setup directories & read the data
+
+```{r message=FALSE, warning=FALSE}
+
+# Utils
+library(dplyr) 
+library(here)
+library(tidyr)
+
+# Plotting and tables
+library(ggplot2)
+library(sjPlot)
+library(gghalves)
+library(scales)
+
+# Statistical tools
+library(lme4)
+library(lmtest)
+library(lmerTest)
+library(car)
+library(BayesFactor)
+library(effsize)
+library(psych)
+
+
+# Set up the fulldata directory
+VRCC_dir         <- here()
+# Read the preprocessed data
+data <- read.csv(file = paste0(VRCC_dir,"/Data/VRTask/VRCC_data_consolidated"))
+
+# convert distances from m to cm
+data <- data %>%
+mutate(EstimatedDistance = EstimatedDistance * 100, RealDistance = RealDistance * 100, DistanceError = DistanceError * 100 , DistanceErrorAbs = DistanceErrorAbs * 100, LocalizationError = LocalizationError * 100)
+
+#### Everything below to be replaced by reading the prepared file (yet saving created some problems - some unusal structure @Aleksander's help there much appreciated)
+source(here("./Code/Analyses/VRTask/Utils/read_utils.r"))
+qstnr_data_path  <- here("./Data/VRTask/Ratings/Backup_15-07-2019.xlsx")
+sess_info_folder <- here('./Data/VRTask/Logfiles/ExpSubjects')
+
+q_data <- get_questnr_data(qstnr_data_path, sess_info_folder)
+length(unique(q_data$subject))
+# # Drop unused data from five subjects
+pre_exclusions <- c("S11", "S13", "S18", "S21", "S44")
+q_data <- q_data[!(q_data$subject %in% pre_exclusions), ]
+length(unique(q_data$subject))
+
+
+```
+
+<br>
+
+# Subjective ratings (first at full visibility) and Distance Error
+
+```{r warning=FALSE}
+
+q <- q_data[is.na(q_data$round_info),]
+length(unique(q$subject))
+
+q <- plyr::rename(q, replace = c("subject" = "ID"))
+q <- plyr::rename(q, replace = c("animal" = "Stimulus"))
+
+d <- data %>% 
+  group_by(ID, Stimulus) %>%
+  summarize(distance_error  = mean(DistanceError))
+
+dt <- merge(q, d, by = c("ID", "Stimulus"))
+length(unique(dt$ID))
+
+scatter.smooth(dt$threat, dt$distance_error)
+
+# THREAT: Explore separately for each animal
+for (s in unique(dt$Stimulus)) {
+  
+ds <- dt[dt$Stimulus == s,]  
+
+scatter.smooth(ds$threat, ds$distance_error, main = paste0(s), pch = 20, cex = 2, col = scales::alpha("gray40",0.5), lwd = 2, xlim = c(1,7))
+}
+
+# DISGUST: Explore separately for each animal
+for (s in unique(dt$Stimulus)) {
+  
+ds <- dt[dt$Stimulus == s,]  
+
+scatter.smooth(ds$disgust, ds$distance_error, main = paste0(s), pch = 20, cex = 2, col = scales::alpha("coral4",0.5), lwd = 2, xlim = c(1,7))
+}
+
+
+# SPEED: Explore separately for each animal
+for (s in unique(dt$Stimulus)) {
+  
+ds <- dt[dt$Stimulus == s,]  
+
+scatter.smooth(ds$how_fast, ds$distance_error, main = paste0(s), pch = 20, cex = 2, col = scales::alpha("royalblue",0.6), lwd = 2, xlim = c(1,7))
+}
+
+```
+
+
