@@ -56,7 +56,7 @@ source(here("./Code/Analyses/VRTask/Utils/distance_utils.r"))
 # Set up the fulldata directory
 VRCC_dir         <- here()
 data_dir         <- here("Data/VRTask/Logfiles/ExpSubjects")
-qstnr_data_path  <- here("./Data/VRTask/Ratings/Backup_15-07-2019.xlsx")
+qstnr_data_path  <- here("./Data/VRTask/Ratings/Ratings_partially_cleaned.xlsx")
 sess_info_folder <- here('./Data/VRTask/Logfiles/ExpSubjects')
 
 # Build the fulldataset (Behavioral/VR data)
@@ -66,7 +66,6 @@ fulldata <- build_dataset(data_dir)
 # Get the summary of questionnaire data
 cat('\n\nReading questionnaire data...\n\n')
 q_data <- get_questnr_data(qstnr_data_path, sess_info_folder)
-
 
 ### Removing the subjects with no cardiac data (temporary - to be decided) 
 # # Drop unused data from five subjects
