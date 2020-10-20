@@ -56,7 +56,7 @@ source(here("./Code/Analyses/VRTask/Utils/distance_utils.r"))
 # Set up the fulldata directory
 VRCC_dir         <- here()
 data_dir         <- here("Data/VRTask/Logfiles/ExpSubjects")
-qstnr_data_path  <- here("./Data/VRTask/Ratings/Ratings_partially_cleaned.xlsx")
+qstnr_data_path  <- here("./Data/VRTask/Ratings/Ratings_cleaned_AM_2020_10_20.xlsx")
 sess_info_folder <- here('./Data/VRTask/Logfiles/ExpSubjects')
 
 # Build the fulldataset (Behavioral/VR data)
