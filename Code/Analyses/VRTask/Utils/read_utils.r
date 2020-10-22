@@ -136,7 +136,7 @@ get_questnr_data <- function(qstnr_filepath, sess_info_folder) {
   final_df = data.frame()
   
   for (subject in all_sheets) {
-    print(subject)
+
     if (startsWith(subject, 'S')) {
       
       # Get session info paths
