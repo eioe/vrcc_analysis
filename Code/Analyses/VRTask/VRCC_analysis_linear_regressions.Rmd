@@ -51,23 +51,51 @@ mutate(EstimatedDistance = EstimatedDistance * 100, RealDistance = RealDistance 
 ```
 
 
-# Perceived distance to threatening animals presented at systole vs presented at diastole (Testing hypothesis 2)
+# Perceived distance to threatening animals presented at systole vs diastole (Testing hypothesis 2)
 
 ```{r warning=FALSE}
 
+# Specify data of interest
 d <- data[data$c_phase == "systole" | data$c_phase == "diastole",]
 
+# Optional step: rescaling numeric variables
+d$DistanceError <- scale(d$DistanceError)
+d$RealDistance <- scale(d$RealDistance)
+
+## Preregistered models:
+# Null model
 null_model <- lmer(DistanceError ~ 1 + (1 + RealDistance | ID), data = data)
 summary(null_model)
-
+# Full model
 full_model <- lmer(DistanceError ~ c_phase * FearObject + (1 + RealDistance|ID), data = d)
 summary(full_model)
+plot_model(full_model, type = "int", mdrt.values = "meansd")
 
-lrtest(null_model, full_model) # not working
 
-### exploratory
-simple_model <- lm(DistanceError ~ c_phase * FearObject, data = d)
-summary(simple_model)
+## Exploratory models:
+# 'Simple' / no random effect
+simplified_model <- lm(DistanceError ~ c_phase * FearObject, data = d)
+summary(simplified_model)
+plot_model(simplified_model, type = "int", mdrt.values = "meansd")
+
+# Stimulus as random effect
+em1 <- lmer(DistanceError ~ c_phase * FearObject + (1|Stimulus), data = d)
+summary(em1)
+plot_model(em1, type = "int", mdrt.values = "meansd")
+
+
+### Alternative solutions to avoid rescaling variables (not working /likely to be removed)
+
+d <- data[data$c_phase == "systole" | data$c_phase == "diastole",]
+          
+full2 <- lmerTest::lmer(DistanceError ~ c_phase * FearObject + (1 + RealDistance|ID), data = d, REML = F)
+summary(full2)
+
+full3 <- lmerTest::lmer(DistanceError ~ c_phase * FearObject + (1 + RealDistance|ID), data = d, control = lmerControl(optimizer = 'Nelder_Mead'))
+summary(full3)
+
+full4 <- lmerTest::lmer(DistanceError ~ c_phase * FearObject + (1 + RealDistance|ID), data = d, control = lmerControl(optimizer = 'Nelder_Mead'))
+summary(full4)
 
 ```
 
@@ -79,11 +107,18 @@ summary(simple_model)
 ```{r}
 ## Testing the hypothesis 1. (Regression) #PM: This is to some extent analogous to further sections (and only a draft for now); We need to discuss our approach towards testing H1 with regression
 
+
+
+data$DistanceError <- scale(data$DistanceError)
+data$RealDistance <- scale(data$RealDistance)
+
 null_model_H1 <- lmer(DistanceError ~ 1 + (1 + RealDistance | ID), data = data)
 summary(null_model_H1)
 
 model_H1 <- lmer(DistanceError ~ FearObject + (1 + RealDistance | ID), data = data)
 summary(model_H1)
+
+
 ```
 
 
