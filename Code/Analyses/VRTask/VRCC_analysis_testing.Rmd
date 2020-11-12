@@ -244,7 +244,7 @@ model1 <- lm(DistanceErrorNorm ~ c_phase * FearObject, data = d)
 summary(model1)
 
 d <- data[data$c_phase == "systole" | data$c_phase == "diastole",]
-d <- select(d, ID, DistanceErrorNorm, c_phase, FearObject)
+d <- dplyr::select(d, ID, DistanceErrorNorm, c_phase, FearObject)
 d <- d %>% group_by(ID, c_phase, FearObject)  %>% summarize(DistanceErrorNorm = mean(DistanceErrorNorm))
 
 require(afex, warn.conflicts = FALSE, quietly=TRUE)
@@ -412,11 +412,6 @@ dataTOSTpaired(data = d, pairs = list(c(i1="m_systole",i2="m_diastole")), low_eq
 # Bayes Factor package
 ttestBF(d$m_systole, d$m_diastole, paired = T)
 
-# Equivalence package (default arguments)
-tost(d$m_systole, d$m_diastole, paired = T, epsilon = 1, var.equal = FALSE, conf.level = 0.95, alpha = NULL) # * epsilon > 2
-#https://stats.stackexchange.com/questions/244839/r-what-is-magnitude-of-region-of-similarity-epsilon-when-using-tost-from-e
-
-
 
 ### Non-threatening
 d <- data[data$FearObject == "False",]
@@ -447,12 +442,6 @@ dataTOSTpaired(data = d, pairs = list(c(i1="m_systole",i2="m_diastole")), low_eq
 
 # Bayes Factor package
 ttestBF(d$m_systole, d$m_diastole, paired = T)
-
-# Equivalence package (default arguments)
-tost(d$m_systole, d$m_diastole, paired = T, epsilon = 1, var.equal = FALSE, conf.level = 0.95, alpha = NULL) # * epsilon > 2
-#https://stats.stackexchange.com/questions/244839/r-what-is-magnitude-of-region-of-similarity-epsilon-when-using-tost-from-e
-
-
 
 
 ```

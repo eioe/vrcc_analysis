@@ -59,13 +59,20 @@ mutate(EstimatedDistance = EstimatedDistance * 100, RealDistance = RealDistance 
 d <- data[data$c_phase == "systole" | data$c_phase == "diastole",]
 
 # Optional step: rescaling numeric variables
+hist(d$DistanceError, breaks = 20)
 d$DistanceError <- scale(d$DistanceError)
+hist(d$DistanceError, breaks = 20)
+
+hist(d$RealDistance, breaks = 200)
 d$RealDistance <- scale(d$RealDistance)
+hist(d$RealDistance, breaks = 200)
 
 ## Preregistered models:
 # Null model
-null_model <- lmer(DistanceError ~ 1 + (1 + RealDistance | ID), data = data)
+null_model <- lmer(DistanceError ~ 1 + (1 + RealDistance | ID), data = d)
 summary(null_model)
+plot(null_model)
+
 # Full model
 full_model <- lmer(DistanceError ~ c_phase * FearObject + (1 + RealDistance|ID), data = d)
 summary(full_model)
@@ -79,9 +86,24 @@ summary(simplified_model)
 plot_model(simplified_model, type = "int", mdrt.values = "meansd")
 
 # Stimulus as random effect
-em1 <- lmer(DistanceError ~ c_phase * FearObject + (1|Stimulus), data = d)
-summary(em1)
-plot_model(em1, type = "int", mdrt.values = "meansd")
+m1 <- lmer(DistanceError ~ c_phase * FearObject + (1|Stimulus), data = d)
+summary(m1)
+plot_model(m1, type = "int", mdrt.values = "meansd")
+
+# 
+m2 <- lmer(DistanceError ~ c_phase * FearObject + (1|ID) + (1|Stimulus), data = d)
+summary(m2)
+plot_model(m2, type = "int", mdrt.values = "meansd")
+
+
+m3 <- lmer(DistanceError ~ c_phase * FearObject + (1 + RealDistance|ID) + (1|Stimulus), data = d)
+summary(m3)
+plot_model(m3, type = "int", mdrt.values = "meansd")
+
+m4 <- lmer(DistanceError ~ c_phase * FearObject + (1 + RealDistance|ID) + (1 + RealDistance|Stimulus), data = d)
+summary(m4)
+plot_model(m4, type = "int", mdrt.values = "meansd")
+
 
 
 ### Alternative solutions to avoid rescaling variables (not working /likely to be removed)

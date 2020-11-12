@@ -225,4 +225,175 @@ scatter.smooth(ds$threat, ds$disgust, main = paste0(s, "\n(rho = ", rho, ", p = 
 
 ```
 
+Association between subjective threat and difference in DE between diastole and systole (overall)
+
+```{r}
+
+d <- data[data$c_phase == "systole" | data$c_phase == "diastole",]
+d <- data[data$FearObject == "True",]
+
+d <- d %>% 
+  group_by(ID) %>%
+  summarize(de_sys = mean(DistanceError[c_phase == "systole"]), de_dia = mean(DistanceError[c_phase == "diastole"]))
+
+d$diff <- d$de_dia - d$de_sys
+hist(d$diff, main = "Diff = DE diastole - DE systole")
+
+qs <- q[q$fear_object == "True",]
+
+qs <- qs %>% 
+  group_by(ID) %>%
+  summarize(mean_threat = mean(threat))
+
+d <- merge(d, qs, by = "ID")
+scatter.smooth(d$mean_threat, d$diff)
+
+
+```
+
+
+Association between subjective threat and difference in DE between diastole and systole (overall)
+
+```{r}
+
+d <- data[data$c_phase == "systole" | data$c_phase == "diastole",]
+d <- data[data$FearObject == "True",]
+
+d <- d %>% 
+  group_by(ID) %>%
+  summarize(de_sys = mean(DistanceError[c_phase == "systole"]), de_dia = mean(DistanceError[c_phase == "diastole"]))
+
+d$diff <- d$de_dia - d$de_sys
+hist(d$diff, main = "Diff = DE diastole - DE systole")
+
+qs <- q[q$fear_object == "True",]
+
+qs <- qs %>% 
+  group_by(ID) %>%
+  summarize(mean_threat = mean(threat))
+
+d <- merge(d, qs, by = "ID")
+scatter.smooth(d$mean_threat, d$diff)
+
+
+```
+
+
+Association between subjective threat and difference in DE between diastole and systole (individual animals)
+
+```{r}
+
+d <- data[data$c_phase == "systole" | data$c_phase == "diastole",]
+d <- data[data$FearObject == "True",]
+
+d <- d %>% 
+  group_by(ID, Stimulus) %>%
+  summarize(de_sys = mean(DistanceError[c_phase == "systole"]), de_dia = mean(DistanceError[c_phase == "diastole"]))
+
+d$diff <- d$de_dia - d$de_sys
+hist(d$diff, main = "Diff = DE diastole - DE systole")
+
+qs <- q[q$fear_object == "True",]
+
+qs <- q %>% 
+  group_by(ID, Stimulus) %>%
+  summarize(mean_threat = mean(threat))
+
+d <- merge(d, qs, by = c("ID", "Stimulus"))
+scatter.smooth(d$mean_threat, d$diff)
+
+for (s in unique(d$ID)) {
+  
+ds <- d[d$ID == s,]  
+scatter.smooth(ds$mean_threat, ds$diff)  
+}
+
+library(rmcorr)
+
+my.rmc <- rmcorr(participant = ID, measure1 = mean_threat, measure2 = diff, dataset = d)
+my.rmc
+plot(my.rmc, overall = TRUE)
+
+
+```
+
+
+Association between subjective threat and difference in DE between diastole and systole (individual blocks) [not working]
+
+```{r}
+
+d <- data[data$c_phase == "systole" | data$c_phase == "diastole",]
+d <- data[data$FearObject == "True",]
+
+d <- d %>% 
+  group_by(ID, Stimulus, Round) %>%
+  summarize(de_sys = mean(DistanceError[c_phase == "systole"]), de_dia = mean(DistanceError[c_phase == "diastole"]))
+
+d$diff <- d$de_dia - d$de_sys
+hist(d$diff, main = "Diff = DE diastole - DE systole")
+
+qs <- q_data[q_data$round_info != "Subj_ratings",]
+#qs <- plyr::rename(qs, replace = c("round_info" = "Round"))
+animals <- qs$round_info
+qs$Round <- animals$Animal
+
+qs$Round <- plyr::revalue(qs$Round, c("100 MS" = "1", "After Round 1" = "2", "After Round 2" = "3", "After Round 3" = "4", "After Round 4" = "5", "After Round 5" = "6")) # before which round
+
+qs <- plyr::rename(qs, replace = c("animal" = "Stimulus"))
+
+qs <- plyr::rename(qs, replace = c("subject" = "ID"))
+
+qs <- qs[qs$fear_object == "True",]
+###
+qs <- qs %>% 
+  group_by(ID, Stimulus, Round) %>%
+  summarize(mean_threat = mean(threat))
+
+d <- merge(d, qs, by = c("ID", "Stimulus", "Round"))
+scatter.smooth(d$mean_threat, d$diff)
+
+d$mean_threat[d$mean_threat == -9999] <- NA
+
+# for (s in unique(d$ID)) {
+#   
+# ds <- d[d$ID == s,]  
+# scatter.smooth(ds$mean_threat, ds$diff)  
+# }
+
+library(rmcorr)
+
+my.rmc <- rmcorr(participant = ID, measure1 = mean_threat, measure2 = diff, dataset = d)
+my.rmc
+plot(my.rmc, overall = TRUE)
+
+
+## simply check how ratings evolve over blocks
+qs$mean_threat[qs$mean_threat == -9999] <- NA
+qb <- qs %>% 
+  group_by(ID, Round) %>%
+  summarize(threat = mean(mean_threat))
+
+boxplot(qb$threat[qb$Round == 1], qb$threat[qb$Round == 2], qb$threat[qb$Round == 3], qb$threat[qb$Round == 4],qb$threat[qb$Round == 5],qb$threat[qb$Round == 6])
+
+mean(qb$threat[qb$Round == 1], na.rm = T)
+mean(qb$threat[qb$Round == 2], na.rm = T)
+mean(qb$threat[qb$Round == 3], na.rm = T)
+mean(qb$threat[qb$Round == 4], na.rm = T)
+mean(qb$threat[qb$Round == 5], na.rm = T)
+mean(qb$threat[qb$Round == 6], na.rm = T)
+
+ggplot(data = qb, aes(x = qb$Round, y = qb$threat, group = qb$ID, colour = qb$ID)) + geom_line() + geom_point()
+
+qb$ID <- as.character(qb$ID)
+
+rmcorr(participant = ID, measure1 = threat, measure2 = Round, dataset = qb)
+
+plot(my.rmc, overall = TRUE)
+
+
+
+```
+
+
+
 
