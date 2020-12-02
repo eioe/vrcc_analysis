@@ -6,11 +6,11 @@
 library(lme4)
 library(performance)
 
-get_ICC = function(model) {
-  # Computes intraclass correlation
-  var_ = as.numeric(VarCorr(model)) 
-  cat(var_[1] / (var_[1] + var_[2]))
-}
+# get_ICC = function(model) {
+#   # Computes intraclass correlation
+#   var_ = as.numeric(VarCorr(model)) 
+#   cat(var_[1] / (var_[1] + var_[2]))
+# }
 
 get_r2_mlm <- function(model) {
   res <- r2_nakagawa(model)
