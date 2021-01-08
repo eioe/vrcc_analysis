@@ -81,6 +81,7 @@ describe(d$mean_non_threat)
 d$diff_distances <- d$mean_non_threat - d$mean_threat
 length(d$diff_distances[d$diff_distances > 0])
 hist(d$diff_distances)
+
 ```
 
 
@@ -164,14 +165,7 @@ plot(Figure)
 
 }
 
-
-
-```
-
-
-# Exploration: distance error as a function of real distance (overall)
-
-```{r}
+## Overall DE (no animals split)
 
 # p_errors <- ggplot(data = data, aes(x = RealDistance, y = DistanceError)) +
 #   geom_point(col = "grey 30", alpha = 0.3, size = 1.5, shape = 18) +
@@ -192,27 +186,28 @@ plot(Figure)
 #   scale_y_continuous(limits= c(min(data$DistanceErrorNorm), max(data$DistanceErrorNorm)), expand = c(0.01,0.01))  + geom_hline(yintercept = 0, col = "blue")
 # p_errors_norm
 
+
 ```
 
 
-
-# HYPOTHESIS 2: Perceived distance to threatening animals presented at systole vs presented at diastole (Version B: Distance Error Normalized)
+# HYPOTHESIS 2: Perceived distance to threatening animals presented at systole vs presented at diastole 
 
 ```{r}
 
-# DE ~ CP * Threat + (1 + r true | ID) # full model
 # DE ~ 1 + (1 + r true | ID) # null
 
 d <- data[data$c_phase == "systole" | data$c_phase == "diastole",]
 
+# DE ~ CP * Threat + (1 + r true | ID) # preregisterd full model
 full_model <- lmer(DistanceError ~ c_phase * FearObject + (1 + RealDistance|ID), data = d)
 summary(full_model)
 
-model1 <- lm(DistanceError ~ c_phase * FearObject, data = d)
-summary(model1)
+## simple (unpreregistered model)
+#model1 <- lm(DistanceError ~ c_phase * FearObject, data = d)
+#summary(model1)
 
 d <- data[data$c_phase == "systole" | data$c_phase == "diastole",]
-d <- select(d, ID, DistanceError, c_phase, FearObject)
+d <- dplyr::select(d, ID, DistanceError, c_phase, FearObject)
 d <- d %>% group_by(ID, c_phase, FearObject)  %>% summarize(DistanceError = mean(DistanceError))
 
 require(afex, warn.conflicts = FALSE, quietly=TRUE)
@@ -228,7 +223,7 @@ emmeans::contrast(ref,method="pairwise",adjust="bonferroni")
 ```
 
 
-# HYPOTHESIS 2: Perceived distance to threatening animals presented at systole vs presented at diastole (Version B: Distance Error Normalized) -
+# HYPOTHESIS 2: Perceived distance to threatening animals presented at systole vs presented at diastole
 
 ```{r}
 
@@ -406,11 +401,10 @@ TOSTpaired(n = nrow(d), m1=mean(d$m_systole), m2=mean(d$m_diastole), sd1= sd(d$m
 # Implementation #2 (SD - d'cohen)
 dataTOSTpaired(data = d, pairs = list(c(i1="m_systole",i2="m_diastole")), low_eqbound = -0.5, high_eqbound = 0.5, eqbound_type = "d", alpha = 0.05, desc = TRUE, plots = TRUE)
 
-# Implementation #2 (raw - cm bounds 2 arbitrary)
-dataTOSTpaired(data = d, pairs = list(c(i1="m_systole",i2="m_diastole")), low_eqbound = -2, high_eqbound = 2, eqbound_type = "raw", alpha = 0.05, desc = TRUE, plots = TRUE)
-
 # Bayes Factor package
 ttestBF(d$m_systole, d$m_diastole, paired = T)
+ttestBF(d$m_systole, d$m_diastole, paired = T, r = 1)
+ttestBF(d$m_systole, d$m_diastole, paired = T, r = 0.354)
 
 
 ### Non-threatening
@@ -437,9 +431,6 @@ TOSTpaired(n = nrow(d), m1=mean(d$m_systole), m2=mean(d$m_diastole), sd1= sd(d$m
 # Implementation #2 (SD - d'cohen)
 dataTOSTpaired(data = d, pairs = list(c(i1="m_systole",i2="m_diastole")), low_eqbound = -0.5, high_eqbound = 0.5, eqbound_type = "d", alpha = 0.05, desc = TRUE, plots = TRUE)
 
-# Implementation #2 (raw - cm bounds 2 arbitrary)
-dataTOSTpaired(data = d, pairs = list(c(i1="m_systole",i2="m_diastole")), low_eqbound = -2, high_eqbound = 2, eqbound_type = "raw", alpha = 0.05, desc = TRUE, plots = TRUE)
-
 # Bayes Factor package
 ttestBF(d$m_systole, d$m_diastole, paired = T)
 
@@ -453,8 +444,8 @@ Distances to particular animals (cardiac phase split)
 
 ```{r}
 
-#d <- data[data$FearObject == "True",]
-d <- data[data$c_phase == "systole" | d$c_phase == "diastole", ]
+d <- data[data$c_phase == "systole" | data$c_phase == "diastole", ]
+d <- d[d$FearObject == "True",]
 
 d <- d %>% 
   group_by(ID, Stimulus, c_phase) %>%
@@ -478,6 +469,7 @@ t.test(d$Crocodile_systole, d$Crocodile_diastole, paired = T)
 library(colorspace)
 
 d <- data[data$c_phase == "systole" | data$c_phase == "diastole", ]
+d <- d[d$FearObject == "True",]
 
 for (p in unique(d$Stimulus)) {
 
@@ -498,6 +490,7 @@ plot(Figure)
 }
 
 
+# Exploratory results
 d <- data %>% 
   group_by(ID) %>%
   summarize(distance_error = mean(DistanceError), RR = mean(RRLength))
