@@ -45,6 +45,7 @@ library(psych)
 source(here("./Code/Analyses/VRTask/Utils/get_cardio_info.R"))
 source(here("./Code/Analyses/VRTask/Utils/read_utils.r"))
 source(here("./Code/Analyses/VRTask/Utils/distance_utils.r"))
+source(here("./Code/Analyses/VRTask/Utils/stats_utils.r"))
 
 
 ```
