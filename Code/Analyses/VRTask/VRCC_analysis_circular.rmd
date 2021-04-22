@@ -1,0 +1,93 @@
+---
+title: "VRCC - preliminary circular"
+author: "AM, FK, PM"
+date: "April 22, 2021"
+# contact: "klotzsche@cbs.mpg.de", "aleksander.molak@gmail.com", "pawel.motyka@psych.uw.edu.pl"
+output: html_document
+chunk_output_type: console
+self_contained: no
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+basic_color <- '#195e8c'
+```
+
+```{r}
+setwd('C:\\Users\\aleksander.molak\\Documents\\Personal\\Fear from  heart - Central Kollegs\\centralkollegs18')
+```
+
+# Import libraries & setup directories & read the data
+
+```{r message=FALSE, warning=FALSE}
+
+# Utils
+library(dplyr) 
+library(here)
+library(tidyr)
+
+# Plotting and tables
+library(ggplot2)
+library(sjPlot)
+library(gghalves)
+
+# Statistical tools
+library(lme4)
+library(lmtest)
+library(lmerTest)
+library(car)
+library(effsize)
+library(psych)
+library(performance)
+
+source(here("./Code/Analyses/VRTask/Utils/stats_utils.r"))
+
+
+# Set up the fulldata directory
+VRCC_dir         <- here()
+# Read the preprocessed data
+data <- read.csv(file = paste0(VRCC_dir,"/Data/VRTask/VRCC_data_consolidated"))
+
+
+```
+
+
+## Compute and add circular components
+
+### NOTE: Code in this notebook is based on the assumption that `relPosRRrad` is the varibale representing `CP` from the pre-reg document. Is this correct, Paweł?
+
+```{r}
+# Get circular components
+rel_pos_circular <- get_circular_components(data$relPosRRrad, 2 * pi)
+
+# Add them to df
+data$relPosRRradCircSin <- rel_pos_circular$sin_component
+data$relPosRRradCircCos <- rel_pos_circular$cos_component
+```
+
+## Model
+
+According to the pre-reg document, we define the model as follows:
+
+`DE ~ CP*Threat + (1 + r_true | ID)`
+
+```{r}
+# Specify data of interest
+d <- data[data$c_phase == "systole" | data$c_phase == "diastole",]
+
+## Preregistered models:
+# Null model
+null_model <- lmer(DistanceError ~ 1 + (1 + RealDistance | ID), data = d)
+summary(null_model)
+
+# Full model
+full_model <- lmer(DistanceError ~ relPosRRradCircSin * FearObject + relPosRRradCircCos * FearObject + (1 + RealDistance|ID), data = d)
+summary(full_model)
+plot_model(full_model, type = "int", mdrt.values = "meansd")
+get_r2_mlm(full_model)
+
+```
+
+
