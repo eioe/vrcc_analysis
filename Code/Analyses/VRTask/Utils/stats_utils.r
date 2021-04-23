@@ -20,8 +20,11 @@ get_r2_mlm <- function(model) {
 }
 
 get_circular_components <- function(x, period) {
+  # Takes a 1D circular variable and returns it's 2D embedding on a unit circle
+  # where the cos component represents Cartesian x-coordianate and sin component represents Cartesian y-coordinate.
   omega <- (2 * pi) / period
-  sin_component = sin(x * omega)
   cos_component = cos(x * omega)
-  data.frame(sin_component, cos_component)
+  sin_component = sin(x * omega)
+  data.frame(cos_component, sin_component)
 }
+
