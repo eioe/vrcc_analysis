@@ -63,8 +63,8 @@ data <- read.csv(file = paste0(VRCC_dir,"/Data/VRTask/VRCC_data_consolidated"))
 rel_pos_circular <- get_circular_components(data$relPosRRrad, 2 * pi)
 
 # Add them to df
-data$relPosRRradCircSin <- rel_pos_circular$sin_component
 data$relPosRRradCircCos <- rel_pos_circular$cos_component
+data$relPosRRradCircSin <- rel_pos_circular$sin_component
 ```
 
 ## Model
@@ -75,19 +75,25 @@ According to the pre-reg document, we define the model as follows:
 
 ```{r}
 # Specify data of interest
-d <- data[data$c_phase == "systole" | data$c_phase == "diastole",]
+# d <- data[data$c_phase == "systole" | data$c_phase == "diastole",]
 
 ## Preregistered models:
 # Null model
-null_model <- lmer(DistanceError ~ 1 + (1 + RealDistance | ID), data = d)
+null_model <- lmer(DistanceError ~ 1 + (1 + RealDistance|ID), data = data)
 summary(null_model)
 
 # Full model
-full_model <- lmer(DistanceError ~ relPosRRradCircSin * FearObject + relPosRRradCircCos * FearObject + (1 + RealDistance|ID), data = d)
+full_model <- lmer(DistanceError ~ relPosRRradCircCos * FearObject + relPosRRradCircSin * FearObject + (1 + RealDistance|ID), data = data)
 summary(full_model)
 plot_model(full_model, type = "int", mdrt.values = "meansd")
 get_r2_mlm(full_model)
 
 ```
 
+```{r}
+anova(null_model, full_model)
+```
 
+## Prep a short pres on circular
+## Fit loess per participant + embedd + embedd mean over all participants
+## Add model diagnostics! [AM]
