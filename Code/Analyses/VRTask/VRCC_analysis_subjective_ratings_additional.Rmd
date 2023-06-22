@@ -1,0 +1,398 @@
+---
+title: "VRCC Analysis - Testing"
+author: "AM, FK, PM"
+date: "May 5, 2019"
+# contact: "klotzsche@cbs.mpg.de", "aleksander.molak@gmail.com", "pawel.motyka@psych.uw.edu.pl"
+output: html_document
+chunk_output_type: console
+self_contained: no
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+basic_color <- '#195e8c'
+```
+
+# Import libraries & setup directories & read the data
+
+```{r message=FALSE, warning=FALSE}
+
+# Utils
+library(dplyr) 
+library(here)
+library(tidyr)
+
+# Plotting and tables
+library(ggplot2)
+library(sjPlot)
+library(gghalves)
+library(scales)
+
+# Statistical tools
+library(lme4)
+library(lmtest)
+library(lmerTest)
+library(car)
+library(BayesFactor)
+library(effsize)
+library(psych)
+
+
+# Set up the fulldata directory
+VRCC_dir         <- here()
+# Read the preprocessed data
+data <- read.csv(file = paste0(VRCC_dir,"/Data/VRTask/VRCC_data_consolidated"))
+
+# convert distances from m to cm
+data <- data %>%
+mutate(EstimatedDistance = EstimatedDistance * 100, RealDistance = RealDistance * 100, DistanceError = DistanceError * 100 , DistanceErrorAbs = DistanceErrorAbs * 100, LocalizationError = LocalizationError * 100)
+
+#### Everything below to be replaced by reading the prepared file (yet saving created some problems - some unusal structure @Aleksander's help there much appreciated)
+source(here("./Code/Analyses/VRTask/Utils/read_utils.r"))
+qstnr_data_path  <- here("./Data/VRTask/Ratings/Ratings_cleaned_AM_2020_10_20.xlsx")
+sess_info_folder <- here('./Data/VRTask/Logfiles/ExpSubjects')
+
+q_data <- get_questnr_data(qstnr_data_path, sess_info_folder)
+length(unique(q_data$subject))
+# # Drop unused data from five subjects
+pre_exclusions <- c("S11", "S13", "S18", "S21", "S44")
+q_data <- q_data[!(q_data$subject %in% pre_exclusions), ]
+length(unique(q_data$subject))
+
+
+```
+
+<br>
+
+# Subjective ratings (first at full visibility) and Distance Error (Animals split and overall)
+
+```{r warning=FALSE}
+
+q_data$round_info[is.na(q_data$round_info), ] <- "Subj_ratings"
+
+q <- q_data[q_data$round_info == "Subj_ratings",]
+
+
+length(unique(q$subject))
+
+q <- plyr::rename(q, replace = c("subject" = "ID"))
+q <- plyr::rename(q, replace = c("animal" = "Stimulus"))
+
+d <- data %>% 
+  group_by(ID, Stimulus) %>%
+  summarize(distance_error  = mean(DistanceError), distance_error_norm  = mean(DistanceErrorNorm))
+
+dt <- merge(q, d, by = c("ID", "Stimulus"))
+length(unique(dt$ID))
+
+# THREAT: DISTANCE ERROR (cm)
+for (s in unique(dt$Stimulus)) {
+
+  ds <- dt[dt$Stimulus == s,]  
+
+cor <- cor.test(ds$threat, ds$distance_error, method = "spearman")
+rho <- round(cor$estimate, digits = 3)
+p_val <- round(cor$p.value, digits = 3)
+
+scatter.smooth(ds$threat, ds$distance_error, main = paste0(s, "\n(rho = ", rho, ", p = ",p_val,")"), pch = 20, cex = 2, col = scales::alpha("firebrick",0.5), lwd = 2, xlim = c(1,7), ylim = c(-105,105))
+}
+
+# THREAT: DISTANCE ERROR NORM (%)
+for (s in unique(dt$Stimulus)) {
+  
+ds <- dt[dt$Stimulus == s,]  
+
+cor <- cor.test(ds$threat, ds$distance_error_norm, method = "spearman")
+rho <- round(cor$estimate, digits = 3)
+p_val <- round(cor$p.value, digits = 3)
+
+scatter.smooth(ds$threat, ds$distance_error_norm, main = paste0(s, "\n(rho = ", rho, ", p = ",p_val,")"), pch = 20, cex = 2, col = scales::alpha("firebrick",0.5), lwd = 2, xlim = c(1,7), ylim = c(-35,35))
+}
+
+
+
+# DISGUST: DISTANCE ERROR (cm)
+for (s in unique(dt$Stimulus)) {
+  
+ds <- dt[dt$Stimulus == s,]  
+
+cor <- cor.test(ds$disgust, ds$distance_error, method = "spearman")
+rho <- round(cor$estimate, digits = 3)
+p_val <- round(cor$p.value, digits = 3)
+
+scatter.smooth(ds$disgust, ds$distance_error, main = paste0(s, "\n(rho = ", rho, ", p = ",p_val,")"), pch = 20, cex = 2, col = scales::alpha("#66804d",0.5), lwd = 2, xlim = c(1,7), ylim = c(-105,105))
+
+}
+
+# DISGUST: DISTANCE ERROR NORM (%)
+for (s in unique(dt$Stimulus)) {
+  
+ds <- dt[dt$Stimulus == s,]  
+
+cor <- cor.test(ds$disgust, ds$distance_error_norm, method = "spearman")
+rho <- round(cor$estimate, digits = 3)
+p_val <- round(cor$p.value, digits = 3)
+
+scatter.smooth(ds$disgust, ds$distance_error_norm, main = paste0(s, "\n(rho = ", rho, ", p = ",p_val,")"), pch = 20, cex = 2, col = scales::alpha("#66804d",0.5), lwd = 2, xlim = c(1,7), ylim = c(-35,35))
+
+}
+
+
+# SPEED: DISTANCE (cm)
+for (s in unique(dt$Stimulus)) {
+  
+ds <- dt[dt$Stimulus == s,]  
+
+cor <- cor.test(ds$how_fast, ds$distance_error, method = "spearman")
+rho <- round(cor$estimate, digits = 3)
+p_val <- round(cor$p.value, digits = 3)
+
+scatter.smooth(ds$how_fast, ds$distance_error, main = paste0(s, "\n(rho = ", rho, ", p = ",p_val,")"), pch = 20, cex = 2, col = scales::alpha("royalblue",0.6), lwd = 2, xlim = c(1,7), ylim = c(-110,110))
+}
+
+# SPEED: DISTANCE NORM (%)
+for (s in unique(dt$Stimulus)) {
+  
+ds <- dt[dt$Stimulus == s,]  
+
+cor <- cor.test(ds$how_fast, ds$distance_error_norm, method = "spearman")
+rho <- round(cor$estimate, digits = 3)
+p_val <- round(cor$p.value, digits = 3)
+
+scatter.smooth(ds$how_fast, ds$distance_error_norm, main = paste0(s, "\n(rho = ", rho, ", p = ",p_val,")"), pch = 20, cex = 2, col = scales::alpha("royalblue",0.6), lwd = 2, xlim = c(1,7), ylim = c(-35,35))
+}
+
+
+# Overall
+d <- dt[dt$fear_object == "True",]
+d <- d %>% 
+  group_by(ID) %>%
+  summarize(distance_error  = mean(distance_error), distance_error_norm  = mean(distance_error_norm), threat = mean(threat), disgust = mean(disgust))
+
+scatter.smooth(d$threat, d$distance_error, span = 1)
+shapiro.test(d$threat)
+cor.test(d$threat, d$distance_error, method = "spearman", exact = F)
+
+scatter.smooth(d$disgust, d$distance_error, span = 1)
+shapiro.test(d$disgust)
+cor.test(d$disgust, d$distance_error, method = "spearman", exact = F)
+
+scatter.smooth(d$threat, d$disgust)
+shapiro.test(d$threat)
+cor.test(d$threat, d$disgust, method = "spearman")
+
+for (s in unique(dt$Stimulus)) {
+  
+ds <- dt[dt$Stimulus == s,]  
+
+cor <- cor.test(ds$threat, ds$disgust, method = "spearman")
+rho <- round(cor$estimate, digits = 3)
+p_val <- round(cor$p.value, digits = 3)
+
+scatter.smooth(ds$threat, ds$disgust, main = paste0(s, "\n(rho = ", rho, ", p = ",p_val,")"), pch = 20, cex = 2, col = scales::alpha("gray40",0.6), lwd = 2, xlim = c(1,7), ylim = c(1,7))
+}
+
+
+
+```
+
+
+Repeated measures correlations (four threatening animals per subject)
+
+```{r}
+
+d <- data[data$FearObject == "True",]
+#d <- data
+
+d <- d %>% 
+  group_by(ID, Stimulus) %>%
+  summarize(distance_error = mean(DistanceError))
+
+
+qs <- q[q$fear_object == "True",]
+#qs <- q
+
+qs <- q %>% 
+  group_by(ID, Stimulus) %>%
+  summarize(mean_threat = mean(threat))
+
+d <- merge(d, qs, by = c("ID", "Stimulus"))
+scatter.smooth(d$mean_threat, d$distance_error)
+
+# Correlations repeated measures
+library(rmcorr)
+my.rmc <- rmcorr(participant = ID, measure1 = mean_threat, measure2 = distance_error, dataset = d)
+my.rmc
+plot(my.rmc, overall = TRUE)
+
+
+
+
+```
+
+
+Block level - dynamic threat ratings
+
+```{r}
+
+### Get block-by-block ratings
+qs <- q_data[q_data$round_info != "Subj_ratings",]
+#create new variable istead of renaming (Round_info is a list)
+animals <- qs$round_info
+qs$Round <- animals$Animal
+qs$Round <- plyr::revalue(qs$Round, c("100 MS" = "1", "After Round 1" = "2", "After Round 2" = "3", "After Round 3" = "4", "After Round 4" = "5", "After Round 5" = "6")) # before which round
+qs <- plyr::rename(qs, replace = c("animal" = "Stimulus"))
+qs <- plyr::rename(qs, replace = c("subject" = "ID"))
+qs <- qs[qs$fear_object == "True",]
+#qs <- qs[qs$fear_object == "False",]
+
+qs$threat[qs$threat == -9999] <- NA
+qs$threat[qs$threat == 0] <- NA
+
+qs <- qs %>% 
+  group_by(ID, Stimulus, Round) %>%
+  summarize(threat = mean(threat))
+
+## simply check how ratings evolve over blocks
+qb <- qs %>% 
+  group_by(ID, Round) %>%
+  summarize(threat = mean(threat))
+
+
+boxplot(qb$threat[qb$Round == 1], qb$threat[qb$Round == 2], qb$threat[qb$Round == 3], qb$threat[qb$Round == 4],qb$threat[qb$Round == 5],qb$threat[qb$Round == 6], ylab = "Threat rating")
+
+points(c(mean(qb$threat[qb$Round == 1], na.rm = T), mean(qb$threat[qb$Round == 2], na.rm = T), mean(qb$threat[qb$Round == 3], na.rm = T), mean(qb$threat[qb$Round == 4], na.rm = T),mean(qb$threat[qb$Round == 5], na.rm = T),mean(qb$threat[qb$Round == 6], na.rm = T)))
+
+#mean(qb$threat[qb$Round == 1], na.rm = T)
+# mean(qb$threat[qb$Round == 2], na.rm = T)
+# mean(qb$threat[qb$Round == 3], na.rm = T)
+# mean(qb$threat[qb$Round == 4], na.rm = T)
+# mean(qb$threat[qb$Round == 5], na.rm = T)
+# mean(qb$threat[qb$Round == 6], na.rm = T)
+
+#ggplot(data = qb, aes(x = qb$Round, y = qb$threat, group = qb$ID, colour = qb$ID)) + geom_line() + geom_point()
+
+
+d <- data[data$FearObject == "True",]
+#d <- data[data$FearObject == "False",]
+
+d <- d %>% 
+  group_by(ID, Stimulus, Round) %>%
+  summarize(distance_error = mean(DistanceError))
+
+d <- merge(d, qs, by = c("ID", "Stimulus", "Round"))
+
+
+library(rmcorr)
+
+## Overall
+my.rmc <- rmcorr(participant = ID, measure1 = threat, measure2 = distance_error, dataset = d)
+my.rmc
+plot(my.rmc, overall = TRUE)
+### this takes all animals as set of numbers per subject (4 animals x 6 rounds = 24 per subject)
+
+d$Stimulus <- as.factor(d$Stimulus)
+
+for (a in unique(d$Stimulus)) {
+  
+da <- d[d$Stimulus == a,]  
+  
+my.rmc <- rmcorr(participant = ID, measure1 = threat, measure2 = distance_error, dataset = da)
+print(a)
+print(my.rmc)
+
+r_val <- round(my.rmc$r, digits = 2)
+p_val <- round(my.rmc$p, digits = 3)
+plot(my.rmc, overall = TRUE, main = paste0(a, "  r:",r_val, " p:", p_val))
+  
+}
+
+# errors across rounds in general
+#d <- data[data$FearObject == "True",]
+d <- data[data$FearObject == "False",]
+
+d <- d %>% 
+  group_by(ID, Round) %>%
+  summarize(distance_error = mean(DistanceError))
+
+boxplot(d$distance_error[d$Round == 1], d$distance_error[d$Round == 2], d$distance_error[d$Round == 3], d$distance_error[d$Round == 4],d$distance_error[d$Round == 5],d$distance_error[d$Round == 6], ylab = "distance_error")
+
+points(c(mean(d$distance_error[d$Round == 1], na.rm = T), mean(d$distance_error[d$Round == 2], na.rm = T), mean(d$distance_error[d$Round == 3], na.rm = T), mean(d$distance_error[d$Round == 4], na.rm = T),mean(d$distance_error[d$Round == 5], na.rm = T),mean(d$distance_error[d$Round == 6], na.rm = T)))
+
+```
+
+
+ANXIETY AND DISTANCE ERROR
+
+```{r}
+library(xlsx)
+
+q <- read.xlsx(paste0(VRCC_dir,"/Data/VRTask/Questionnaires/questionnaires_summary_final.xlsx"),sheetIndex = 1)
+
+q <- plyr::rename(q, replace = c("SUBJECT" = "ID"))
+q <- plyr::rename(q, replace = c("Scroe.STAI.T" = "Score.STAI.T"))
+
+#qs <- read.xlsx(paste0(VRCC_dir,"/Data/VRTask/Questionnaires/questionnaires_summaryscores.xlsx"),sheetName = "Aggregated Scores")
+
+
+d <- data[data$FearObject == "True",]
+#d <- data[data$FearObject == "False",]
+
+d <- d %>% 
+  group_by(ID) %>%
+  summarize(distance_error = mean(DistanceError))
+
+d <- merge(d, q, by = "ID")
+
+shapiro.test(d$distance_error)
+shapiro.test(d$Score.STAI.S)
+shapiro.test(d$Score.STAI.T)
+
+scatter.smooth(d$Score.STAI.S, d$distance_error)
+cor.test(d$Score.STAI.S, d$distance_error, method = "pearson")
+
+scatter.smooth(d$Score.STAI.T, d$distance_error)
+cor.test(d$Score.STAI.T, d$distance_error, method = "pearson")
+
+bold.text <- element_text(face = "bold", color = "black")
+Fig1 <- ggplot(data = d, aes(x = Score.STAI.S, y = distance_error)) + geom_smooth(col = "grey8", method = "lm", level=0.95, alpha = 0.5) +  geom_point(col = "grey 15", alpha = 0.5, size = 3, shape = 19) +   labs(x = "Anxiety - state", y = "Distance Error") + scale_fill_manual() + theme_classic() +  theme(axis.text=element_text(size=15, colour = "black", face="bold"),  axis.title=element_text(size=17), axis.title.y = element_text(margin = margin(t = 0, r = 3, b = 0, l = 0)), axis.title.x =   element_text(margin = margin(t = 5, r = 0, b = 0, l = 0))) + theme(axis.title = bold.text)
+Fig1
+
+bold.text <- element_text(face = "bold", color = "black")
+Fig2 <- ggplot(data = d, aes(x = Score.STAI.T, y = distance_error)) + geom_smooth(col = "grey8", method = "lm", level=0.95, alpha = 0.5) +  geom_point(col = "grey 15", alpha = 0.5, size = 3, shape = 19) +   labs(x = "Anxiety - trait", y = "Distance Error") + scale_fill_manual() + theme_classic() +  theme(axis.text=element_text(size=15, colour = "black", face="bold"),  axis.title=element_text(size=17), axis.title.y = element_text(margin = margin(t = 0, r = 3, b = 0, l = 0)), axis.title.x =   element_text(margin = margin(t = 5, r = 0, b = 0, l = 0))) + theme(axis.title = bold.text)
+Fig2
+
+
+# Estimated/True distance split by Anxiety
+
+q$Score.STAI.T
+hist(q$Score.STAI.T)
+
+low_third <- quantile(q$Score.STAI.T, 0.333)
+high_third <- quantile(q$Score.STAI.T, 0.666)
+q$stai_t_factor[q$Score.STAI.T <= low_third] <- "lower"
+q$stai_t_factor[q$Score.STAI.T >= high_third] <- "higher"
+qs <- select(q, ID, stai_t_factor)
+
+data <- merge(data, qs, by = "ID")
+
+library(colorspace)
+
+d <- data[!is.na(data$stai_t_factor),]
+d$stai_t_factor <- as.factor(d$stai_t_factor)
+
+Figure <- ggplot(data = d, aes(x = RealDistance, y = EstimatedDistance, color = stai_t_factor), alpha = 0.8) + geom_smooth(method = "loess", level=0.95, alpha = 0.5, aes(fill = stai_t_factor)) +
+  labs(y = "Estimated Distance", x = "Real Distance") +
+  theme_classic() +
+  theme(plot.title = element_text(hjust = 0.5, face = "bold", size = 17), axis.text=element_text(size=15),  axis.title=element_text(size=15)) +
+  scale_x_continuous(limits= c(min(data$RealDistance), max(data$RealDistance)), expand = c(0.01,0.01)) 
+
+plot(Figure)
+
+
+
+```
+
+

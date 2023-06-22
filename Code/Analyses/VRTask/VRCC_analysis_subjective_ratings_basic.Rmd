@@ -1,0 +1,389 @@
+---
+title: "VRCC Analysis - Testing"
+author: "AM, FK, PM"
+date: "May 5, 2019"
+# contact: "klotzsche@cbs.mpg.de", "aleksander.molak@gmail.com", "pawel.motyka@psych.uw.edu.pl"
+output: html_document
+chunk_output_type: console
+self_contained: no
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+basic_color <- '#195e8c'
+```
+
+# Import libraries & setup directories & read the data
+
+```{r message=FALSE, warning=FALSE}
+
+# Utils
+library(dplyr) 
+library(here)
+library(tidyr)
+
+# Plotting and tables
+library(ggplot2)
+library(sjPlot)
+library(gghalves)
+library(scales)
+
+# Statistical tools
+library(lme4)
+library(lmtest)
+library(lmerTest)
+library(car)
+library(BayesFactor)
+library(effsize)
+library(psych)
+
+
+# Set up the fulldata directory
+VRCC_dir         <- here()
+# Read the preprocessed data
+data <- read.csv(file = paste0(VRCC_dir,"/Data/VRTask/VRCC_data_consolidated"))
+
+# convert distances from m to cm
+data <- data %>%
+mutate(EstimatedDistance = EstimatedDistance * 100, RealDistance = RealDistance * 100, DistanceError = DistanceError * 100 , DistanceErrorAbs = DistanceErrorAbs * 100, LocalizationError = LocalizationError * 100)
+
+#### Everything below to be replaced by reading the prepared file (yet saving created some problems - some unusal structure @Aleksander's help there much appreciated)
+source(here("./Code/Analyses/VRTask/Utils/read_utils.r"))
+qstnr_data_path  <- here("./Data/VRTask/Ratings/Ratings_cleaned_AM_2020_10_20.xlsx")
+sess_info_folder <- here('./Data/VRTask/Logfiles/ExpSubjects')
+
+q_data <- get_questnr_data(qstnr_data_path, sess_info_folder)
+length(unique(q_data$subject))
+# # Drop unused data from five subjects
+pre_exclusions <- c("S11", "S13", "S18", "S21", "S44")
+q_data <- q_data[!(q_data$subject %in% pre_exclusions), ]
+length(unique(q_data$subject))
+
+
+```
+
+<br>
+
+# Subjective ratings (first at full visibility) and Distance Error
+
+```{r warning=FALSE}
+
+q_data$round_info[is.na(q_data$round_info), ] <- "Subj_ratings"
+
+q <- q_data[q_data$round_info == "Subj_ratings",]
+
+
+length(unique(q$subject))
+
+q <- plyr::rename(q, replace = c("subject" = "ID"))
+q <- plyr::rename(q, replace = c("animal" = "Stimulus"))
+
+d <- data %>% 
+  group_by(ID, Stimulus) %>%
+  summarize(distance_error  = mean(DistanceError), distance_error_norm  = mean(DistanceErrorNorm))
+
+dt <- merge(q, d, by = c("ID", "Stimulus"))
+length(unique(dt$ID))
+
+# THREAT: DISTANCE ERROR (cm)
+for (s in unique(dt$Stimulus)) {
+
+  ds <- dt[dt$Stimulus == s,]  
+
+cor <- cor.test(ds$threat, ds$distance_error, method = "spearman")
+rho <- round(cor$estimate, digits = 3)
+p_val <- round(cor$p.value, digits = 3)
+
+scatter.smooth(ds$threat, ds$distance_error, main = paste0(s, "\n(rho = ", rho, ", p = ",p_val,")"), pch = 20, cex = 2, col = scales::alpha("firebrick",0.5), lwd = 2, xlim = c(1,7), ylim = c(-105,105))
+}
+
+# THREAT: DISTANCE ERROR NORM (%)
+for (s in unique(dt$Stimulus)) {
+  
+ds <- dt[dt$Stimulus == s,]  
+
+cor <- cor.test(ds$threat, ds$distance_error_norm, method = "spearman")
+rho <- round(cor$estimate, digits = 3)
+p_val <- round(cor$p.value, digits = 3)
+
+scatter.smooth(ds$threat, ds$distance_error_norm, main = paste0(s, "\n(rho = ", rho, ", p = ",p_val,")"), pch = 20, cex = 2, col = scales::alpha("firebrick",0.5), lwd = 2, xlim = c(1,7), ylim = c(-35,35))
+}
+
+
+
+# DISGUST: DISTANCE ERROR (cm)
+for (s in unique(dt$Stimulus)) {
+  
+ds <- dt[dt$Stimulus == s,]  
+
+cor <- cor.test(ds$disgust, ds$distance_error, method = "spearman")
+rho <- round(cor$estimate, digits = 3)
+p_val <- round(cor$p.value, digits = 3)
+
+scatter.smooth(ds$disgust, ds$distance_error, main = paste0(s, "\n(rho = ", rho, ", p = ",p_val,")"), pch = 20, cex = 2, col = scales::alpha("#66804d",0.5), lwd = 2, xlim = c(1,7), ylim = c(-105,105))
+
+}
+
+# DISGUST: DISTANCE ERROR NORM (%)
+for (s in unique(dt$Stimulus)) {
+  
+ds <- dt[dt$Stimulus == s,]  
+
+cor <- cor.test(ds$disgust, ds$distance_error_norm, method = "spearman")
+rho <- round(cor$estimate, digits = 3)
+p_val <- round(cor$p.value, digits = 3)
+
+scatter.smooth(ds$disgust, ds$distance_error_norm, main = paste0(s, "\n(rho = ", rho, ", p = ",p_val,")"), pch = 20, cex = 2, col = scales::alpha("#66804d",0.5), lwd = 2, xlim = c(1,7), ylim = c(-35,35))
+
+}
+
+
+# SPEED: DISTANCE (cm)
+for (s in unique(dt$Stimulus)) {
+  
+ds <- dt[dt$Stimulus == s,]  
+
+cor <- cor.test(ds$how_fast, ds$distance_error, method = "spearman")
+rho <- round(cor$estimate, digits = 3)
+p_val <- round(cor$p.value, digits = 3)
+
+scatter.smooth(ds$how_fast, ds$distance_error, main = paste0(s, "\n(rho = ", rho, ", p = ",p_val,")"), pch = 20, cex = 2, col = scales::alpha("royalblue",0.6), lwd = 2, xlim = c(1,7), ylim = c(-110,110))
+}
+
+# SPEED: DISTANCE NORM (%)
+for (s in unique(dt$Stimulus)) {
+  
+ds <- dt[dt$Stimulus == s,]  
+
+cor <- cor.test(ds$how_fast, ds$distance_error_norm, method = "spearman")
+rho <- round(cor$estimate, digits = 3)
+p_val <- round(cor$p.value, digits = 3)
+
+scatter.smooth(ds$how_fast, ds$distance_error_norm, main = paste0(s, "\n(rho = ", rho, ", p = ",p_val,")"), pch = 20, cex = 2, col = scales::alpha("royalblue",0.6), lwd = 2, xlim = c(1,7), ylim = c(-35,35))
+}
+
+
+
+```
+
+ANOVA
+
+```{r}
+
+d <- dt[dt$fear_object == "True",]
+d <- d %>% 
+  group_by(ID) %>%
+  summarize(distance_error  = mean(distance_error), distance_error_norm  = mean(distance_error_norm), threat = mean(threat), disgust = mean(disgust))
+
+scatter.smooth(d$threat, d$distance_error, span = 1)
+shapiro.test(d$threat)
+cor.test(d$threat, d$distance_error, method = "spearman", exact = F)
+
+scatter.smooth(d$disgust, d$distance_error, span = 1)
+shapiro.test(d$disgust)
+cor.test(d$disgust, d$distance_error, method = "spearman", exact = F)
+
+scatter.smooth(d$threat, d$disgust)
+shapiro.test(d$threat)
+cor.test(d$threat, d$disgust, method = "spearman")
+               
+mT <- mean(d$threat)
+sdT <- sd(d$threat)
+mD <- mean(d$disgust)
+sdD <- sd(d$disgust)
+
+d$threat_z <- (d$threat - mT) / sdT
+d$disgust_z <- (d$disgust - mD) / sdD
+
+# earlier I tried with 1SD (as in work by Cole et al.) but almost no observations extracted 
+highT_highD <- median(d$distance_error[d$threat_z > 0 & d$disgust_z > 0])
+lowT_lowD <- median(d$distance_error[d$threat_z < -0 & d$disgust_z < -0])
+highT_lowD <-  median(d$distance_error[d$threat_z > 0 & d$disgust_z < -0])
+low_T_highD <- median(d$distance_error[d$threat_z < -0 & d$disgust_z > 0])
+
+
+for (s in unique(dt$Stimulus)) {
+  
+ds <- dt[dt$Stimulus == s,]  
+
+cor <- cor.test(ds$threat, ds$disgust, method = "spearman")
+rho <- round(cor$estimate, digits = 3)
+p_val <- round(cor$p.value, digits = 3)
+
+scatter.smooth(ds$threat, ds$disgust, main = paste0(s, "\n(rho = ", rho, ", p = ",p_val,")"), pch = 20, cex = 2, col = scales::alpha("gray40",0.6), lwd = 2, xlim = c(1,7), ylim = c(1,7))
+}
+
+
+
+```
+
+Association between subjective threat and difference in DE between diastole and systole (overall)
+
+```{r}
+
+d <- data[data$c_phase == "systole" | data$c_phase == "diastole",]
+d <- data[data$FearObject == "True",]
+
+d <- d %>% 
+  group_by(ID) %>%
+  summarize(de_sys = mean(DistanceError[c_phase == "systole"]), de_dia = mean(DistanceError[c_phase == "diastole"]))
+
+d$diff <- d$de_dia - d$de_sys
+hist(d$diff, main = "Diff = DE diastole - DE systole")
+
+qs <- q[q$fear_object == "True",]
+
+qs <- qs %>% 
+  group_by(ID) %>%
+  summarize(mean_threat = mean(threat))
+
+d <- merge(d, qs, by = "ID")
+scatter.smooth(d$mean_threat, d$diff)
+
+
+```
+
+
+Association between subjective threat and difference in DE between diastole and systole (overall)
+
+```{r}
+
+d <- data[data$c_phase == "systole" | data$c_phase == "diastole",]
+d <- data[data$FearObject == "True",]
+
+d <- d %>% 
+  group_by(ID) %>%
+  summarize(de_sys = mean(DistanceError[c_phase == "systole"]), de_dia = mean(DistanceError[c_phase == "diastole"]))
+
+d$diff <- d$de_dia - d$de_sys
+hist(d$diff, main = "Diff = DE diastole - DE systole")
+
+qs <- q[q$fear_object == "True",]
+
+qs <- qs %>% 
+  group_by(ID) %>%
+  summarize(mean_threat = mean(threat))
+
+d <- merge(d, qs, by = "ID")
+scatter.smooth(d$mean_threat, d$diff)
+
+
+```
+
+
+Association between subjective threat and difference in DE between diastole and systole (individual animals)
+
+```{r}
+
+d <- data[data$c_phase == "systole" | data$c_phase == "diastole",]
+d <- data[data$FearObject == "True",]
+
+d <- d %>% 
+  group_by(ID, Stimulus) %>%
+  summarize(de_sys = mean(DistanceError[c_phase == "systole"]), de_dia = mean(DistanceError[c_phase == "diastole"]))
+
+d$diff <- d$de_dia - d$de_sys
+hist(d$diff, main = "Diff = DE diastole - DE systole")
+
+qs <- q[q$fear_object == "True",]
+
+qs <- q %>% 
+  group_by(ID, Stimulus) %>%
+  summarize(mean_threat = mean(threat))
+
+d <- merge(d, qs, by = c("ID", "Stimulus"))
+scatter.smooth(d$mean_threat, d$diff)
+
+for (s in unique(d$ID)) {
+  
+ds <- d[d$ID == s,]  
+scatter.smooth(ds$mean_threat, ds$diff)  
+}
+
+library(rmcorr)
+
+my.rmc <- rmcorr(participant = ID, measure1 = mean_threat, measure2 = diff, dataset = d)
+my.rmc
+plot(my.rmc, overall = TRUE)
+
+
+#Association between subjective threat and difference in DE between diastole and systole (individual blocks) [not working]
+
+
+d <- data[data$c_phase == "systole" | data$c_phase == "diastole",]
+d <- data[data$FearObject == "True",]
+
+d <- d %>% 
+  group_by(ID, Stimulus, Round) %>%
+  summarize(de_sys = mean(DistanceError[c_phase == "systole"]), de_dia = mean(DistanceError[c_phase == "diastole"]))
+
+d$diff <- d$de_dia - d$de_sys
+hist(d$diff, main = "Diff = DE diastole - DE systole")
+
+qs <- q_data[q_data$round_info != "Subj_ratings",]
+#qs <- plyr::rename(qs, replace = c("round_info" = "Round"))
+animals <- qs$round_info
+qs$Round <- animals$Animal
+
+qs$Round <- plyr::revalue(qs$Round, c("100 MS" = "1", "After Round 1" = "2", "After Round 2" = "3", "After Round 3" = "4", "After Round 4" = "5", "After Round 5" = "6")) # before which round
+
+qs <- plyr::rename(qs, replace = c("animal" = "Stimulus"))
+
+qs <- plyr::rename(qs, replace = c("subject" = "ID"))
+
+qs <- qs[qs$fear_object == "True",]
+###
+qs <- qs %>% 
+  group_by(ID, Stimulus, Round) %>%
+  summarize(mean_threat = mean(threat))
+
+d <- merge(d, qs, by = c("ID", "Stimulus", "Round"))
+d$mean_threat[d$mean_threat == -9999] <- NA
+scatter.smooth(d$mean_threat, d$diff)
+
+
+# for (s in unique(d$ID)) {
+#   
+# ds <- d[d$ID == s,]  
+# scatter.smooth(ds$mean_threat, ds$diff)  
+# }
+
+library(rmcorr)
+
+my.rmc <- rmcorr(participant = ID, measure1 = mean_threat, measure2 = diff, dataset = d)
+my.rmc
+plot(my.rmc, overall = TRUE)
+
+
+## simply check how ratings evolve over blocks
+qs$mean_threat[qs$mean_threat == -9999] <- NA
+qb <- qs %>% 
+  group_by(ID, Round) %>%
+  summarize(threat = mean(mean_threat))
+
+boxplot(qb$threat[qb$Round == 1], qb$threat[qb$Round == 2], qb$threat[qb$Round == 3], qb$threat[qb$Round == 4],qb$threat[qb$Round == 5],qb$threat[qb$Round == 6])
+
+mean(qb$threat[qb$Round == 1], na.rm = T)
+mean(qb$threat[qb$Round == 2], na.rm = T)
+mean(qb$threat[qb$Round == 3], na.rm = T)
+mean(qb$threat[qb$Round == 4], na.rm = T)
+mean(qb$threat[qb$Round == 5], na.rm = T)
+mean(qb$threat[qb$Round == 6], na.rm = T)
+
+ggplot(data = qb, aes(x = qb$Round, y = qb$threat, group = qb$ID, colour = qb$ID)) + geom_line() + geom_point()
+
+qb$ID <- as.character(qb$ID)
+
+rmcorr(participant = ID, measure1 = threat, measure2 = Round, dataset = qb)
+
+plot(my.rmc, overall = TRUE)
+
+
+
+```
+
+
+
+

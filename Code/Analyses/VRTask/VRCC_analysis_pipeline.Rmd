@@ -26,6 +26,7 @@ library(tibble)
 library(purrr)
 library(mosaic)
 library(stringr)
+library(dplR)
 
 # Plotting and tables
 library(ggplot2)
@@ -45,6 +46,7 @@ source(here("./Code/Analyses/VRTask/Utils/get_cardio_info.R"))
 source(here("./Code/Analyses/VRTask/Utils/read_utils.r"))
 source(here("./Code/Analyses/VRTask/Utils/distance_utils.r"))
 source(here("./Code/Analyses/VRTask/Utils/stats_utils.r"))
+
 
 ```
 
@@ -153,14 +155,14 @@ fulldata <- full_join(fulldata, cardio_data)
 
 # Add unique row ID
 fulldata$row_ID <- paste0(fulldata$ID, '_', fulldata$Round, '_', fulldata$Trial)
-fulldata$ID <- as.factor(fulldatda$ID)
+fulldata$ID <- as.factor(fulldata$ID)
 
 # remove trials with no responses (NAs for distance estimations)
 data_filt_behav <- fulldata[!is.na(fulldata$EstimatedDistance),]
 nrow(fulldata)-nrow(data_filt_behav) # how many trials
 length(unique(fulldata$ID[is.na(fulldata$EstimatedDistance)])) # from how many participants
 
-# remove trials with no cardiac data (either due to temporary absence of ecg signal: 88 trials or too noisy signal: 24 trials)
+# remove trials with no cardiac data (either due to temporary absence of ecg signal: 88 trials or too noisy signal: 24 trials; 112 in total)
 data_filt_ecg <- data_filt_behav[!is.na(data_filt_behav$systolength),]
 nrow(data_filt_behav)-nrow(data_filt_ecg)
 
@@ -170,16 +172,20 @@ rm(data_filt_behav)
 rm(data_filt_ecg)
 
 ##### TRIAL-BASED ##### 
-#(!) Pawel: - to be decided: Localization Errors or LocalizationErrorsNorm
+
+# Log Localization Error (due to its non-normal distriubion)
+data$LocalizationErrorLog <- log(data$LocalizationError)
+#hist(data$LocalizationError, breaks = 100)
+#hist(data$LocalizationErrorLog, breaks = 100)
 
 # Remove trials with untypically large Localization Errors within subject (LE): LE > avg(LE) + 3*sd(LE)
 thrshlds_b <- data %>% 
             group_by(ID) %>% 
-            summarize(thrsh_hi = mean(LocalizationError, na.rm = TRUE) + 3 * sd(LocalizationError, na.rm = TRUE)) 
+            summarize(thrsh_hi = mean(LocalizationErrorLog, na.rm = TRUE) + 3 * sd(LocalizationErrorLog, na.rm = TRUE)) 
 
 
 fullfltrd_1b <- inner_join(data, thrshlds_b, by = 'ID') %>% 
-               filter(LocalizationError <= thrsh_hi) %>% 
+               filter(LocalizationErrorLog <= thrsh_hi) %>% 
                select(-c(thrsh_hi))
 
 
@@ -199,13 +205,12 @@ comparison_b$diff_trials <- comparison_b$INCL - comparison_b$EXCL
 comparison_b$percent_rm  <- (comparison_b$diff_trials / comparison_b$INCL) * 100
 describe(comparison_b$percent_rm) # outliers in %
 describe(comparison_b$diff_trials) # outlier in absolute numbers
-hist(comparison_b$diff_trials, breaks = 20, xlab = "Number of outlier trials - LE", ylab = "Number of subjects", main = "")
 
 # assign a variable specyfing whether LE value is outlier (alternative/double check)
 for (s in unique(data$ID)){
 for (t in unique(data$totTrial[data$ID == s])) {
   
-ifelse(data$LocalizationError[data$ID == s & data$totTrial == t] > thrshlds_b$thrsh_hi[thrshlds_b$ID==s], outlier <- "outlier", outlier <- "non_outlier")   
+ifelse(data$LocalizationErrorLog[data$ID == s & data$totTrial == t] > thrshlds_b$thrsh_hi[thrshlds_b$ID==s], outlier <- "outlier", outlier <- "non_outlier")   
 data$LE_outlier[data$ID == s & data$totTrial == t] <- outlier 
 }
 }
@@ -226,7 +231,7 @@ y<-0:7
 new <- data.frame(x = seq(0, 6, 0.1))
 lines(new$x, predict(lm(y~x), new),col= scales::alpha("dodgerblue", alpha = 0.7),lty= 2, lwd = 1.6)
 
-# plot without outliers
+# plot data without outliers
 d <- data[data$LE_outlier == "non_outlier",]
 scatter.smooth(d$RealDistance, d$EstimatedDistance, xlim = c(1.4,5.6), ylim = c(0.5,8.5), cex = 0.05, col = scales::alpha("gray20", 0.4) , xlab = "Real Distance", ylab = "Estimated Distance")
 
@@ -240,9 +245,7 @@ lines(new$x, predict(lm(y~x), new),col= scales::alpha("dodgerblue", alpha = 0.8)
 
 ## Exclusions based on distance estimates (behavioral & subject-based)
 
-
 ```{r}
-
 
 ##### SUBJECT-BASED #####
 
@@ -303,7 +306,6 @@ cat('How many trials were excluded in total?\n')
 cat(dim(data_filt)[1] - dim(fullfltrd_1t)[1])
 
 # What percent of trials should be removed at the subject level?
-
 incl_t       <- data_filt %>% group_by(ID) %>% count()
 excl_trial_t <- fullfltrd_1t %>% group_by(ID) %>% count()
 comparison_t <- data.frame(incl_t, excl_trial_t)
@@ -315,7 +317,6 @@ comparison_t$diff_trials <- comparison_t$INCL - comparison_t$EXCL
 comparison_t$percent_rm  <- (comparison_t$diff_trials / comparison_t$INCL) * 100
 describe(comparison_t$diff_trials)
 describe(comparison_t$percent_rm)
-hist(comparison_t$diff_trials, breaks = 20, xlab = "Number of outlier systole lengths", ylab = "Subjects count", main = "", col = "gray40")
 
 # assign a variable specyfing whether LE value is outlier (alternative/double check)
 for (s in unique(data$ID)){
