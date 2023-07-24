@@ -62,7 +62,7 @@ library(afex)
 VRCC_dir         <- here::here()
 
 # Read the preprocessed data
-data <- read.csv(file = paste0(VRCC_dir,"/Data/VRTask/VRCC_data_consolidated.csv"))
+data <- read.csv(file = paste0(VRCC_dir,"/Data/VRTask/VRCC_data_consolidated-2023-07-20.csv"))
 
 # conversion of distance from m to cm
 data <- data %>%
@@ -135,6 +135,12 @@ describe(dd$mean_localization)
 describe(dd$mean_angular)
 hist(dd$mean_angular)
 
+shapiro.test(dd$mean_angular)
+t.test(dd$mean_angular, mu = 0, alternative = "two.sided")
+
+shapiro.test(dd$mean_localization)
+t.test(dd$mean_angular, mu = 0, alternative = "two.sided")
+
 
 ###2.3 Plot distance errors for different animals
  
@@ -152,6 +158,9 @@ Figure <- ggplot(data = subdata, aes(x = RealDistance, y = DistanceError)) +
   scale_x_continuous(limits= c(min(data$RealDistance), max(data$RealDistance)), expand = c(0.01,0.01)) +
   scale_y_continuous(limits= c(-250, 250), expand = c(0.01,0.01)) + geom_hline(yintercept = 0, col = "royalblue1")
 plot(Figure)
+
+
+
 }
 
 ```
@@ -278,6 +287,78 @@ abline(h=0, col="gray20", lwd = 1.3, lty = 2)
 
 ```
 
+#####**3A. Hypothesis 1A: Comparison of localization and angular error between threatening and non-threatening objects** 
+
+```{r warning=FALSE}
+
+data$AngularErrorDeg <- data$AngularErrorRad * 180 / pi 
+data$AngularErrorDegAbs <- abs(data$AngularErrorDeg)
+
+###3.1. Preregistered analysis: hypothesis 1
+d <- data %>% 
+  dplyr::group_by(ID, FearObject) %>%
+  dplyr::summarize(mean_LocErr = mean(LocalizationError),
+                   mean_AngErr = mean(AngularErrorDegAbs),
+                   mean_DistErr = mean(DistanceError),
+                   sd_LocErr = sd(LocalizationError),
+                   sd_AngErr = sd(AngularErrorDeg),
+                   sd_DistErr = sd(DistanceError),
+      ) %>% 
+  ungroup()
+
+# check normality of distributions
+shapiro.test(d$mean_LocErr[d$FearObject=="True"])
+shapiro.test(d$mean_LocErr[d$FearObject=="False"])
+shapiro.test(d$mean_AngErr[d$FearObject=="True"])
+shapiro.test(d$mean_AngErr[d$FearObject=="False"])
+shapiro.test(d$sd_AngErr[d$FearObject=="True"])
+shapiro.test(d$sd_AngErr[d$FearObject=="False"])
+
+# 
+wilcox.test(d$mean_LocErr[d$FearObject=="True"], d$mean_LocErr[d$FearObject=="False"], paired = TRUE, alternative = "two.sided")
+t.test(d$mean_AngErr[d$FearObject=="True"], d$mean_AngErr[d$FearObject=="False"], paired = TRUE, alternative = "two.sided")
+t.test(d$sd_AngErr[d$FearObject=="True"], d$sd_AngErr[d$FearObject=="False"], paired = TRUE, alternative = "two.sided")
+
+
+# Show means:
+d %>% group_by(FearObject) %>% 
+  dplyr::summarise(gmean_LocErr = mean(mean_LocErr),
+                   gmean_AngErrDeg = mean(mean_AngErr),
+                   gmean_DistErr = mean(mean_DistErr),
+                   meansd_LocErr = mean(sd_LocErr),
+                   meansd_AngErrDeg = mean(sd_AngErr),
+                   meansd_DistErr = mean(sd_DistErr)
+                   ) -> summary_AngLocErr
+
+print(summary_AngLocErr)
+
+# calculate Cohen's d
+effsize::cohen.d(mean_LocErr~FearObject, data=d, paired = T)
+
+
+
+
+###3.3 Plot results for different animals
+d <- data %>% 
+  dplyr::group_by(ID, Stimulus) %>%
+  dplyr::summarize(angular_error = mean(AngularErrorDeg))
+
+d <- spread(d, key = Stimulus, value = angular_error)
+
+boxplot(d$Crocodile, d$FinalWolf, d$FinalSnake, d$Scorpio, d$Deer, d$Pig,  d$Turtle, d$Rabbit, 
+        col = c(cR, cR, cR, cR, cB, cB, cB,cB), 
+        names = c("Crocodile", "Wolf", "Snake", "Scorpio", "Deer", "Pig", "Turtle", "Rabbit"), 
+        frame = FALSE, 
+        notch = TRUE, 
+        ylab = "Angular Error", 
+        cex.lab = 1.4, 
+        cex.axis = 1)
+abline(h=0, col="gray20", lwd = 1.3, lty = 2)
+# export size: 5 x 7
+
+```
+
+
 <a name="S4"></a>
 &nbsp;
 
@@ -339,6 +420,7 @@ shapiro.test(d$m_systole)
 shapiro.test(d$m_diastole)
 t.test(d$m_systole, d$m_diastole, paired = T)
 
+
 # Bayes factor (comparison of interest + robustness check)
 ttestBF(d$m_systole, d$m_diastole, paired = T)
 ttestBF(d$m_systole, d$m_diastole, paired = T, r = 1)
@@ -351,13 +433,20 @@ d <- d[d$c_phase == "systole" | d$c_phase == "diastole", ]
 # transform data
 d <- d %>% 
   dplyr::group_by(ID) %>%
-  dplyr::summarize(m_systole     = mean(DistanceError[c_phase == "systole"]), 
-            m_diastole = mean(DistanceError[c_phase == "diastole"]))
+  dplyr::summarize(
+    m_systole = mean(DistanceError[c_phase == "systole"]), 
+    m_diastole = mean(DistanceError[c_phase == "diastole"]),
+    sd_systole = sd(AngularErrorDeg[c_phase == "systole"]), 
+    sd_diastole = sd(AngularErrorDeg[c_phase == "diastole"])
+  )
 
 # t-test (comparison of interest)
 shapiro.test(d$m_systole)
 shapiro.test(d$m_diastole)
+shapiro.test(d$sd_systole)
+shapiro.test(d$sd_diastole)
 t.test(d$m_systole, d$m_diastole, paired = T)
+t.test(d$sd_systole, d$sd_diastole, paired = TRUE)
 
 # Bayes factor (comparison of interest + robustness check)
 ttestBF(d$m_systole, d$m_diastole, paired = T)
@@ -371,10 +460,32 @@ ttestBF(d$m_systole, d$m_diastole, paired = T, r = 0.354)
 d <- data[data$FearObject == "True",]
 d <- d[d$c_phase == "systole" | d$c_phase == "diastole", ]
 
+# transform data
 d <- d %>% 
   dplyr::group_by(ID) %>%
-  dplyr::summarize(m_systole     = mean(DistanceError[c_phase == "systole"]), 
-            m_diastole = mean(DistanceError[c_phase == "diastole"]))
+  dplyr::summarize(
+    m_systole = mean(DistanceError[c_phase == "systole"]), 
+    m_diastole = mean(DistanceError[c_phase == "diastole"]),
+    m_systole_ang = mean(AngularErrorDeg[c_phase == "systole"]), 
+    m_diastole_ang = mean(AngularErrorDeg[c_phase == "diastole"])
+  )
+
+# t-test (comparison of interest)
+shapiro.test(d$m_systole)
+shapiro.test(d$m_diastole)
+shapiro.test(d$m_systole_ang)
+shapiro.test(d$m_diastole_ang)
+t.test(d$m_systole, d$m_diastole, paired = T)
+t.test(d$m_systole_ang, d$m_diastole_ang, paired = TRUE)
+
+aov_d <- data %>% 
+  filter(c_phase %in% c("diastole", "systole")) %>% 
+  group_by(ID, FearObject, c_phase) %>% 
+  dplyr::summarise(m = mean(AngularErrorDeg), 
+                   sd = sd(AngularErrorDeg)) %>% 
+  ungroup()
+
+summary(aov(sd ~ c_phase * FearObject + Error(ID), data = aov_d))
 
 d2 <- d
 d2$diff <- d$m_diastole - d$m_systole
