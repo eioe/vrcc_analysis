@@ -4,6 +4,7 @@ Data
 Data__
 .RData
 .Rhistory
+.Rproj.user/
 # Code/Analyses/VRTask/VRCC_analysis_pipeline.Rmd
 
 # Ignore MATLAB autosaves:

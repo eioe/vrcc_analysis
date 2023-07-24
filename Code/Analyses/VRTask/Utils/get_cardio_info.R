@@ -17,14 +17,14 @@ get_cardio_info <- function(fulldat, subj_ID) {
   print(subj_ID)
   
   # Set paths to ecg files
-  fpath <- paste0("Data/VRTask/Cardio/ExpSubjects/02_Peaks/Events/VRCC_", 
+  fpath <- paste0(here(), "/Data/VRTask/Cardio/ExpSubjects/02_Peaks/Events/VRCC_", 
                   subj_ID, ".csv")
-  fpath_noisy_ecg <- paste0("Data/VRTask/Cardio/ExpSubjects/02_Peaks/TimesBadECG/VRCC_", 
+  fpath_noisy_ecg <- paste0(here(), "/Data/VRTask/Cardio/ExpSubjects/02_Peaks/TimesBadECG/VRCC_", 
                   subj_ID, ".txt")
   
   # Get marker info from ECG file:
-  mrks <- read_delim(here(fpath), delim = '\t')
-  noisy_ecg <- read_delim(here(fpath_noisy_ecg), delim = ',')
+  mrks <- read_delim(fpath, delim = '\t')
+  noisy_ecg <- read_delim(fpath_noisy_ecg, delim = ',')
   
   # Get relevant columns and rows, add info column about type of marker:
   mrks <- mrks %>% 
@@ -94,7 +94,7 @@ get_cardio_info <- function(fulldat, subj_ID) {
     as_vector()
   
   # Load filtered ECG data (for the t-wave end detection algorithm)
-  filtered_ecg_fpath <- paste0("Data/VRTask/Cardio/ExpSubjects/01_Filtered/VRCC_filt_ecg_",subj_ID, ".txt")
+  filtered_ecg_fpath <- paste0(here(), "/Data/VRTask/Cardio/ExpSubjects/01_Filtered/VRCC_filt_ecg_",subj_ID, ".txt")
   ecg <- read.table(here(filtered_ecg_fpath)) 
   ecg[,1] <- ecg[,1] * 1000 # frequency: 1000 Hz
   

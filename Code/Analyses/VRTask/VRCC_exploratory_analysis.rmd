@@ -1,0 +1,484 @@
+---
+title: <font size="5">**VRCC -- exploratory analysis **</font> 
+author: <br> <font size="4"> Pawel Motyka, Felix Klotzsche, Aleksander Molak </font> <br>  *pmotyka@psych.pan.pl*  *klotzsche@cbs.mpg.de* *aleksander.molak@gmail.com*
+date: <font size="3"> April 2021  </font>
+output: html_document
+chunk_output_type: console
+self_contained: no
+
+--- 
+
+&nbsp;
+<font size="4">
+**List of sections**:
+
+1. Load required packages and data [S1](#S1)
+2. Comparison of localization error between cardiac phases [S2](#S2)
+3. RR interval length and distance estimates [S3](#S3)
+4. Animal assessment - threat, disgust, and speed ratings  [S4](#S4)
+5. Distance error as a function of subjective threat [S5](#S5)
+6. Distance error as a function of anxiety levels, digust, and speed ratings [S6](#S6)
+7. Cybersickness (SSQ) and presence in VR (SUS) [S7](#S7)
+
+<a name="S1"></a>
+&nbsp;
+
+#####**1. Load required packages and data** 
+
+```{r message=FALSE, warning=FALSE}
+
+# Utils
+library(dplyr) 
+library(here)
+library(tidyr)
+source(here("./Code/Analyses/VRTask/Utils/stats_utils.r"))
+
+# Plotting and tables
+library(ggplot2)
+library(sjPlot)
+library(gghalves)
+library(colorspace)
+
+# Statistical tools
+library(lme4)
+library(lmtest)
+library(lmerTest)
+library(car)
+library(effsize)
+library(psych)
+library(Rmisc)
+library(afex)
+
+# Set up the fulldata directory
+VRCC_dir  <- here::here()
+
+# read behavioral & ecg data
+data <- read.csv(file = paste0(VRCC_dir,"/Data/VRTask/VRCC_data_consolidated"))
+
+# read intial ratings data
+d_sub_start <- read.csv(file = paste0(VRCC_dir,"/Data/VRTask/VRCC_data_initial_subjective_ratings"))
+
+# read mid-experimental ratings data
+d_sub_mid <- read.csv(file = paste0(VRCC_dir,"/Data/VRTask/VRCC_data_mid-experimental_subjective_ratings"))
+d_sub_mid$threat[d_sub_mid$threat == 0] <- NA # add NAs
+
+# read questionnaires data
+d_qstn <- read.csv(file = paste0(VRCC_dir,"/Data/VRTask/VRCC_data_questionnaires"))
+
+# conversion of distance from m to cm
+data <- data %>%
+mutate(EstimatedDistance = EstimatedDistance * 100, RealDistance = RealDistance * 100, DistanceError = DistanceError * 100 , DistanceErrorAbs = DistanceErrorAbs * 100, LocalizationError = LocalizationError * 100)
+
+```
+
+
+<a name="S2"></a>
+&nbsp;
+
+#####**2. Comparison of localization error between cardiac phases** 
+
+```{r}
+
+### 2.1 Localization error
+
+d <- data[data$c_phase == "systole" | data$c_phase == "diastole",]
+
+d <- dplyr::select(d, ID, LocalizationError, c_phase)
+d <- d %>% dplyr::group_by(ID, c_phase)  %>% dplyr::summarize(LocalizationError = mean(LocalizationError))
+
+d <- pivot_wider(d, names_from = c(c_phase), values_from = LocalizationError)
+
+# perform t-test
+shapiro.test(d$diastole)
+shapiro.test(d$systole)
+describe(d$diastole)
+describe(d$systole)
+wilcox.test(d$systole, d$diastole, paired = T)
+#boxplot(d$systole, d$diastole, names = c("Systole", "Diastole"), ylim = c(0,1))
+```
+
+<a name="S3"></a>
+&nbsp;
+
+#####**3. RR interval length and distance estimates** 
+
+```{r}
+
+### 3.1 RR interval - distance & localization errors
+
+d <- dplyr::select(data, ID, DistanceError, LocalizationError, RRLength)
+d <- d %>% dplyr::group_by(ID) %>% dplyr::summarize(LocalizationError = mean(LocalizationError), DistanceError = mean(DistanceError), RRLength = mean(RRLength))
+
+shapiro.test(d$LocalizationError)
+shapiro.test(d$DistanceError)
+shapiro.test(d$RRLength)
+
+cor.test(d$RRLength, d$DistanceError, method = "pearson")
+cor.test(d$RRLength, d$LocalizationError, method = "spearman")
+
+```
+
+
+<a name="S4"></a>
+&nbsp;
+
+#####**4. Animal assessment - threat, disgust, and speed ratings** 
+
+```{r}
+
+###. 4.1. Separate groups (threat, disgust, speed ratings)
+
+di <- d_sub_start
+di <- di %>% dplyr::group_by(ID, fear_object) %>% dplyr::summarize(threat = mean(threat), disgust = mean(disgust), speed = mean(how_fast))
+di <- pivot_wider(di, names_from = c(fear_object), values_from = c(threat, disgust, speed))
+
+# threat
+shapiro.test(di$threat_False)
+shapiro.test(di$threat_True)
+wilcox.test(di$threat_True, di$threat_False, paired = T,  alternative = "two.sided", exact = F)
+describe(di$threat_False)
+describe(di$threat_True)
+
+# disgust
+shapiro.test(di$disgust_False)
+shapiro.test(di$disgust_True)
+wilcox.test(di$disgust_True, di$disgust_False, paired = T,  alternative = "two.sided", exact = F)
+describe(di$disgust_False)
+describe(di$disgust_True)
+
+# speed
+shapiro.test(di$speed_False)
+shapiro.test(di$speed_True)
+t.test(di$speed_True, di$speed_False, paired = T,  alternative = "two.sided")
+describe(di$speed_False)
+describe(di$speed_True)
+
+
+###. 4.2. Invididual animals (threat, disgust, speed)
+
+di <- d_sub_start
+di <- di %>% dplyr::group_by(ID, Stimulus) %>% dplyr::summarize(threat = mean(threat), disgust = mean(disgust), speed = mean(how_fast))
+
+dis <- pivot_wider(di, names_from = c(Stimulus), values_from = c(threat, disgust, speed))
+
+cR <- rgb(178/255, 31/255, 0/255)
+cB <- rgb(10/255, 80/255, 200/255)
+
+# threat
+boxplot(dis$threat_Crocodile, dis$threat_FinalWolf, dis$threat_FinalSnake, dis$threat_Scorpio, dis$threat_Deer, dis$threat_Pig,  dis$threat_Turtle, dis$threat_Rabbit, col = c(cR, cR, cR, cR, cB, cB, cB,cB), names = c("Crocodile", "Wolf", "Snake", "Scorpio", "Deer", "Pig", "Turtle", "Rabbit"), frame = FALSE, notch = F, ylab = "Subjective threat", cex.lab = 1.2, cex.axis = 1, ylim = c(1,7))
+abline(h=0, col="gray20", lwd = 1.3, lty = 2)
+
+points(c(mean(dis$threat_Crocodile, na.rm = T), mean(dis$threat_FinalWolf, na.rm = T), mean(dis$threat_FinalSnake, na.rm = T), mean(dis$threat_Scorpio, na.rm = T), mean(dis$threat_Deer, na.rm = T),mean(dis$threat_Pig, na.rm = T),mean(dis$threat_Turtle, na.rm = T),mean(dis$threat_Rabbit, na.rm = T)), pch = 19, cex = 1.4)
+# export 3.5 x 7 cm
+
+# disgust
+boxplot(dis$disgust_Crocodile, dis$disgust_FinalWolf, dis$disgust_FinalSnake, dis$disgust_Scorpio, dis$disgust_Deer, dis$disgust_Pig,  dis$disgust_Turtle, dis$disgust_Rabbit, col = c(cR, cR, cR, cR, cB, cB, cB,cB), names = c("Crocodile", "Wolf", "Snake", "Scorpio", "Deer", "Pig", "Turtle", "Rabbit"), frame = FALSE, notch = F, ylab = "Subjective disgust", cex.lab = 1.2, cex.axis = 1, ylim = c(1,7))
+abline(h=0, col="gray20", lwd = 1.3, lty = 2)
+
+points(c(mean(dis$disgust_Crocodile, na.rm = T), mean(dis$disgust_FinalWolf, na.rm = T), mean(dis$disgust_FinalSnake, na.rm = T), mean(dis$disgust_Scorpio, na.rm = T), mean(dis$disgust_Deer, na.rm = T),mean(dis$disgust_Pig, na.rm = T),mean(dis$disgust_Turtle, na.rm = T),mean(dis$disgust_Rabbit, na.rm = T)), pch = 19, cex = 1.4)
+# export 3.5 x 7 cm
+
+# speed
+boxplot(dis$speed_Crocodile, dis$speed_FinalWolf, dis$speed_FinalSnake, dis$speed_Scorpio, dis$speed_Deer, dis$speed_Pig,  dis$speed_Turtle, dis$speed_Rabbit, col = c(cR, cR, cR, cR, cB, cB, cB,cB), names = c("Crocodile", "Wolf", "Snake", "Scorpio", "Deer", "Pig", "Turtle", "Rabbit"), frame = FALSE, notch = F, ylab = "Ratings of speed", cex.lab = 1.2, cex.axis = 1, ylim = c(1,7))
+abline(h=0, col="gray20", lwd = 1.3, lty = 2)
+
+points(c(mean(dis$speed_Crocodile, na.rm = T), mean(dis$speed_FinalWolf, na.rm = T), mean(dis$speed_FinalSnake, na.rm = T), mean(dis$speed_Scorpio, na.rm = T), mean(dis$speed_Deer, na.rm = T),mean(dis$speed_Pig, na.rm = T),mean(dis$speed_Turtle, na.rm = T),mean(dis$speed_Rabbit, na.rm = T)), pch = 19, cex = 1.4)
+# export 3.5 x 7 cm
+
+
+### 4.3.  Block-by-block/mid-experimental threat ratings
+
+# threatening vs non-threatening difference
+mid_averaged <- d_sub_mid %>% 
+  dplyr::group_by(ID, fear_object) %>%
+  dplyr::summarize(threat = mean(threat, na.rm = T))
+
+mid_averaged <- pivot_wider(mid_averaged, names_from = fear_object, values_from = threat)
+
+shapiro.test(mid_averaged$False)
+shapiro.test(mid_averaged$True)
+
+wilcox.test(mid_averaged$True, mid_averaged$False, paired = T,  alternative = "two.sided", exact = F)
+describe(mid_averaged$False)
+describe(mid_averaged$True)
+
+# block-by-block changes 
+qb <- d_sub_mid %>% 
+  dplyr::group_by(ID, fear_object, Round) %>%
+  dplyr::summarize(threat = mean(threat, na.rm = T))
+qb <- qb[qb$fear_object == "True",]
+
+cR <- rgb(178/255, 31/255, 0/255)
+boxplot(qb$threat[qb$Round == 1], qb$threat[qb$Round == 2], qb$threat[qb$Round == 3], qb$threat[qb$Round == 4],qb$threat[qb$Round == 5],qb$threat[qb$Round == 6], ylab = "Subjective threat", xlab = "Consecutive blocks", col = cR, 
+frame = FALSE, notch = F, cex.lab = 1.2, cex.axis = 1)
+
+points(c(mean(qb$threat[qb$Round == 1], na.rm = T), mean(qb$threat[qb$Round == 2], na.rm = T), mean(qb$threat[qb$Round == 3], na.rm = T), mean(qb$threat[qb$Round == 4], na.rm = T),mean(qb$threat[qb$Round == 5], na.rm = T),mean(qb$threat[qb$Round == 6], na.rm = T)), pch = 19, cex = 1.4)
+
+# run analysis
+fit_all <- aov_ez(data = qb, dv = "threat", id = "ID", within="Round", return = afex_options("return_aov"), anova_table = list(), fun_aggregate = mean)
+fit_all 
+summary(fit_all) # see epsilon values
+
+# post-hoc comparisons (Bonferroni correction)
+ref <- emmeans::emmeans(fit_all, specs = "Round")
+ref
+emmeans::contrast(ref,method="pairwise",adjust="bonferroni")
+
+
+### 4.4. Stimulus recognition task
+dm <- d_sub_mid
+# % of unrecognized objects
+length(dm$recognize[dm$recognize == 0]) / nrow(dm)
+# from 18 subjects
+length(unique(dm$ID[dm$recognize == 0]))
+
+```
+
+<a name="S5"></a>
+&nbsp;
+
+#####**5. Distance error as a function of subjective threat** 
+
+```{r, warning=FALSE}
+
+# merge initial and mid-experimental threat ratings to get overall average
+dm <- d_sub_mid
+dm <- dm %>% 
+  group_by(ID, Stimulus) %>%
+  dplyr::summarize(threat = mean(threat, na.rm = T))
+
+di <- d_sub_start
+di <- di %>% dplyr::rename("threat_start" = "threat")
+
+d <- inner_join(dm, di)
+
+# check correlations between initial and mid-experimental ratings
+for (s in unique(d$Stimulus)) {
+  
+ds <- d[d$Stimulus == s,]  
+
+cor <- cor.test(ds$threat, ds$threat_start, method = "spearman") 
+rho <- round(cor$estimate, digits = 3)
+p_val <- round(cor$p.value, digits = 3)
+
+scatter.smooth(ds$threat, ds$threat_start, main = paste0(s, "\n(rho = ", rho, ", p = ",p_val,")"), pch = 20, cex = 2, col = scales::alpha("firebrick",0.5), lwd = 2, xlim = c(0,7), ylim = c(0,7))
+}
+
+# merge data
+dm <- d_sub_mid[,c(1,3,4,5,7)]
+di <- d_sub_start
+di <- di[,c(1,3,7,8)]
+di$Round <- 0 # save initial rating as 'block 0'
+dss <- rbind(di,dm)
+dss <- dss[dss$fear_object == "True",]
+
+# save average threat ratings
+d <- dss %>% 
+  dplyr::group_by(ID, Stimulus) %>%
+  dplyr::summarize(threat = mean(threat, na.rm = T))
+
+# merge threat ratings with behavioral data
+data_t <- data[data$FearObject == "True",]
+dt <- merge(data_t,d, by = c("ID", "Stimulus"))
+
+# prepare data for analysis & plotting
+dt <- dt %>% 
+  dplyr::group_by(ID, Stimulus) %>%
+  dplyr::summarize(distance_error  = mean(DistanceError), threat = mean(threat))
+
+# plot raw figures with correlation results
+for (s in unique(dt$Stimulus)) {
+
+  ds <- dt[dt$Stimulus == s,]  
+
+print(shapiro.test(ds$threat))
+print(shapiro.test(ds$distance_error))
+
+print(s)
+cor <- cor.test(ds$threat, ds$distance_error, method = "spearman")
+print(cor)
+
+rho <- round(cor$estimate, digits = 3)
+p_val <- round(cor$p.value, digits = 3)
+
+scatter.smooth(ds$threat, ds$distance_error, main = paste0(s, "\n(rho = ", rho, ", p = ",p_val,")"), pch = 20, cex = 2, col = scales::alpha("firebrick",0.5), lwd = 2, xlim = c(1,7), ylim = c(-105,105))
+}
+
+# plot finalized figures
+bold.text <- element_text(face = "bold", color = "black")
+cR <- darken(rgb(178/255, 31/255, 0/255), 0.1)
+
+par(mfrow=c(1,4))
+
+for (s in unique(dt$Stimulus)) {
+
+  d <- dt[dt$Stimulus == s,]  
+
+Fig1 <- ggplot(data = d, aes(x = threat, y = distance_error)) + geom_smooth(col = cR, fill = cR,method = "lm", level=0.95, alpha = 0.5) +  geom_point(col = cR, alpha = 0.8, size = 3, shape = 19) +   labs(x = "Subjective Threat", y = "Distance Error") + scale_fill_manual() + theme_classic() +  theme(axis.text=element_text(size=16, colour = "black", face="bold"),  axis.title=element_text(size=18), axis.title.y = element_text(margin = margin(t = 0, r = 1, b = 0, l = 0)), axis.title.x =   element_text(margin = margin(t = 7, r = 0, b = 0, l = 0))) + theme(axis.title = bold.text) + xlim(1, 7) + ylim(-101, 101) + scale_x_continuous(n.breaks = 7)
+print(Fig1) 
+# export 4 x 4.5
+}
+
+```
+
+
+<a name="S6"></a>
+&nbsp;
+
+#####**6. Distance error as a function anxiety levels, digust, and speed ratings** 
+
+```{r, warning=FALSE}
+
+### 6.1. Anxiety levels (STAI)
+
+# prepare data
+d <- data %>% 
+  dplyr::group_by(ID) %>%
+  dplyr::summarize(distance_error = mean(DistanceError))
+d <- merge(d, d_qstn, by = "ID")
+
+# normality of distributions
+shapiro.test(d$distance_error)
+shapiro.test(d$stai_s)
+shapiro.test(d$stai_t)
+
+# test correlation: anxiety state - distance error
+cor.test(d$stai_s, d$distance_error, method = "pearson")
+bold.text <- element_text(face = "bold", color = "black")
+Fig1 <- ggplot(data = d, aes(x = stai_s, y = distance_error)) + geom_smooth(col = "grey8", method = "lm", level=0.95, alpha = 0.5) +  geom_point(col = "grey 15", alpha = 0.5, size = 3, shape = 19) +   labs(x = "Anxiety - state", y = "Distance Error") + scale_fill_manual() + theme_classic() +  theme(axis.text=element_text(size=15, colour = "black", face="bold"),  axis.title=element_text(size=17), axis.title.y = element_text(margin = margin(t = 0, r = 3, b = 0, l = 0)), axis.title.x =   element_text(margin = margin(t = 5, r = 0, b = 0, l = 0))) + theme(axis.title = bold.text)
+Fig1
+
+# test correlation: anxiety trait - distance error
+cor.test(d$stai_t, d$distance_error, method = "pearson")
+bold.text <- element_text(face = "bold", color = "black")
+Fig2 <- ggplot(data = d, aes(x = stai_t, y = distance_error)) + geom_smooth(col = "grey8", method = "lm", level=0.95, alpha = 0.5) +  geom_point(col = "grey 15", alpha = 0.5, size = 3, shape = 19) +   labs(x = "Anxiety - trait", y = "Distance Error") + scale_fill_manual() + theme_classic() +  theme(axis.text=element_text(size=15, colour = "black", face="bold"),  axis.title=element_text(size=17), axis.title.y = element_text(margin = margin(t = 0, r = 3, b = 0, l = 0)), axis.title.x =   element_text(margin = margin(t = 5, r = 0, b = 0, l = 0))) + theme(axis.title = bold.text)
+Fig2
+
+## check correlations for individual animals
+# prepare data
+d <- data %>% 
+  dplyr::group_by(ID, Stimulus) %>%
+  dplyr::summarize(distance_error = mean(DistanceError))
+d <- merge(d, d_qstn, by = "ID")
+
+# loop over animals
+for (s in unique(d$Stimulus)) {
+ds <- d[d$Stimulus == s,]  
+print(s)
+print(shapiro.test(ds$distance_error))
+cor <- cor.test(ds$stai_t, ds$distance_error, method = "spearman", exact = F)
+print(cor)
+rho <- round(cor$estimate, digits = 3)
+p_val <- round(cor$p.value, digits = 3)
+scatter.smooth(ds$stai_t, ds$distance_error, main = paste0(s, "\n(rho = ", rho, ", p = ",p_val,")"), pch = 20, cex = 2, col = scales::alpha("gray30",0.5), lwd = 2, xlim = c(25,55), ylim = c(-105,105))}
+
+### 6.2. Disgust
+dg <- d_sub_start
+dg <- dg %>% 
+  group_by(ID, Stimulus) %>%
+  dplyr::summarize(disgust = mean(disgust, na.rm = T))
+
+ds <- data %>% 
+  dplyr::group_by(ID, Stimulus) %>%
+  dplyr::summarize(distance_error = mean(DistanceError))
+ds <- merge(ds, dg, by = c("ID","Stimulus"))
+
+# loop over animals
+for (s in unique(ds$Stimulus)) {
+
+print(s)
+d <- ds[ds$Stimulus == s,]
+
+test <- shapiro.test(d$distance_error)
+norm1 <- (test$p.value > 0.05)
+test <- shapiro.test(d$disgust)
+norm2 <- (test$p.value > 0.05)
+
+ifelse((norm1 == FALSE | norm2 == FALSE), R_method <- "spearman", R_method <- "pearson")  
+
+print(s)
+cor <- cor.test(d$disgust, d$distance_error, method = R_method)
+print(cor)
+rho <- round(cor$estimate, digits = 3)
+p_val <- round(cor$p.value, digits = 3)
+
+scatter.smooth(d$disgust, d$distance_error, main = paste0(s, " ", R_method, ":", rho, ", p = ",p_val), pch = 20, cex = 2, col = scales::alpha("chocolate4",0.5), lwd = 2, xlim = c(0,7), ylim = c(-105,105))
+}
+
+### 6.3. Speed
+dsp <- d_sub_start
+dsp <- dsp %>% 
+  group_by(ID, Stimulus) %>%
+  dplyr::summarize(speed = mean(how_fast, na.rm = T))
+
+ds <- data %>% 
+  dplyr::group_by(ID, Stimulus) %>%
+  dplyr::summarize(distance_error = mean(DistanceError))
+ds <- merge(ds, dsp, by = c("ID","Stimulus"))
+
+# loop over animals
+for (s in unique(ds$Stimulus)) {
+
+d <- ds[ds$Stimulus == s,]
+
+test <- shapiro.test(d$distance_error)
+norm1 <- (test$p.value > 0.05)
+test <- shapiro.test(d$speed)
+norm2 <- (test$p.value > 0.05)
+
+ifelse((norm1 == FALSE | norm2 == FALSE), R_method <- "spearman", R_method <- "pearson")
+
+print(s)
+cor <- cor.test(d$speed, d$distance_error, method = R_method)
+print(cor)
+rho <- round(cor$estimate, digits = 3)
+p_val <- round(cor$p.value, digits = 3)
+
+scatter.smooth(d$speed, d$distance_error, main = paste0(s, " ", R_method, ":", rho, ", p = ",p_val), pch = 20, cex = 2, col = scales::alpha("darkblue",0.5), lwd = 2, xlim = c(0,7), ylim = c(-105,105))
+}
+
+```
+
+
+<a name="S7"></a>
+&nbsp;
+
+#####**7. Cybersickness (SSQ) and presence in VR (SUS)** 
+
+```{r}
+
+### 7.1. Simulator Sickness Questionnaire (SSQ)
+d_qstn$SSQ.Pre <- d_qstn$SSQ.Pre / 6
+d_qstn$SSQ.Post <- d_qstn$SSQ.Post / 6
+d_qstn$csickness_change <- d_qstn$SSQ.Post - d_qstn$SSQ.Pre
+hist(d_qstn$csickness_change, col = "darkgreen")
+
+shapiro.test(d_qstn$SSQ.Pre)
+shapiro.test(d_qstn$SSQ.Post)
+wilcox.test(d_qstn$SSQ.Post, d_qstn$SSQ.Pre, paired = T, exact = F)
+
+describe(d_qstn$SSQ.Pre)
+describe(d_qstn$SSQ.Post)
+
+
+### 7.2 Slater-Usoh-Steed Questionnaire (SUS; Slater, 1999) 
+d_qstn$SUS <- d_qstn$SUS / 6
+describe(d_qstn$SUS)
+dt <- data %>% 
+  dplyr::group_by(ID) %>%
+  dplyr::summarize(distance_error  = mean(DistanceError), localization_error =  mean(LocalizationError))
+dt <- merge(dt, d_qstn, by = "ID")
+
+shapiro.test(dt$SUS.Score)
+shapiro.test(dt$distance_error)
+shapiro.test(dt$localization_error)
+
+#scatter.smooth(dt$SUS.Score, dt$distance_error)
+cor.test(dt$SUS.Score, dt$distance_error, method = "pearson")
+
+#scatter.smooth(dt$SUS.Score, dt$localization_error)
+cor.test(dt$SUS.Score, dt$localization_error, method = "spearman")
+
+```
+
+

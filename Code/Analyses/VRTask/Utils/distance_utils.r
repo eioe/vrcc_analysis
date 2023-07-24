@@ -23,12 +23,21 @@ get_euclidean_dist = function(pos_1, pos_2) {
 }
 
 
-get_angle <- function(pos_1, pos_2){
-  dot_prod <- pos_1 %*% pos_2
+get_angle <- function(pos_1, pos_2, abs_value=FALSE){
+  dotprod <- pos_1 %*% pos_2
   norm_1 <- norm(pos_1, type="2")
   norm_2 <- norm(pos_2, type="2")
-  theta <- acos(dot_prod / (norm_1 * norm_2))
+  theta <- acos(dotprod / (norm_1 * norm_2))
   as.numeric(theta)
+  if (!abs_value) {
+    if ((length(pos_1) == length(pos_2) & length(pos_1) == 2)) {
+      pos_1 = c(pos_1[1], 0, pos_1[2])
+      pos_2 = c(pos_2[1], 0, pos_2[2])
+    }
+    crossprod <- pracma::cross(pos_1, pos_2)
+    theta <- sign(crossprod[2]) * theta
+  }
+  return(theta) 
 }
 
 
@@ -59,7 +68,7 @@ compute_euclidean_distances = function(list_1, list_2) {
 }
 
 
-compute_angles = function(list_1, list_2) {
+compute_angles = function(list_1, list_2, abs_value=FALSE) {
   
   # Computes angle in radians between two lists of coordinates in form e.g. "(0.67, 0.0, 0.786)", 
   # using `position_to_numeric()` to parse theses coordinates to a valid format, e.g. (0.67, 0.786)
@@ -76,7 +85,7 @@ compute_angles = function(list_1, list_2) {
   cat('\nComputing angles for', length(numeric_1), 'observations...\n')
   
   for (i in 1:length(numeric_1)) {
-    distances[i] = get_angle(numeric_1[[i]], numeric_2[[i]])
+    distances[i] = get_angle(numeric_1[[i]], numeric_2[[i]], abs_value = abs_value)
   }
   
   cat('\nAngles computed.\n')

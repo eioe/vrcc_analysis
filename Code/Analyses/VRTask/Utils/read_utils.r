@@ -92,18 +92,30 @@ get_single_table <- function(path,
 #---------------------------------------------------------------------------------------#
 
 
-filter_data <- function(df) {
+filter_data <- function(df, part='main') {
   
   # To get the rows relevant to the further analysis we filter the data 
   # according to the original criteria from `VRCC_behav_pilots.Rmd`
   
-  df %>% filter(Phase == "Estimation" & 
-                Round > 0)
+  if (part == 'main') {
+    df %>% filter(Phase == "Estimation" & 
+                  Round > 0) -> out
+  }
+  else if (part == 'training') {
+    df %>% filter(Phase == "Estimation" & 
+                  Round == 0 &
+                  Training == "True") -> out
+  }
+  else {
+    stop("Invalid argument for 'part'; must be 'main' or 'training'.")
+  }
+  
+  return(out)
 }
 
 #---------------------------------------------------------------------------------------#
 
-build_dataset <- function(path) {
+build_dataset <- function(path, part='main') {
   
   # To get the full dataset we iterate over folders, read, transform and concatenate the data
   
@@ -114,7 +126,7 @@ build_dataset <- function(path) {
   for (i in seq_along(folders)) {
     
     df <- get_single_table(file.path(path, folders[i]))
-    df <- filter_data(df)
+    df <- filter_data(df, part=part)
     ifelse(df$ID == "S41" |  df$ID == "S44" | df$ID == "S11" , df$PhaseLenght <- as.double(levels(df$PhaseLenght))[df$PhaseLenght],  df$PhaseLenght <- as.numeric(df$PhaseLenght))  # participant-specific adjustment: for 3 subjects PhaseLenght column was saved as integer value
     ifelse(df$ID == "S09" |  df$ID == "S18" | df$ID == "S22" | df$ID == "S36", df$EstimatedDistance <- as.double(levels(df$EstimatedDistance))[df$EstimatedDistance],  df$EstimatedDistance <- as.numeric(df$EstimatedDistance)) # for 4 subjects EstimatedDistance column was saved as integer value
     tables[i] <- list(df)
