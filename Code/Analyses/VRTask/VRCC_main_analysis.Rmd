@@ -117,17 +117,30 @@ for (p in unique(data$ID)) { # LOOP PARTICIPANTS (p)
 #hist(as.numeric(Onset_distribution_ID$NT_p_value), breaks = 20)
 
 
+
 ###2.2 Distance and localization errors
+
+data$AngularErrorDeg <- data$AngularErrorRad * 180 / pi 
+data$AngularErrorDegAbs <- abs(data$AngularErrorDeg)
+
 dd <- data %>% 
   dplyr::group_by(ID) %>%
   dplyr::summarize(mean_distance = mean(DistanceError),
                    mean_localization = mean(LocalizationError),
-                   mean_angular = mean(AngularErrorRad))
+                   mean_angular = mean(AngularErrorDeg))
 
 # check whether average distance error was different from zero
 shapiro.test(dd$mean_distance)
 t.test(dd$mean_distance, mu = 0, alternative = "two.sided")
 describe(dd$mean_distance)
+
+# check whether average angular error was different from zero
+shapiro.test(dd$mean_angular)
+wilcox.test(dd$mean_angular, mu = 0, alternative = "two.sided")
+t.test(dd$mean_angular, mu = 0, alternative = "two.sided")
+describe(dd$mean_distance)
+
+
 
 # check average localization and angular errors
 describe(dd$mean_localization)
@@ -291,8 +304,7 @@ abline(h=0, col="gray20", lwd = 1.3, lty = 2)
 
 ```{r warning=FALSE}
 
-data$AngularErrorDeg <- data$AngularErrorRad * 180 / pi 
-data$AngularErrorDegAbs <- abs(data$AngularErrorDeg)
+
 
 ###3.1. Preregistered analysis: hypothesis 1
 d <- data %>% 
