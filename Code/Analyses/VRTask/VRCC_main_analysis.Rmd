@@ -12,6 +12,7 @@ self_contained: no
 <font size="4">
 **List of sections**:
 
+# TODO: update
 1. Load required packages and data [S1](#S1)
 2. Data checks and descriptive statistics [S2](#S2)
 3. Hypothesis 1: Comparison of distance error between threatening and non-threatening objects [S3](#S3)
@@ -27,7 +28,15 @@ self_contained: no
 ```{r message=FALSE, warning=FALSE}
 
 knitr::opts_chunk$set(echo = TRUE)
+
+# define colors:
+c_threat <- "#FE5D9F"
+c_nonthreat <- "#54426B"
+c_neutral <- "#623CEA"
+c_systole <- "#F686BD"
+c_diastole <- "#F4BBD3"
 basic_color <- '#195e8c'
+
 
 # Utils
 library(dplyr) 
@@ -42,6 +51,7 @@ source(here("./Code/Analyses/VRTask/Utils/stats_utils.r"))
 library(ggplot2)
 library(sjPlot)
 library(gghalves)
+library(ggridges)
 library(scales)
 library(colorspace)
 library(Rmisc)
@@ -62,7 +72,7 @@ library(afex)
 VRCC_dir         <- here::here()
 
 # Read the preprocessed data
-data <- read.csv(file = paste0(VRCC_dir,"/Data/VRTask/VRCC_data_consolidated-2023-07-20.csv"))
+data <- read.csv(file = paste0(VRCC_dir,"/Data/VRTask/VRCC_data_consolidated-2023-08-10"))
 
 # conversion of distance from m to cm
 data <- data %>%
@@ -81,45 +91,9 @@ data <- data %>%
 
 ```{r, warning=FALSE}
 
-###2.1 Distribution of stimulus onsets across the cardiac cycle
+###1. Control analysis: avg. distance and localization errors different from zero?
 
-# specify a data frame with the uniformity test results for each participant
-Onset_distribution_ID <- data.frame(ID = integer(0),
-                                    T_test_statistics = numeric(0), # T - threatening
-                                    T_p_value = numeric(0), # T - threatening
-                                    NT_test_statistics = numeric(0), # NT - non-threatening
-                                    NT_p_value = numeric(0)) #NT - non-threatening
-
-for (p in unique(data$ID)) { # LOOP PARTICIPANTS (p)
-  
-  # save the vector with calculated onset positions in radians as a circular object
-  T_temp_onset <- circular(data$relPosRRrad[data$ID==p & data$FearObject == "True"], type="angles", units="radians", rotation="clock") 
-  
-  NT_temp_onset <- circular(data$relPosRRrad[data$ID==p & data$FearObject == "False"], type="angles", units="radians", rotation="clock")
-
-  # test uniformity of onset distribution for a participant and save the results
-  T_onset_distribution_individual <- rayleigh.test(T_temp_onset) 
-  NT_onset_distribution_individual <- rayleigh.test(NT_temp_onset) 
-  
-  # add test statistics and p-value to the data frame with uniformity testing results
-  T_p_value <- T_onset_distribution_individual$p.value
-  T_test_statistics <- T_onset_distribution_individual$statistic
-  NT_p_value <- NT_onset_distribution_individual$p.value
-  NT_test_statistics <- NT_onset_distribution_individual$statistic
-  
-  Onset_distribution_ID[nrow(Onset_distribution_ID)+1,] <- c(p, T_test_statistics, T_p_value, NT_test_statistics, NT_p_value)
-}
-
-## Optional histograms
-#hist(as.numeric(Onset_distribution_ID$T_test_statistics), breaks = 20)
-#hist(as.numeric(Onset_distribution_ID$T_p_value), breaks = 20)
-#hist(as.numeric(Onset_distribution_ID$NT_test_statistics), breaks = 20)
-#hist(as.numeric(Onset_distribution_ID$NT_p_value), breaks = 20)
-
-
-
-###2.2 Distance and localization errors
-
+# Transform angular error from radians to degree:
 data$AngularErrorDeg <- data$AngularErrorRad * 180 / pi 
 data$AngularErrorDegAbs <- abs(data$AngularErrorDeg)
 
@@ -133,47 +107,17 @@ shapiro.test(dd$mean_distance)
 t.test(dd$mean_distance, mu = 0, alternative = "two.sided")
 describe(dd$mean_distance)
 
+
+## Control analysis: 
 # check whether average angular error was different from zero
 shapiro.test(dd$mean_angular)
 wilcox.test(dd$mean_angular, mu = 0, alternative = "two.sided")
 t.test(dd$mean_angular, mu = 0, alternative = "two.sided")
-describe(dd$mean_distance)
-
-
-
-# check average localization and angular errors
-describe(dd$mean_localization)
-# hist(dd$mean_localization)
 describe(dd$mean_angular)
 hist(dd$mean_angular)
-
-shapiro.test(dd$mean_angular)
-t.test(dd$mean_angular, mu = 0, alternative = "two.sided")
-
-shapiro.test(dd$mean_localization)
-t.test(dd$mean_angular, mu = 0, alternative = "two.sided")
+# wilcox & t test largely agree (not surprising due to reasonable sample size; for sake of simplicity we can therefore just report the t test)
 
 
-###2.3 Plot distance errors for different animals
- 
-for (p in unique(data$Stimulus)) {
-
-subdata <- data[data$Stimulus == p,]
-
-Figure <- ggplot(data = subdata, aes(x = RealDistance, y = DistanceError)) +
-  geom_point(col = "grey 15", alpha = 0.2, size = 1, shape = 18) +
-  geom_smooth(col = "grey8", method = "loess", level=0.95, alpha = 0.9) +
-  labs(y = "Distance Error", x = "True Distance") +
-  ggtitle(p) +
-  theme_classic() +
-  theme(plot.title = element_text(hjust = 0.5, face = "bold", size = 17), axis.text=element_text(size=15),  axis.title=element_text(size=15)) +
-  scale_x_continuous(limits= c(min(data$RealDistance), max(data$RealDistance)), expand = c(0.01,0.01)) +
-  scale_y_continuous(limits= c(-250, 250), expand = c(0.01,0.01)) + geom_hline(yintercept = 0, col = "royalblue1")
-plot(Figure)
-
-
-
-}
 
 ```
 
@@ -185,39 +129,63 @@ plot(Figure)
 
 ```{r warning=FALSE}
 
-###3.1. Preregistered analysis: hypothesis 1
+###3.1. Preregistered analysis: hypothesis 1 (compare distance error between threat and non-threat)
+d <- data %>% 
+  dplyr::group_by(ID) %>%
+  dplyr::summarize(mean_threat = mean(DistanceError[FearObject == "True"]), 
+                   mean_nonthreat = mean(DistanceError[FearObject == "False"]),
+                   sd_threat = sd(DistanceError[FearObject == "True"]), 
+                   sd_nonthreat = sd(DistanceError[FearObject == "False"]))
+
+# check normality of distributions
+shapiro.test(d$mean_threat)
+shapiro.test(d$mean_nonthreat)
+
+# perform paired t-test
+t.test(d$mean_threat, d$mean_nonthreat, alt = "two.sided", conf = 0.95, paired = T) 
+
+# calculate Cohen's d
+effsize::cohen.d(d$mean_threat, d$mean_nonthreat, paired = T)
+
+# show summary statistics
+describe(d$mean_threat)
+describe(d$mean_nonthreat)
+
+
+## Compare the precision (SD) between threatening and non-threatening animals
+# check normality of distributions
+shapiro.test(d$sd_threat)
+shapiro.test(d$sd_nonthreat)
+
+# perform paired t-test
+t.test(d$sd_threat, d$sd_nonthreat, alt = "two.sided", conf = 0.95, paired = T) 
+
+# calculate Cohen's d
+effsize::cohen.d(d$sd_threat, d$sd_nonthreat, paired = T)
+
+# show summary statistics
+describe(d$sd_threat)
+describe(d$sd_nonthreat)
+
+
+
+```
+
+
+
+```{r}
+###3.2. Plot results - hypothesis 1
+
+# specify colors
+cR <- c_threat  # Old value: rgb(178/255, 31/255, 0/255)
+cB <- c_nonthreat  # Old value:  rgb(10/255, 80/255, 200/255)
+
+# prepare data
+
 d <- data %>% 
   dplyr::group_by(ID) %>%
   dplyr::summarize(mean_threat = mean(DistanceError[FearObject == "True"]), 
                    mean_non_threat = mean(DistanceError[FearObject == "False"]))
-
-# check normality of distributions
-shapiro.test(d$mean_threat)
-shapiro.test(d$mean_non_threat)
-
-# perform paired t-test
-t.test(d$mean_threat, d$mean_non_threat, alt = "two.sided", conf = 0.95, paired = T) 
-
-# calculate Cohen's d
-effsize::cohen.d(d$mean_threat, d$mean_non_threat, paired = T)
-
-# show summary statistics
-describe(d$mean_threat)
-describe(d$mean_non_threat)
-
-# for how many subjects threatening animals were perceived as closer than non-threatening ones
-d$diff_distances <- d$mean_non_threat - d$mean_threat
-length(d$diff_distances[d$diff_distances > 0])
-#hist(d$diff_distances)
-
-
-###3.2. Plot results - hypothesis 1
-
-# specify colors
-cR <- rgb(178/255, 31/255, 0/255)
-cB <- rgb(10/255, 80/255, 200/255)
-
-# prepare data
 d <- gather(d, threat, distance_error, mean_threat:mean_non_threat)
 d$threat_f[d$threat == "mean_threat"] <- 1
 d$threat_f[d$threat == "mean_non_threat"] <- 2
@@ -242,62 +210,199 @@ ci <- c((score_ci_1[1] - score_ci_1[3]), (score_ci_2[1] - score_ci_2[3]))
 f1 <- ggplot(data = d, aes(y = distance_error)) +
   
   #Add geom_() objects
-  geom_point(data = d %>% filter(threat_f =="1"), aes(x = pos), color = cR, size = 1.5, alpha = .4) +
+  geom_point(data = d %>% filter(threat_f =="1"),
+             aes(x = pos),
+             color = cR,
+             size = 1.5,
+             alpha = .4) +
 
-  geom_point(data = d %>% filter(threat_f =="2"), aes(x = pos), color = cB, size = 1.5,  alpha = .4) + 
+  geom_point(data = d %>% filter(threat_f =="2"),
+             aes(x = pos),
+             color = cB,
+             size = 1.5,
+             alpha = .4) + 
   
-  geom_line(aes(x = pos, group = ID), color = 'gray60', alpha = .3) +
+  geom_line(aes(x = pos, group = ID),
+            color = 'gray60',
+            alpha = .3) +
   
   geom_half_boxplot(
-    data = d %>% filter(threat_f=="1"), aes(x=threat_f, y = distance_error), position = position_nudge(x = -.25), 
-    side = "r",outlier.shape = NA, center = TRUE, errorbar.draw = FALSE, width = .2, 
+    data = d %>% filter(threat_f=="1"), 
+    aes(x=threat_f, y = distance_error), 
+    position = position_nudge(x = -.25), 
+    side = "r",
+    outlier.shape = NA, 
+    center = TRUE, 
+    errorbar.draw = FALSE, 
+    width = .2, 
     fill = cR) +
   
   geom_half_boxplot(
-    data = d %>% filter(threat_f=="2"), aes(x=threat_f, y = distance_error), position = position_nudge(x = .15), 
-    side = "r",outlier.shape = NA, center = TRUE, errorbar.draw = FALSE, width = .2, 
+    data = d %>% filter(threat_f=="2"), 
+    aes(x=threat_f, y = distance_error), 
+    position = position_nudge(x = .15), 
+    side = "r",
+    outlier.shape = NA, 
+    center = TRUE, 
+    errorbar.draw = FALSE, 
+    width = .2, 
     fill = cB) +
   
   geom_half_violin(
-    data = d %>% filter(threat_f=="1"),aes(x = threat_f, y = distance_error), position = position_nudge(x = -.3), 
+    data = d %>% filter(threat_f=="1"),
+    aes(x = threat_f, y = distance_error), 
+    position = position_nudge(x = -.3), 
     side = "l", fill = cR) +
   
   geom_half_violin(
-    data = d %>% filter(threat_f=="2"),aes(x = threat_f, y = distance_error), position = position_nudge(x= .3), 
-    side = "r", fill = cB) +
+    data = d %>% filter(threat_f=="2"),
+    aes(x = threat_f, y = distance_error), 
+    position = position_nudge(x= .3), 
+    side = "r", 
+    fill = cB) +
   
-     geom_point(data = d %>% filter(threat_f=="1"), aes(x = threat_f, y = m_threat), position = position_nudge(x = .0), color = darken(cR,0.3), size = 4.6, shape = 20) +
-    
-#    geom_errorbar(data = d %>% filter(threat_f =="1"), aes(x = threat_f, y = m_threat, ymin = score_ci_1[3], ymax = score_ci_1[1]), position = position_nudge(.0), color = "gray15", width = 0.07, size = 0.5, alpha = .5) +
+  geom_point(data = d %>% filter(threat_f=="1") %>% 
+                          filter(row_number() == 1),
+            aes(x = threat_f, y = m_threat), 
+            position = position_nudge(x = .0), 
+            color = darken(cR,0.3), 
+            size = 5.5, 
+            shape = 20) +
   
-     geom_point(data = d %>% filter(threat_f=="2"), aes(x = threat_f, y = m_nonthreat), position = position_nudge(x = -.0), color = darken(cB, 0.3), size = 4.6, shape = 20) +
+  geom_point(data = d %>% filter(threat_f=="2") %>% 
+                          filter(row_number() == 1),
+            aes(x = threat_f, y = m_nonthreat),
+            position = position_nudge(x = -.0),
+            color = darken(cB, 0.3),
+            size = 5.5,
+            shape = 20) + 
+  geom_line(data = tibble(x = c(1,2),
+                         y = c(m_threat, m_nonthreat)),
+           aes(x = x, y = y)) +
   
- # geom_errorbar(data = d %>% filter(threat_f=="2"), aes(x = threat_f, y = m_nonthreat, ymin = score_ci_2[3], ymax = score_ci_2[1]), position = position_nudge(.0), color = "gray15", width = 0.07, size = 0.5, alpha = .5) +
-  
-  #Define additional settings
-  
-   scale_x_continuous(breaks=c(1,2), labels=c("Threatening", "Non-threatening")) +
-  xlab("Type of animal") + ylab("Distance Error (cm)") +
+  scale_x_continuous(breaks=c(1,2),
+                     labels=c("Threatening", "Non-threatening")) +
+  xlab("Type of animal") + 
+  ylab("Distance Error (cm)") +
   ggtitle('Threatening vs Non-threatening animals') +
   theme_classic()+
   coord_cartesian(ylim=c(min(d$distance_error), 90)) +
-   theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),panel.background = element_blank(), axis.line = element_line(colour = "black"), axis.title = element_text(face="bold",size=18.5, colour = "black"), axis.text = element_text(face="bold",size=17, colour = "black"))
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        panel.background = element_blank(), 
+        axis.line = element_line(colour = "black"), 
+        axis.title = element_text(face="bold",
+                                  size=18.5,
+                                  colour = "black"),
+        axis.text = element_text(face="bold",
+                                 size=17,
+                                 colour = "black"))
 
-f1 # export size: 5 x 5
+f1 
+
+# save to disc:
+fpath_figs <- file.path(VRCC_dir, 'Code', 'Analyses', 'VRTask', 'Figures')
+fname <- file.path(fpath_figs, 'VRCC_DistErr_BoxViolin.pdf')
+pdf(fname)
+f1
+dev.off()
 
 
 ###3.3 Plot results for different animals
+
+# Overview box plot:
 d <- data %>% 
   dplyr::group_by(ID, Stimulus) %>%
   dplyr::summarize(distance_error = mean(DistanceError))
 
 d <- spread(d, key = Stimulus, value = distance_error)
 
-boxplot(d$Crocodile, d$FinalWolf, d$FinalSnake, d$Scorpio, d$Deer, d$Pig,  d$Turtle, d$Rabbit, col = c(cR, cR, cR, cR, cB, cB, cB,cB), names = c("Crocodile", "Wolf", "Snake", "Scorpio", "Deer", "Pig", "Turtle", "Rabbit"), frame = FALSE, notch = TRUE, ylab = "Distance Error", cex.lab = 1.4, cex.axis = 1)
+boxplot(d$Crocodile, d$FinalWolf, d$FinalSnake, d$Scorpio, d$Deer, d$Pig,  d$Turtle, d$Rabbit, 
+        col = c(cR, cR, cR, cR, cB, cB, cB,cB), 
+        names = c("Crocodile", "Wolf", "Snake", "Scorpio", "Deer", "Pig", "Turtle", "Rabbit"),
+        frame = FALSE,
+        notch = TRUE,
+        ylab = "Distance Error", 
+        cex.lab = 1.4, 
+        cex.axis = 1)
 abline(h=0, col="gray20", lwd = 1.3, lty = 2)
-# export size: 5 x 7
+
+
+# pub-ready density plot:
+
+data_avg <- data %>%
+  group_by(Stimulus, ID) %>%
+  dplyr::summarize(DistanceError = mean(DistanceError), 
+                   FearObject = first(FearObject)) %>%
+  mutate(Stimulus = revalue(Stimulus, c('FinalWolf'='Wolf', 
+                                        'FinalSnake' = 'Snake',
+                                        'Scorpio' = 'Scorpion'))) %>% 
+  ungroup()
+
+
+
+ggplot(data_avg, aes(x = DistanceError, 
+                     y = fct_reorder(Stimulus, .x = DistanceError, .fun=mean),
+                     fill = FearObject)) +
+  geom_density_ridges(aes(point_fill = factor(FearObject),
+                          point_color= factor(FearObject)),
+                      alpha = 0.9,
+                      jittered_points = TRUE, 
+                      point_alpha=1,
+                      point_shape=21, 
+                      stat = "density_ridges") +
+  theme_ridges() +
+  theme(legend.position = "none", 
+        axis.text.x = element_text(angle = 45, hjust = 1),
+        axis.title.x = element_text(hjust = 0.5),  # Center x-axis label
+        axis.title.y = element_text(hjust = 0.5)) +
+  geom_vline(xintercept = 0, color = c_neutral) + 
+  scale_fill_manual(values = c(c_nonthreat, c_threat)) + 
+  scale_discrete_manual(aesthetics = "point_color", values = c("black", "black")) +
+  scale_discrete_manual(aesthetics = "point_fill", values = c(c_threat, c_nonthreat)) +
+  ylab("Stimulus animal") +
+  xlab("Distance error (°)") +
+  coord_flip() -> plt
+
+# save to disc:
+fpath_figs <- file.path(VRCC_dir, 'Code', 'Analyses', 'VRTask', 'Figures')
+fname <- file.path(fpath_figs, 'VRCC_DistErr_RidgeDensity.pdf')
+pdf(fname)
+plt
+dev.off()
+
+
 
 ```
+
+```{r warning=FALSE}
+
+###3.1. Exploratory/control analysis: compare angular error between threat and non-threat
+d <- data %>% 
+  dplyr::group_by(ID) %>%
+  dplyr::summarize(mean_threat = mean(AngularErrorDeg[FearObject == "True"]), 
+                   mean_non_threat = mean(AngularErrorDeg[FearObject == "False"]))
+
+# check normality of distributions
+shapiro.test(d$mean_threat)
+shapiro.test(d$mean_non_threat)
+
+# perform paired t-test
+t.test(d$mean_threat, d$mean_non_threat, alt = "two.sided", conf = 0.95, paired = T) 
+
+# calculate Cohen's d
+effsize::cohen.d(d$mean_threat, d$mean_non_threat, paired = T)
+
+# show summary statistics
+describe(d$mean_threat)
+describe(d$mean_non_threat)
+
+# for how many subjects threatening animals were perceived as closer than non-threatening ones
+d$diff_distances <- d$mean_non_threat - d$mean_threat
+length(d$diff_distances[d$diff_distances > 0])
+hist(d$diff_distances)
+```
+
 
 #####**3A. Hypothesis 1A: Comparison of localization and angular error between threatening and non-threatening objects** 
 
@@ -322,28 +427,19 @@ shapiro.test(d$sd_AngErr[d$FearObject=="True"])
 shapiro.test(d$sd_AngErr[d$FearObject=="False"])
 
 # 
-wilcox.test(d$mean_LocErr[d$FearObject=="True"], d$mean_LocErr[d$FearObject=="False"], paired = TRUE, alternative = "two.sided")
 t.test(d$mean_AngErr[d$FearObject=="True"], d$mean_AngErr[d$FearObject=="False"], paired = TRUE, alternative = "two.sided")
 t.test(d$sd_AngErr[d$FearObject=="True"], d$sd_AngErr[d$FearObject=="False"], paired = TRUE, alternative = "two.sided")
 
 
 # Show means:
 d %>% group_by(FearObject) %>% 
-  dplyr::summarise(gmean_LocErr = mean(mean_LocErr),
-                   gmean_AngErrDeg = mean(mean_AngErr),
+  dplyr::summarise(gmean_AngErrDeg = mean(mean_AngErr),
                    gmean_DistErr = mean(mean_DistErr),
-                   meansd_LocErr = mean(sd_LocErr),
                    meansd_AngErrDeg = mean(sd_AngErr),
                    meansd_DistErr = mean(sd_DistErr)
-                   ) -> summary_AngLocErr
+                   ) -> summary_AngDistErr
 
-print(summary_AngLocErr)
-
-# calculate Cohen's d
-effsize::cohen.d(mean_LocErr~FearObject, data=d, paired = T)
-
-
-
+print(summary_AngDistErr)
 
 ###3.3 Plot results for different animals
 d <- data %>% 
@@ -369,12 +465,49 @@ abline(h=0, col="gray20", lwd = 1.3, lty = 2)
 <a name="S4"></a>
 &nbsp;
 
+```{r}
+
+###4.1. 2 x 2 ANOVA analysis (with Bonferroni post hoc comparisons)
+
+# prepare data
+d <- data[data$c_phase == "systole" | data$c_phase == "diastole",]
+d <- dplyr::select(d, ID, DistanceError, c_phase, FearObject)
+d <- d %>% 
+  dplyr::group_by(ID, c_phase, FearObject) %>% 
+  dplyr::summarize(DistanceError = mean(DistanceError))
+
+# run analysis
+fit_all <- aov_ez(data = d,
+                  dv = "DistanceError",
+                  id = "ID",
+                  within=c("c_phase", "FearObject"),
+                  return = afex_options("return_aov"),
+                  anova_table = list(),
+                  fun_aggregate = mean)
+fit_all 
+summary(fit_all) # see epsilon values
+
+# post-hoc comparisons (Bonferroni correction)
+ref <- emmeans::emmeans(fit_all, specs = c("c_phase", "FearObject"))
+ref
+emmeans::contrast(ref,method="pairwise",adjust="bonferroni")
+
+
+```
+
+
+
 #####**4. Hypothesis 2: Comparison of distance error between cardiac phases** 
 
 ```{r warning=FALSE}
 
-###4.1. Run preregistered analysis
+
+### 4.2. Preregistered mixed model
+
 d <- data[data$c_phase == "systole" | data$c_phase == "diastole",]
+d <- d %>% 
+  mutate(RealDistance = RealDistance * 0.01,
+         DistanceError = DistanceError * 0.01)
 
 # null model
 null_model <- lmer(DistanceError ~ 1 + (1 + RealDistance | ID), data = d)
@@ -387,29 +520,15 @@ summary(full_model)
 get_r2_mlm(full_model) # alternative: performance::r2
 
 # plot model
-plot_model(full_model, type = "int", mdrt.values = "meansd", colors = c("blue", "red"))
+plot_model(full_model, type = "int", mdrt.values = "meansd", colors = c(c_nonthreat, c_threat))
 
 # compare models
 lrtest(null_model, full_model)
-
-###4.2. Complementary 2 x 2 ANOVA analysis (with Bonferroni post hoc comparisons)
-
-# prepare data
-d <- data[data$c_phase == "systole" | data$c_phase == "diastole",]
-d <- dplyr::select(d, ID, DistanceError, c_phase, FearObject)
-d <- d %>% dplyr::group_by(ID, c_phase, FearObject)  %>% dplyr::summarize(DistanceError = mean(DistanceError))
-
-# run analysis
-fit_all <- aov_ez(data = d, dv = "DistanceError", id = "ID", within=c("c_phase", "FearObject"), return = afex_options("return_aov"), anova_table = list(), fun_aggregate = mean)
-fit_all 
-summary(fit_all) # see epsilon values
-
-# post-hoc comparisons (Bonferroni correction)
-ref <- emmeans::emmeans(fit_all, specs = c("c_phase", "FearObject"))
-ref
-emmeans::contrast(ref,method="pairwise",adjust="bonferroni")
+```
 
 
+
+```{r}
 ###4.3. Bayes factor analysis (comparisons of interest)
 
 ## Threatening animals
@@ -442,16 +561,12 @@ d <- d %>%
   dplyr::group_by(ID) %>%
   dplyr::summarize(
     m_systole = mean(DistanceError[c_phase == "systole"]), 
-    m_diastole = mean(DistanceError[c_phase == "diastole"]),
-    sd_systole = sd(AngularErrorDeg[c_phase == "systole"]), 
-    sd_diastole = sd(AngularErrorDeg[c_phase == "diastole"])
+    m_diastole = mean(DistanceError[c_phase == "diastole"])
   )
 
 # t-test (comparison of interest)
 shapiro.test(d$m_systole)
 shapiro.test(d$m_diastole)
-shapiro.test(d$sd_systole)
-shapiro.test(d$sd_diastole)
 t.test(d$m_systole, d$m_diastole, paired = T)
 t.test(d$sd_systole, d$sd_diastole, paired = TRUE)
 
@@ -459,7 +574,10 @@ t.test(d$sd_systole, d$sd_diastole, paired = TRUE)
 ttestBF(d$m_systole, d$m_diastole, paired = T)
 ttestBF(d$m_systole, d$m_diastole, paired = T, r = 1)
 ttestBF(d$m_systole, d$m_diastole, paired = T, r = 0.354)
+```
 
+
+```{r}
 
 ###4.4. Vizualize the results
 
@@ -485,14 +603,7 @@ shapiro.test(d$m_diastole_ang)
 t.test(d$m_systole, d$m_diastole, paired = T)
 t.test(d$m_systole_ang, d$m_diastole_ang, paired = TRUE)
 
-aov_d <- data %>% 
-  filter(c_phase %in% c("diastole", "systole")) %>% 
-  group_by(ID, FearObject, c_phase) %>% 
-  dplyr::summarise(m = mean(AngularErrorDeg), 
-                   sd = sd(AngularErrorDeg)) %>% 
-  ungroup()
 
-summary(aov(sd ~ c_phase * FearObject + Error(ID), data = aov_d))
 
 d2 <- d
 d2$diff <- d$m_diastole - d$m_systole
@@ -506,34 +617,55 @@ d$phase_f[d$phase == "m_diastole"] <- 2
 d$pos <- jitter(d$phase_f, amount=.03)
 
 # threatening
-cRd <- "#6c030f"
-cRl <- "#af7d81"
+c_threat_sys <- lighten(c_threat, amount = 0.35)   #  "#6c030f"
+c_threat_dias <- darken(c_threat, amount = 0.15)  # "#af7d81"
 
 f1 <- ggplot(data = d, aes(y = distance_error)) +
   
-  geom_point(data = d %>% filter(phase_f =="1"), aes(x = pos), color = cRd, size = 1.5, 
+  geom_point(data = d %>% filter(phase_f =="1"), aes(x = pos), color = c_threat_sys, size = 1.5, 
              alpha = .5) +
-  geom_point(data = d %>% filter(phase_f =="2"), aes(x = pos), color = cRl, size = 1.5, 
+  geom_point(data = d %>% filter(phase_f =="2"), aes(x = pos), color = c_threat_dias, size = 1.5, 
              alpha = .5) +
   geom_line(aes(x = pos, group = ID), color = 'gray60', alpha = .3) +
   
   geom_half_boxplot(
     data = d %>% filter(phase_f=="1"), aes(x=phase_f, y = distance_error), position = position_nudge(x = -.25), 
     side = "r",outlier.shape = NA, center = TRUE, errorbar.draw = FALSE, width = .2, 
-    fill = cRd) +
+    fill = c_threat_sys) +
   
   geom_half_boxplot(
     data = d %>% filter(phase_f=="2"), aes(x=phase_f, y = distance_error), position = position_nudge(x = .15), 
     side = "r",outlier.shape = NA, center = TRUE, errorbar.draw = FALSE, width = .2, 
-    fill = cRl) +
+    fill = c_threat_dias) +
   
   geom_half_violin(
     data = d %>% filter(phase_f=="1"),aes(x = phase_f, y = distance_error), position = position_nudge(x = -.3), 
-    side = "l", fill = cRd) +
+    side = "l", fill = c_threat_sys) +
   
   geom_half_violin(
     data = d %>% filter(phase_f=="2"),aes(x = phase_f, y = distance_error), position = position_nudge(x= .3), 
-    side = "r", fill = cRl) +
+    side = "r", fill = c_threat_dias) +
+    
+  geom_point(data = d %>% 
+              group_by(phase_f) %>% 
+              dplyr::summarize(gm_DistErr = mean(distance_error)) %>% 
+              mutate(col = factor(phase_f)), 
+              #mutate(loc = if_else(c_phase == "systole", 1, 2)),
+            aes(x = phase_f, y = gm_DistErr, color = col), 
+            position = position_nudge(x = -.0),
+            size = 5.5,
+            shape = 20) +
+  
+  geom_line(data = d %>% 
+              group_by(phase_f) %>% 
+              dplyr::summarize(gm_DistErr = mean(distance_error)), 
+              #mutate(loc = if_else(c_phase == "systole", 1, 2)),
+            aes(x = phase_f, y = gm_DistErr)) +
+  
+  #Define additional settings
+  scale_x_continuous(breaks=c(1,2), labels=c("Systole", "Diastole")) +
+  scale_color_manual(values = c(c_threat_sys, c_threat_dias)) + 
+  
   #Define additional settings
   scale_x_continuous(breaks=c(1,2), labels=c("Systole", "Diastole")) +
   xlab("Cardiac phase") + ylab("Distance Error") +
@@ -543,9 +675,18 @@ f1 <- ggplot(data = d, aes(y = distance_error)) +
    theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),panel.background = element_blank(), axis.line = element_line(colour = "black"), axis.title = element_text(face="bold",size=18, colour = "black"), axis.text = element_text(face="bold",size=17, colour = "black"))
 f1 # export size: 5 x 5
 
+# save to disc:
+fpath_figs <- file.path(VRCC_dir, 'Code', 'Analyses', 'VRTask', 'Figures')
+fname <- file.path(fpath_figs, 'VRCC_DistErr_BoxViolin_CardiacPhase_Threat.pdf')
+pdf(fname)
+f1
+dev.off()
+
+
+
 ### Non_threatening
-cBd <- darken(rgb(10/255, 80/255, 200/255),0.55)
-cBl <- "#9590a8"
+c_nonthreat_sys <- lighten(c_nonthreat, amount = 0.35)   #  "#6c030f"   # darken(rgb(10/255, 80/255, 200/255),0.55)
+c_nonthreat_dias <- darken(c_nonthreat, amount = 0.15)  # "#9590a8"
 
 d <- data[data$FearObject == "False",]
 d <- d[d$c_phase == "systole" | d$c_phase == "diastole", ]
@@ -569,37 +710,116 @@ d$pos <- jitter(d$phase_f, amount=.03)
 f2 <- ggplot(data = d, aes(y = distance_error)) +
   
   #Add geom_() objects
-  geom_point(data = d %>% filter(phase_f =="1"), aes(x = pos), color = cBd, size = 1.5, 
+  geom_point(data = d %>% filter(phase_f =="1"), aes(x = pos), color = c_nonthreat_sys, size = 1.5, 
              alpha = .5) +
-  geom_point(data = d %>% filter(phase_f =="2"), aes(x = pos), color = cBl, size = 1.5, 
+  geom_point(data = d %>% filter(phase_f =="2"), aes(x = pos), color = c_nonthreat_dias, size = 1.5, 
              alpha = .5) +
   geom_line(aes(x = pos, group = ID), color = 'gray60', alpha = .3) +
   
   geom_half_boxplot(
     data = d %>% filter(phase_f=="1"), aes(x=phase_f, y = distance_error), position = position_nudge(x = -.25), 
     side = "r",outlier.shape = NA, center = TRUE, errorbar.draw = FALSE, width = .2, 
-    fill = cBd) +
+    fill = c_nonthreat_sys) +
   
   geom_half_boxplot(
     data = d %>% filter(phase_f=="2"), aes(x=phase_f, y = distance_error), position = position_nudge(x = .15), 
     side = "r",outlier.shape = NA, center = TRUE, errorbar.draw = FALSE, width = .2, 
-    fill = cBl) +
+    fill = c_nonthreat_dias) +
   
   geom_half_violin(
     data = d %>% filter(phase_f=="1"),aes(x = phase_f, y = distance_error), position = position_nudge(x = -.3), 
-    side = "l", fill = cBd) +
+    side = "l", fill = c_nonthreat_sys) +
   
   geom_half_violin(
     data = d %>% filter(phase_f=="2"),aes(x = phase_f, y = distance_error), position = position_nudge(x= .3), 
-    side = "r",fill = cBl) +
+    side = "r",fill = c_nonthreat_dias) +
+  
+  geom_point(data = d %>% 
+              group_by(phase_f) %>% 
+              dplyr::summarize(gm_DistErr = mean(distance_error)) %>% 
+              mutate(col = factor(phase_f)), 
+              #mutate(loc = if_else(c_phase == "systole", 1, 2)),
+            aes(x = phase_f, y = gm_DistErr, color = col), 
+            position = position_nudge(x = -.0),
+            size = 5.5,
+            shape = 20) +
+  
+  geom_line(data = d %>% 
+              group_by(phase_f) %>% 
+              dplyr::summarize(gm_DistErr = mean(distance_error)), 
+              #mutate(loc = if_else(c_phase == "systole", 1, 2)),
+            aes(x = phase_f, y = gm_DistErr)) +
+  
   #Define additional settings
   scale_x_continuous(breaks=c(1,2), labels=c("Systole", "Diastole")) +
+  scale_color_manual(values = c(c_nonthreat_sys, c_nonthreat_dias)) + 
   xlab("Cardiac phase") + ylab("Distance Error") +
   ggtitle('Non-threatening animals') +
   theme_classic()+
   coord_cartesian(ylim=c(-100, 80)) +
-   theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),panel.background = element_blank(), axis.line = element_line(colour = "black"), axis.title = element_text(face="bold",size=18, colour = "black"), axis.text = element_text(face="bold",size=17, colour = "black"))
+   theme(panel.grid.major = element_blank(),
+         panel.grid.minor = element_blank(),
+         panel.background = element_blank(), 
+         axis.line = element_line(colour = "black"), 
+         axis.title = element_text(face="bold",
+                                   size=18, 
+                                   colour = "black"), 
+         axis.text = element_text(face="bold",size=17, colour = "black"))
 f2 # export size: 5 x 5
+
+# save to disc:
+fpath_figs <- file.path(VRCC_dir, 'Code', 'Analyses', 'VRTask', 'Figures')
+fname <- file.path(fpath_figs, 'VRCC_DistErr_BoxViolin_CardiacPhase_NonThreat.pdf')
+pdf(fname)
+f2
+dev.off()
+
+# ANOVA plot: 
+
+d <- data %>% 
+  filter(c_phase == "systole" | c_phase == "diastole") %>% 
+  group_by(ID, c_phase, FearObject) %>% 
+  dplyr::summarise(m_DistErr = mean(DistanceError)) %>% 
+  mutate(c_phase = factor(c_phase, 
+                          levels = c("systole", "diastole"), 
+                          labels = c("Systole", "Diastole")),
+         FearObject = factor(FearObject,
+                             levels = c( "True" , "False"), 
+                             labels = c("Threatening", "Non-threatening")),
+         Color = if_else(FearObject == "Threatening", 
+                         if_else(c_phase == "Systole", 
+                                 c_threat_sys, 
+                                 c_threat_dias),
+                         if_else(c_phase == "Systole", 
+                                 c_nonthreat_sys, 
+                                 c_nonthreat_dias)))
+                         
+f3 <- ggplot(data = d, aes(x = c_phase, y = m_DistErr, fill = Color)) +
+  geom_boxplot(aes(), 
+               outlier.shape = NA, 
+               center = TRUE, errorbar.draw = FALSE, width = .2) + 
+  xlab("Cardiac phase") + ylab("Distance Error") +
+  theme_classic()+
+  scale_fill_manual(values = c(c_threat_sys, c_threat_dias, c_nonthreat_sys, c_nonthreat_dias),
+                    name="") +
+  coord_cartesian(ylim=c(-70, 70)) +
+   theme(panel.grid.major = element_blank(), 
+         panel.grid.minor = element_blank(),
+         panel.background = element_blank(), 
+         axis.line = element_line(colour = "black"), 
+         axis.title = element_text(face="bold",size=18, colour = "black"), 
+         axis.text = element_text(face="bold",size=17, colour = "black"))
+f3
+
+# save to disc:
+fpath_figs <- file.path(VRCC_dir, 'Code', 'Analyses', 'VRTask', 'Figures')
+fname <- file.path(fpath_figs, 'VRCC_DistErr_BoxPlot_ANOVA.pdf')
+pdf(fname)
+f3
+dev.off()
+
+
+
 ```
 
 
@@ -613,15 +833,16 @@ rel_pos_circular <- get_circular_components(data$relPosRRrad, 2 * pi)
 data$relPosRRradCircCos <- rel_pos_circular$cos_component
 data$relPosRRradCircSin <- rel_pos_circular$sin_component
 
-# z-score (otherwise models do not converge)
-data$RealDistance_z <- scale(data$RealDistance)
+d <- data %>% 
+  mutate(RealDistance = RealDistance * 0.01,
+         DistanceError = DistanceError * 0.01)
 
 # null model
-null_model <- lmer(DistanceError ~ 1 + (1 + RealDistance_z|ID), data = data, REML = FALSE)
+null_model <- lmer(DistanceError ~ 1 + (1 + RealDistance|ID), data = d, REML = FALSE)
 summary(null_model)
 
 # full model
-full_model <- lmer(DistanceError ~ relPosRRradCircCos * FearObject + relPosRRradCircSin * FearObject + (1 + RealDistance_z|ID), data = data, REML = FALSE)
+full_model <- lmer(DistanceError ~ relPosRRradCircCos * FearObject + relPosRRradCircSin * FearObject + (1 + RealDistance|ID), data = d, REML = FALSE)
 summary(full_model)
 plot_model(full_model, type = "int", mdrt.values = "meansd")
 get_r2_mlm(full_model)
@@ -682,22 +903,22 @@ t.test(d$Crocodile_systole, d$Crocodile_diastole, paired = T)
 
 # prepare graphics
 par(mfrow=c(1,4))
-cRd <- "#6c030f"
-cRl <- "#af7d81"
+c_threat_sys <- "#6c030f"
+c_threat_dias <- "#af7d81"
 
-boxplot(d$Crocodile_systole, d$Crocodile_diastole, col = c(cRd, cRl), names = c("Systole", "Diastole"), frame = FALSE, notch = TRUE, ylab = "Distance Error", cex.lab = 1.4, cex.axis = 1, ylim = c(-80,80), main = "Crocodile")
+boxplot(d$Crocodile_systole, d$Crocodile_diastole, col = c(c_threat_sys, c_threat_dias), names = c("Systole", "Diastole"), frame = FALSE, notch = TRUE, ylab = "Distance Error", cex.lab = 1.4, cex.axis = 1, ylim = c(-80,80), main = "Crocodile")
 abline(h=0, col="gray20", lwd = 1.3, lty = 2)
 
 
-boxplot(d$FinalWolf_systole, d$FinalWolf_diastole, col = c(cRd, cRl), names = c("Systole", "Diastole"), frame = FALSE, notch = TRUE, ylab = "Distance Error", cex.lab = 1.4, cex.axis = 1, ylim = c(-80,80), main = "Wolf")
+boxplot(d$FinalWolf_systole, d$FinalWolf_diastole, col = c(c_threat_sys, c_threat_dias), names = c("Systole", "Diastole"), frame = FALSE, notch = TRUE, ylab = "Distance Error", cex.lab = 1.4, cex.axis = 1, ylim = c(-80,80), main = "Wolf")
 abline(h=0, col="gray20", lwd = 1.3, lty = 2)
 
 
-boxplot(d$FinalSnake_systole, d$FinalSnake_diastole, col = c(cRd, cRl), names = c("Systole", "Diastole"), frame = FALSE, notch = TRUE, ylab = "Distance Error", cex.lab = 1.4, cex.axis = 1, ylim = c(-80,80), main = "Snake")
+boxplot(d$FinalSnake_systole, d$FinalSnake_diastole, col = c(c_threat_sys, c_threat_dias), names = c("Systole", "Diastole"), frame = FALSE, notch = TRUE, ylab = "Distance Error", cex.lab = 1.4, cex.axis = 1, ylim = c(-80,80), main = "Snake")
 abline(h=0, col="gray20", lwd = 1.3, lty = 2)
 
 
-boxplot(d$Scorpio_systole, d$Scorpio_diastole, col = c(cRd, cRl), names = c("Systole", "Diastole"), frame = FALSE, notch = TRUE, ylab = "Distance Error", cex.lab = 1.4, cex.axis = 1, ylim = c(-80,80), main = "Scorpio")
+boxplot(d$Scorpio_systole, d$Scorpio_diastole, col = c(c_threat_sys, c_threat_dias), names = c("Systole", "Diastole"), frame = FALSE, notch = TRUE, ylab = "Distance Error", cex.lab = 1.4, cex.axis = 1, ylim = c(-80,80), main = "Scorpio")
 abline(h=0, col="gray20", lwd = 1.3, lty = 2)
 # export 3 x 7.5 cm
 
@@ -726,22 +947,22 @@ t.test(d$Rabbit_systole, d$Rabbit_diastole, paired = T)
 
 # prepare graphics
 par(mfrow=c(1,4))
-cBd <- darken(rgb(10/255, 80/255, 200/255),0.55)
-cBl <- "#9590a8"
+c_nonthreat_sys <- darken(rgb(10/255, 80/255, 200/255),0.55)
+c_nonthreat_dias <- "#9590a8"
 
-boxplot(d$Deer_systole, d$Deer_diastole, col = c(cBd, cBl), names = c("Systole", "Diastole"), frame = FALSE, notch = TRUE, ylab = "Distance Error", cex.lab = 1.4, cex.axis = 1, ylim = c(-80,80), main = "Deer")
+boxplot(d$Deer_systole, d$Deer_diastole, col = c(c_nonthreat_sys, c_nonthreat_dias), names = c("Systole", "Diastole"), frame = FALSE, notch = TRUE, ylab = "Distance Error", cex.lab = 1.4, cex.axis = 1, ylim = c(-80,80), main = "Deer")
 abline(h=0, col="gray20", lwd = 1.3, lty = 2)
 
 
-boxplot(d$Pig_systole, d$Pig_diastole, col = c(cBd, cBl), names = c("Systole", "Diastole"), frame = FALSE, notch = TRUE, ylab = "Distance Error", cex.lab = 1.4, cex.axis = 1, ylim = c(-80,80), main = "Pig")
+boxplot(d$Pig_systole, d$Pig_diastole, col = c(c_nonthreat_sys, c_nonthreat_dias), names = c("Systole", "Diastole"), frame = FALSE, notch = TRUE, ylab = "Distance Error", cex.lab = 1.4, cex.axis = 1, ylim = c(-80,80), main = "Pig")
 abline(h=0, col="gray20", lwd = 1.3, lty = 2)
 
 
-boxplot(d$Turtle_systole, d$Turtle_diastole, col = c(cBd, cBl), names = c("Systole", "Diastole"), frame = FALSE, notch = TRUE, ylab = "Distance Error", cex.lab = 1.4, cex.axis = 1, ylim = c(-80,80), main = "Turtle")
+boxplot(d$Turtle_systole, d$Turtle_diastole, col = c(c_nonthreat_sys, c_nonthreat_dias), names = c("Systole", "Diastole"), frame = FALSE, notch = TRUE, ylab = "Distance Error", cex.lab = 1.4, cex.axis = 1, ylim = c(-80,80), main = "Turtle")
 abline(h=0, col="gray20", lwd = 1.3, lty = 2)
 
 
-boxplot(d$Rabbit_systole, d$Rabbit_diastole, col = c(cBd, cBl), names = c("Systole", "Diastole"), frame = FALSE, notch = TRUE, ylab = "Distance Error", cex.lab = 1.4, cex.axis = 1, ylim = c(-80,80), main = "Rabbit")
+boxplot(d$Rabbit_systole, d$Rabbit_diastole, col = c(c_nonthreat_sys, c_nonthreat_dias), names = c("Systole", "Diastole"), frame = FALSE, notch = TRUE, ylab = "Distance Error", cex.lab = 1.4, cex.axis = 1, ylim = c(-80,80), main = "Rabbit")
 abline(h=0, col="gray20", lwd = 1.3, lty = 2)
 # export 3 x 7.5 cm
 
@@ -756,8 +977,8 @@ d <- data[data$c_phase == "systole" | data$c_phase == "diastole", ]
 d <- d[d$FearObject == "True",]
 
 # prepare graphics
-cRd <- "#6c030f"
-cRl <- "#af7d81"
+c_threat_sys <- "#6c030f"
+c_threat_dias <- "#af7d81"
 bold.text <- element_text(face = "bold", color = "black")
 
 # plot the resuls for different animals
@@ -767,7 +988,7 @@ subdata <- d[d$Stimulus == p,]
 
 Figure <- ggplot(data = subdata, aes(x = RealDistance, y = DistanceError, color = c_phase)) + geom_smooth(method = "loess", level=0.95, alpha = 0.5, aes(fill=c_phase)) +
   labs(y = "Distance Error", x = "True Distance") +
-  ggtitle(p) + scale_color_manual(values = c('systole' = cRd, 'diastole' = cRl)) + scale_fill_manual(values = c('systole' = cRd, 'diastole' = cRl)) +
+  ggtitle(p) + scale_color_manual(values = c('systole' = c_threat_sys, 'diastole' = c_threat_dias)) + scale_fill_manual(values = c('systole' = c_threat_sys, 'diastole' = c_threat_dias)) +
   theme_classic() +
   theme(plot.title = element_text(hjust = 0.5, face = "bold", size = 17), axis.text=element_text(size=17),  axis.title=element_text(size=18)) +
   scale_x_continuous(limits= c(min(data$RealDistance), max(data$RealDistance)), expand = c(0.01,0.01)) + coord_cartesian(ylim=c(-50, 50)) + theme(axis.title = bold.text, axis.title.y = element_text(margin = margin(t = 0, r = 10, b = 0, l = 0)), axis.title.x =   element_text(margin = margin(t = 10, r = 0, b = 0, l = 0)))
@@ -782,8 +1003,8 @@ d <- data[data$c_phase == "systole" | data$c_phase == "diastole", ]
 d <- d[d$FearObject == "False",]
 
 # prepare graphics 
-cBd <- darken(rgb(10/255, 80/255, 200/255),0.55)
-cBl <- "#9590a8"
+c_nonthreat_sys <- darken(rgb(10/255, 80/255, 200/255),0.55)
+c_nonthreat_dias <- "#9590a8"
 
 # plot the results for different animals
 for (p in unique(d$Stimulus)) {
@@ -792,7 +1013,7 @@ subdata <- d[d$Stimulus == p,]
 
 Figure <- ggplot(data = subdata, aes(x = RealDistance, y = DistanceError, color = c_phase)) + geom_smooth(method = "loess", level=0.95, alpha = 0.5, aes(fill=c_phase)) +
   labs(y = "Distance Error", x = "True Distance") +
-  ggtitle(p) + scale_color_manual(values = c('systole' = cBd, 'diastole' = cBl)) + scale_fill_manual(values = c('systole' = cBd, 'diastole' = cBl)) +
+  ggtitle(p) + scale_color_manual(values = c('systole' = c_nonthreat_sys, 'diastole' = c_nonthreat_dias)) + scale_fill_manual(values = c('systole' = c_nonthreat_sys, 'diastole' = c_nonthreat_dias)) +
   theme_classic() +
   theme(plot.title = element_text(hjust = 0.5, face = "bold", size = 17), axis.text=element_text(size=17),  axis.title=element_text(size=18)) +
   scale_x_continuous(limits= c(min(data$RealDistance), max(data$RealDistance)), expand = c(0.01,0.01)) + coord_cartesian(ylim=c(-50, 50)) + theme(axis.title = bold.text, axis.title.y = element_text(margin = margin(t = 0, r = 10, b = 0, l = 0)), axis.title.x =   element_text(margin = margin(t = 10, r = 0, b = 0, l = 0)))
@@ -802,6 +1023,72 @@ plot(Figure)
 
 ```
 
+```{r}
 
+# Control analyses
+
+# model width of distance error distributions as function of threat and cardiac phase
+aov_d <- data %>% 
+  filter(c_phase %in% c("diastole", "systole")) %>% 
+  group_by(ID, FearObject, c_phase) %>% 
+  dplyr::summarise(sd = sd(abs(DistanceError))) %>% 
+  ungroup()
+
+cat("\n\n### ANOVA – sd DISTANCE ERROR:\n")
+
+fit_all <- aov_ez(data = aov_d,
+                  dv = "sd",
+                  id = "ID",
+                  within=c("c_phase", "FearObject"),
+                  return = afex_options("return_aov"),
+                  anova_table = list(),
+                  fun_aggregate = mean)
+fit_all 
+summary(fit_all)
+
+print(aov_d %>% 
+        group_by(FearObject) %>% 
+        dplyr::summarise(mean_sd = mean(sd),
+                         sd_sd = sd(sd)))
+
+
+# model angular error as function of threat and cardiac phase
+aov_d <- data %>% 
+  filter(c_phase %in% c("diastole", "systole")) %>% 
+  group_by(ID, FearObject, c_phase) %>% 
+  dplyr::summarise(m = mean(abs(AngularErrorDeg)), 
+                   sd = sd(AngularErrorDeg)) %>% 
+  ungroup()
+
+cat("\n\n### ANOVA – mean ANG ERROR\n")
+fit_all <- aov_ez(data = aov_d,
+                  dv = "m",
+                  id = "ID",
+                  within=c("c_phase", "FearObject"),
+                  return = afex_options("return_aov"),
+                  anova_table = list(),
+                  fun_aggregate = mean)
+fit_all 
+summary(fit_all)
+cat("\n\n### ANOVA – sd ANG ERROR\n")
+fit_all <- aov_ez(data = aov_d,
+                  dv = "sd",
+                  id = "ID",
+                  within=c("c_phase", "FearObject"),
+                  return = afex_options("return_aov"),
+                  anova_table = list(),
+                  fun_aggregate = mean)
+fit_all 
+summary(fit_all)
+print(aov_d %>% 
+        group_by(FearObject) %>% 
+        dplyr::summarise(grand_m = mean(m), 
+                         grand_sd = sd(m),
+                         mean_sd = mean(sd),
+                         sd_sd = sd(sd)))
+
+
+
+```
 
 

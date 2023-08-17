@@ -127,8 +127,19 @@ build_dataset <- function(path, part='main') {
     
     df <- get_single_table(file.path(path, folders[i]))
     df <- filter_data(df, part=part)
-    ifelse(df$ID == "S41" |  df$ID == "S44" | df$ID == "S11" , df$PhaseLenght <- as.double(levels(df$PhaseLenght))[df$PhaseLenght],  df$PhaseLenght <- as.numeric(df$PhaseLenght))  # participant-specific adjustment: for 3 subjects PhaseLenght column was saved as integer value
-    ifelse(df$ID == "S09" |  df$ID == "S18" | df$ID == "S22" | df$ID == "S36", df$EstimatedDistance <- as.double(levels(df$EstimatedDistance))[df$EstimatedDistance],  df$EstimatedDistance <- as.numeric(df$EstimatedDistance)) # for 4 subjects EstimatedDistance column was saved as integer value
+    ifelse(df$ID == "S41" |  df$ID == "S44" | df$ID == "S11" , 
+           df$PhaseLenght <- as.double(levels(df$PhaseLenght))[df$PhaseLenght], 
+           df$PhaseLenght <- as.numeric(df$PhaseLenght))  # participant-specific adjustment: for 3 subjects PhaseLenght column was saved as integer value
+
+    ## FK: the following produced issues in my setup -> replacing all values for 3 subjects with NA
+    ##     I therefore replaced it by the simpler and (at least for me) more stable version:
+    ifelse(df$EstimatedIDstance == "factor", 
+           df$EstimatedDistance <- as.double(levels(df$EstimatedDistance))[df$EstimatedDistance], 
+           df$EstimatedDistance <- as.numeric(df$EstimatedDistance))
+    df$EstimatedDistance <- as.numeric(df$EstimatedDistance)
+    # ifelse(df$ID == "S09" |  df$ID == "S18" | df$ID == "S22" | df$ID == "S36", 
+    #        df$EstimatedDistance <- as.double(levels(df$EstimatedDistance))[df$EstimatedDistance],  
+    #        df$EstimatedDistance <- as.numeric(df$EstimatedDistance)) # for 4 subjects EstimatedDistance column was saved as char value
     tables[i] <- list(df)
     
   }

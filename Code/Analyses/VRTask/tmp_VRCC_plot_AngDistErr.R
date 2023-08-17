@@ -55,12 +55,4 @@ ggplot(data, aes(x = DistanceError, y = fct_reorder(Stimulus, .x = DistanceError
   xlim(-250, 250)
 
 
-
-data %>% group_by(ID, Stimulus) %>% 
-  dplyr::summarise(m_ang = mean(AngularErrorDeg), 
-                   m_ditst = mean(DistanceError)) -> o
-
-o %>% 
-  filter(Stimulus == 'FinalSnake') %>% 
-  ggplot(aes(x = m_ang, y = m_ditst)) + geom_point()
-
+  

@@ -175,10 +175,19 @@ subjects_list <- str_remove(subjects_list, "VRCC_")
 subjects_list <- str_remove(subjects_list, ".csv")
 cardio_data   <- NULL
 
-# add cardiac data
-for (subj_ID in subjects_list) {                               
-  cardio_temp <- get_cardio_info(fulldata, subj_ID)
-  cardio_data <- bind_rows(cardio_data, cardio_temp)
+
+read_cardiodata_from_disc = TRUE
+path_cardiodata <- file.path(here("Data/VRTask/Cardio/", "cardio_data_tmp.rds"))
+
+if (read_cardiodata_from_disc) {
+  cardio_data <- readRDS(path_cardiodata)
+} else {
+  # add cardiac data
+  for (subj_ID in subjects_list) {                               
+    cardio_temp <- get_cardio_info(fulldata, subj_ID)
+    cardio_data <- bind_rows(cardio_data, cardio_temp)
+    saveRDS(cardio_data, path_cardiodata)
+  }
 }
 
 # join the data
@@ -352,7 +361,11 @@ data$SYS_outlier[data$ID == s & data$totTrial == t] <- outlier
 
 # how many outliers?
 nrow(data[data$SYS_outlier == "outlier",])
+```
 
+
+Plot some shizzle (takes ages):
+```{r}
 # plot systole lengths (optional: export 5 x 5 cm)
 group_col <- as.character(data$SYS_outlier)            
 group_col[group_col == "outlier"] <- scales::alpha("darkorange", 0.7)
@@ -390,6 +403,6 @@ describe(trials_per_subject$percent)
 data <- select(data, -Training, -Phase, -LE_outlier, -SYS_outlier)
 
 # save consolidated data (optional)
-write.csv(data, paste0(VRCC_dir, "/Data/VRTask/VRCC_data_consolidated-2023-07-20"), row.names = F)
+write.csv(data, paste0(VRCC_dir, "/Data/VRTask/VRCC_data_consolidated-2023-08-10.csv"), row.names = F)
 
 ```
