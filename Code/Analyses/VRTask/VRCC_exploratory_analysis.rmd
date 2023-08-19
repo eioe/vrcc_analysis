@@ -48,26 +48,91 @@ library(effsize)
 library(psych)
 library(Rmisc)
 library(afex)
+library(circular) 
 
 # Set up the fulldata directory
 VRCC_dir  <- here::here()
 
 # read behavioral & ecg data
-data <- read.csv(file = paste0(VRCC_dir,"/Data/VRTask/VRCC_data_consolidated"))
+data <- read.csv(file = paste0(VRCC_dir,"/Data/VRTask/VRCC_data_consolidated-2023-08-10"))
 
 # read intial ratings data
-d_sub_start <- read.csv(file = paste0(VRCC_dir,"/Data/VRTask/VRCC_data_initial_subjective_ratings"))
+d_sub_start <- read.csv(file = paste0(VRCC_dir,"/Data/VRTask/VRCC_data_initial_subjective_ratings.csv"))
 
 # read mid-experimental ratings data
-d_sub_mid <- read.csv(file = paste0(VRCC_dir,"/Data/VRTask/VRCC_data_mid-experimental_subjective_ratings"))
+d_sub_mid <- read.csv(file = paste0(VRCC_dir,"/Data/VRTask/VRCC_data_mid-experimental_subjective_ratings.csv"))
 d_sub_mid$threat[d_sub_mid$threat == 0] <- NA # add NAs
 
 # read questionnaires data
-d_qstn <- read.csv(file = paste0(VRCC_dir,"/Data/VRTask/VRCC_data_questionnaires"))
+d_qstn <- read.csv(file = paste0(VRCC_dir,"/Data/VRTask/VRCC_data_questionnaires.csv"))
 
 # conversion of distance from m to cm
 data <- data %>%
 mutate(EstimatedDistance = EstimatedDistance * 100, RealDistance = RealDistance * 100, DistanceError = DistanceError * 100 , DistanceErrorAbs = DistanceErrorAbs * 100, LocalizationError = LocalizationError * 100)
+
+```
+
+
+```{r}
+
+# TODO: fix this [copied from main analysis ]
+
+
+###2.3 Plot distance errors for different animals
+ 
+for (p in unique(data$Stimulus)) {
+
+subdata <- data[data$Stimulus == p,]
+
+Figure <- ggplot(data = subdata, aes(x = RealDistance, y = DistanceError)) +
+  geom_point(col = "grey 15", alpha = 0.2, size = 1, shape = 18) +
+  geom_smooth(col = "grey8", method = "loess", level=0.95, alpha = 0.9) +
+  labs(y = "Distance Error", x = "True Distance") +
+  ggtitle(p) +
+  theme_classic() +
+  theme(plot.title = element_text(hjust = 0.5, face = "bold", size = 17), axis.text=element_text(size=15),  axis.title=element_text(size=15)) +
+  scale_x_continuous(limits= c(min(data$RealDistance), max(data$RealDistance)), expand = c(0.01,0.01)) +
+  scale_y_continuous(limits= c(-250, 250), expand = c(0.01,0.01)) + geom_hline(yintercept = 0, col = "royalblue1")
+plot(Figure)
+
+}
+
+
+###2.1 Distribution of stimulus onsets across the cardiac cycle
+
+# specify a data frame with the uniformity test results for each participant
+Onset_distribution_ID <- data.frame(ID = integer(0),
+                                    T_test_statistics = numeric(0), # T - threatening
+                                    T_p_value = numeric(0), # T - threatening
+                                    NT_test_statistics = numeric(0), # NT - non-threatening
+                                    NT_p_value = numeric(0)) #NT - non-threatening
+
+for (p in unique(data$ID)) { # LOOP PARTICIPANTS (p)
+  
+  # save the vector with calculated onset positions in radians as a circular object
+  T_temp_onset <- circular(data$relPosRRrad[data$ID==p & data$FearObject == "True"], type="angles", units="radians", rotation="clock") 
+  
+  NT_temp_onset <- circular(data$relPosRRrad[data$ID==p & data$FearObject == "False"], type="angles", units="radians", rotation="clock")
+
+  # test uniformity of onset distribution for a participant and save the results
+  T_onset_distribution_individual <- rayleigh.test(T_temp_onset) 
+  NT_onset_distribution_individual <- rayleigh.test(NT_temp_onset) 
+  
+  # add test statistics and p-value to the data frame with uniformity testing results
+  T_p_value <- T_onset_distribution_individual$p.value
+  T_test_statistics <- T_onset_distribution_individual$statistic
+  NT_p_value <- NT_onset_distribution_individual$p.value
+  NT_test_statistics <- NT_onset_distribution_individual$statistic
+  
+  Onset_distribution_ID[nrow(Onset_distribution_ID)+1,] <- c(p, T_test_statistics, T_p_value, NT_test_statistics, NT_p_value)
+}
+
+## Optional histograms
+hist(as.numeric(Onset_distribution_ID$T_test_statistics), breaks = 20)
+hist(as.numeric(Onset_distribution_ID$T_p_value), breaks = 20)
+hist(as.numeric(Onset_distribution_ID$NT_test_statistics), breaks = 20)
+hist(as.numeric(Onset_distribution_ID$NT_p_value), breaks = 20)
+
 
 ```
 
@@ -209,6 +274,7 @@ qb <- d_sub_mid %>%
 qb <- qb[qb$fear_object == "True",]
 
 cR <- rgb(178/255, 31/255, 0/255)
+
 boxplot(qb$threat[qb$Round == 1], qb$threat[qb$Round == 2], qb$threat[qb$Round == 3], qb$threat[qb$Round == 4],qb$threat[qb$Round == 5],qb$threat[qb$Round == 6], ylab = "Subjective threat", xlab = "Consecutive blocks", col = cR, 
 frame = FALSE, notch = F, cex.lab = 1.2, cex.axis = 1)
 
@@ -224,6 +290,32 @@ ref <- emmeans::emmeans(fit_all, specs = "Round")
 ref
 emmeans::contrast(ref,method="pairwise",adjust="bonferroni")
 
+# Compare threat vs non-threat ratings before final block
+d_sub_mid %>% 
+  filter(Round == 6) %>% 
+  group_by(ID, fear_object) %>% 
+  dplyr::summarise(m_rat = mean(threat, na.rm=TRUE)) -> dat_r6
+
+t.test(m_rat~fear_object, data = dat_r6, paired = TRUE)
+shapiro.test(dat_r6 %>% 
+               ungroup() %>% 
+               filter(fear_object == "True") %>% 
+               pull(m_rat))
+shapiro.test(dat_r6 %>% 
+               ungroup() %>% 
+               filter(fear_object == "False") %>% 
+               pull(m_rat))
+wilcox.test(m_rat~fear_object, data = dat_r6, paired = TRUE)
+# same result as t test
+
+
+
+dat_r6 %>% 
+  group_by(fear_object) %>% 
+  dplyr::summarise(grand_m = mean(m_rat),
+                   sd = sd(m_rat)) -> dat_r6_desc
+
+dat_r6_desc
 
 ### 4.4. Stimulus recognition task
 dm <- d_sub_mid
