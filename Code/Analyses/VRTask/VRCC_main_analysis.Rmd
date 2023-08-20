@@ -177,8 +177,8 @@ describe(d$sd_nonthreat)
 ###3.2. Plot results - hypothesis 1
 
 # specify colors
-cR <- c_threat  # Old value: rgb(178/255, 31/255, 0/255)
-cB <- c_nonthreat  # Old value:  rgb(10/255, 80/255, 200/255)
+cR <- rgb(178/255, 31/255, 0/255)    # altern.: c_threat         # Old value: rgb(178/255, 31/255, 0/255)
+cB <- rgb(10/255, 80/255, 200/255)   # altern.: c_nonthreat      # Old value:  rgb(10/255, 80/255, 200/255)
 
 # prepare data
 
@@ -363,6 +363,8 @@ ggplot(data_avg, aes(x = DistanceError,
   ylab("Stimulus animal") +
   xlab("Distance error (°)") +
   coord_flip() -> plt
+
+plt
 
 # save to disc:
 fpath_figs <- file.path(VRCC_dir, 'Code', 'Analyses', 'VRTask', 'Figures')
