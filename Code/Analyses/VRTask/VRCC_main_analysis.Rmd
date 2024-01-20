@@ -1,6 +1,6 @@
 ---
 title: <font size="5">**VRCC -- main analysis **</font> 
-author: <br> <font size="4"> Pawel Motyka, Felix Klotzsche, Aleksander Molak </font> <br>  *pmotyka@psych.pan.pl*  *klotzsche@cbs.mpg.de* *aleksander.molak@gmail.com*
+author: <br> <font size="4"> Pawel Motyka, Felix Klotzsche, Aleksander Molak </font> <br>  pmotyka@psych.pan.pl <br>klotzsche@cbs.mpg.de <br>aleksander.molak@gmail.com
 date: <font size="3"> April 2021  </font>
 output: html_document
 chunk_output_type: console
@@ -10,20 +10,21 @@ self_contained: no
 
 &nbsp;
 <font size="4">
-**List of sections**:
+**List of sections**:  
 
-# TODO: update
-1. Load required packages and data [S1](#S1)
-2. Data checks and descriptive statistics [S2](#S2)
-3. Hypothesis 1: Comparison of distance error between threatening and non-threatening objects [S3](#S3)
-4. Hypothesis 2: Comparison of distance error between cardiac phases [S4](#S4)
-5. Comparison of distance error between cardiac phases (individual animals) [S5](#S5)
+- [S1](#S1) – Load required packages and data
+- [S2](#S2) – Data checks and descriptive statistics of dep. variables 
+- [S3](#S3) – Hypothesis 1: Comparison of distance error between threatening and non-threatening objects 
+- [S4](#S4) – Hypothesis 2: Comparison of distance error between cardiac phases 
+- [S5](#S5) – Comparison of distance error between cardiac phases (individual animals) 
+- [S6](#S6) – Distance errors as a function of true distance (individual animals) 
+- [S7](#S7) – Width of distance error distributions as function of threat and cardiac phase 
 
 
 <a name="S1"></a>
 &nbsp;
 
-#####**1. Load required packages and data** 
+**1. Load required packages and data** 
 
 ```{r message=FALSE, warning=FALSE}
 
@@ -88,11 +89,11 @@ data <- data %>%
 <a name="S2"></a>
 &nbsp;
 
-#####**2. Data checks and descriptive statistics** 
+**2. Data checks and descriptive statistics** 
 
 ```{r, warning=FALSE}
 
-###1. Control analysis: avg. distance and localization errors different from zero?
+# --- Control analysis: avg. distance and angular errors different from zero? ---
 
 # Transform angular error from radians to degree:
 data$AngularErrorDeg <- data$AngularErrorRad * 180 / pi 
@@ -108,8 +109,6 @@ shapiro.test(dd$mean_distance)
 t.test(dd$mean_distance, mu = 0, alternative = "two.sided")
 describe(dd$mean_distance)
 
-
-## Control analysis: 
 # check whether average angular error was different from zero
 shapiro.test(dd$mean_angular)
 wilcox.test(dd$mean_angular, mu = 0, alternative = "two.sided")
@@ -126,11 +125,12 @@ hist(dd$mean_angular)
 <a name="S3"></a>
 &nbsp;
 
-#####**3. Hypothesis 1: Comparison of distance error between threatening and non-threatening objects** 
+**3. Hypothesis 1: Comparison of distance error between threatening and non-threatening objects** 
 
 ```{r warning=FALSE}
 
-###3.1. Preregistered analysis: hypothesis 1 (compare distance error between threat and non-threat)
+# 3.1. Preregistered analysis: compare distance error between threat and non-threat
+
 d <- data %>% 
   dplyr::group_by(ID) %>%
   dplyr::summarize(mean_threat = mean(DistanceError[FearObject == "True"]), 
@@ -152,7 +152,6 @@ effsize::cohen.d(d$mean_threat, d$mean_nonthreat, paired = T)
 describe(d$mean_threat)
 describe(d$mean_nonthreat)
 
-
 ## Compare the precision (SD) between threatening and non-threatening animals
 # check normality of distributions
 shapiro.test(d$sd_threat)
@@ -169,13 +168,18 @@ describe(d$sd_threat)
 describe(d$sd_nonthreat)
 
 
+# for how many subjects threatening animals were perceived as closer than non-threatening ones
+d$diff_distances <- d$mean_nonthreat - d$mean_threat
+length(d$diff_distances[d$diff_distances > 0])
+hist(d$diff_distances)
+
 
 ```
 
 
 
 ```{r}
-###3.2. Plot results - hypothesis 1
+# 3.2. Plot results - hypothesis 1
 
 # specify colors
 cR <- rgb(178/255, 31/255, 0/255)    # altern.: c_threat         # Old value: rgb(178/255, 31/255, 0/255)
@@ -309,7 +313,7 @@ f1
 dev.off()
 
 
-###3.3 Plot results for different animals
+# Plot results for single animals
 
 # Overview box plot:
 d <- data %>% 
@@ -330,7 +334,6 @@ abline(h=0, col="gray20", lwd = 1.3, lty = 2)
 
 
 # pub-ready density plot:
-
 data_avg <- data %>%
   group_by(Stimulus, ID) %>%
   dplyr::summarize(DistanceError = mean(DistanceError), 
@@ -378,9 +381,13 @@ dev.off()
 
 ```
 
+**Exploratory/control analysis: compare angular error between threat and non-threat**
+<a name="S3c"></a>
+&nbsp;
+
 ```{r warning=FALSE}
 
-###3.1. Exploratory/control analysis: compare angular error between threat and non-threat
+# 3.3 Exploratory/control analysis: compare angular error between threat and non-threat
 d <- data %>% 
   dplyr::group_by(ID) %>%
   dplyr::summarize(mean_threat = mean(AngularErrorDeg[FearObject == "True"]), 
@@ -400,20 +407,6 @@ effsize::cohen.d(d$mean_threat, d$mean_non_threat, paired = T)
 describe(d$mean_threat)
 describe(d$mean_non_threat)
 
-# for how many subjects threatening animals were perceived as closer than non-threatening ones
-d$diff_distances <- d$mean_non_threat - d$mean_threat
-length(d$diff_distances[d$diff_distances > 0])
-hist(d$diff_distances)
-```
-
-
-#####**3A. Hypothesis 1A: Comparison of localization and angular error between threatening and non-threatening objects** 
-
-```{r warning=FALSE}
-
-
-
-###3.1. Preregistered analysis: hypothesis 1
 d <- data %>% 
   dplyr::group_by(ID, FearObject) %>%
   dplyr::summarize(mean_AngErr = mean(AngularErrorDeg),
@@ -424,13 +417,10 @@ d <- data %>%
   ungroup()
 
 # check normality of distributions
-shapiro.test(d$mean_AngErr[d$FearObject=="True"])
-shapiro.test(d$mean_AngErr[d$FearObject=="False"])
 shapiro.test(d$sd_AngErr[d$FearObject=="True"])
 shapiro.test(d$sd_AngErr[d$FearObject=="False"])
 
-# 
-t.test(d$mean_AngErr[d$FearObject=="True"], d$mean_AngErr[d$FearObject=="False"], paired = TRUE, alternative = "two.sided")
+
 t.test(d$sd_AngErr[d$FearObject=="True"], d$sd_AngErr[d$FearObject=="False"], paired = TRUE, alternative = "two.sided")
 
 
@@ -460,17 +450,20 @@ boxplot(d$Crocodile, d$FinalWolf, d$FinalSnake, d$Scorpio, d$Deer, d$Pig,  d$Tur
         cex.lab = 1.4, 
         cex.axis = 1)
 abline(h=0, col="gray20", lwd = 1.3, lty = 2)
-# export size: 5 x 7
-
 ```
+
 
 
 <a name="S4"></a>
 &nbsp;
 
+**4. Hypothesis 2: Comparison of distance error between cardiac phases** 
+
+*Binary comparison: ANOVA*
+
 ```{r}
 
-###4.1. 2 x 2 ANOVA analysis (with Bonferroni post hoc comparisons)
+# 4.1. 2 x 2 ANOVA analysis (with Bonferroni post hoc comparisons)
 
 # prepare data
 d <- data[data$c_phase == "systole" | data$c_phase == "diastole",]
@@ -499,12 +492,9 @@ emmeans::contrast(ref,method="pairwise",adjust="bonferroni")
 ```
 
 
-
-#####**4. Hypothesis 2: Comparison of distance error between cardiac phases** 
+*Binary comparison: Mixed Model (pre-registered)*
 
 ```{r warning=FALSE}
-
-
 ### 4.2. Preregistered mixed model
 
 d <- data[data$c_phase == "systole" | data$c_phase == "diastole",]
@@ -529,10 +519,10 @@ plot_model(full_model, type = "int", mdrt.values = "meansd", colors = c(c_nonthr
 lrtest(null_model, full_model)
 ```
 
-
+*Bayes factors*
 
 ```{r}
-###4.3. Bayes factor analysis (comparisons of interest)
+# 4.3. Bayes factor analysis (comparisons of interest)
 
 ## Threatening animals
 d <- data[data$FearObject == "True",]
@@ -571,7 +561,6 @@ d <- d %>%
 shapiro.test(d$m_systole)
 shapiro.test(d$m_diastole)
 t.test(d$m_systole, d$m_diastole, paired = T)
-t.test(d$sd_systole, d$sd_diastole, paired = TRUE)
 
 # Bayes factor (comparison of interest + robustness check)
 ttestBF(d$m_systole, d$m_diastole, paired = T)
@@ -579,10 +568,10 @@ ttestBF(d$m_systole, d$m_diastole, paired = T, r = 1)
 ttestBF(d$m_systole, d$m_diastole, paired = T, r = 0.354)
 ```
 
-
+*Binary analysis: Plots*
 ```{r}
 
-###4.4. Vizualize the results
+# 4.4. Vizualize the results
 
 # Threatening
 d <- data[data$FearObject == "True",]
@@ -825,9 +814,10 @@ dev.off()
 
 ```
 
+**Circular analysis (pre-registered): Mixed Model**
 
 ```{r}
-###4.5 Run preregistered analysis (circular approach)
+# 4.5 Run preregistered analysis (circular approach)
 
 # get circular components
 rel_pos_circular <- get_circular_components(data$relPosRRrad, 2 * pi)
@@ -863,7 +853,7 @@ print(comparison)
 <a name="S5"></a>
 &nbsp;
 
-#####**5. Comparison of distance error between cardiac phases (individual animals)** 
+**5. Comparison of distance error between cardiac phases (individual animals)** 
 
 ```{r}
 
@@ -969,9 +959,15 @@ boxplot(d$Rabbit_systole, d$Rabbit_diastole, col = c(c_nonthreat_sys, c_nonthrea
 abline(h=0, col="gray20", lwd = 1.3, lty = 2)
 # export 3 x 7.5 cm
 
+```
 
 
-###5.2. Plot distance errors in relation to true distances (animals split)
+<a name="S6"></a>
+&nbsp;
+
+**6. Distance errors as a function of true distance (individual animals)** 
+
+```{r}
 
 ## Threatening animals
 
@@ -1026,9 +1022,12 @@ plot(Figure)
 
 ```
 
-```{r}
 
-# Control analyses
+<a name="S7"></a>
+&nbsp;
+
+**7. Width of (distance & angular) error distributions as function of threat and cardiac phase** 
+```{r}
 
 # model width of distance error distributions as function of threat and cardiac phase
 aov_d <- data %>% 
