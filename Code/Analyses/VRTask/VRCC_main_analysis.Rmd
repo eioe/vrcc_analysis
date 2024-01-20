@@ -39,13 +39,14 @@ basic_color <- '#195e8c'
 
 
 # Utils
+library(tidyverse)
 library(dplyr) 
 library(here)
 library(tidyr)
-library(tidyverse)
+
 
 # load helper functions
-source(here("./Code/Analyses/VRTask/Utils/stats_utils.r"))
+source(here::here("./Code/Analyses/VRTask/Utils/stats_utils.r"))
 
 # Plotting and tables
 library(ggplot2)
