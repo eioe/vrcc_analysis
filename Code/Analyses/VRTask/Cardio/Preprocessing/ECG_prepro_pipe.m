@@ -20,7 +20,7 @@
 b_processRepairedFiles = false; % grab files from subfolder "_repaired"
 b_exportTXT = false; % should not be necessary anymore
 b_filter = true; % filter te data (0.5 - 40Hz)
-b_exportFiltered = true; %save filtered files as TXTs
+b_exportFiltered = false; %save filtered files as TXTs
 b_addRPmarkers = true; %add a marker for each R peak
 
 % Plotting:
@@ -32,7 +32,7 @@ b_removePREPpath = true; % avoid masking of findpeaks function if you use PREP
 %% Prepare environment:
 
 % make sure you're on the right path:
-if ~(strfind(pwd, 'centralkollegs18') && exist(fullfile(pwd, '.git'), 'dir'))
+if ~(contains(pwd, 'VRCC') && exist(fullfile(pwd, '.git'), 'dir'))
     b_done = false;
     m.prompt = sprintf('%s\n%s\n%s\n%s\n', ...
         'Your PWD is on path: ', pwd, ...
@@ -56,7 +56,7 @@ end
 %remove PREP pipeline folder (problem with its findpeaks function):
 if b_removePREPpath
     path_fp = which('findpeaks');
-    if strfind(path_fp, 'PrepPipeline')
+    if contains(path_fp, 'PrepPipeline')
         path_fp = strsplit(path_fp, 'findpeaks');
         path_fp = path_fp{1};
         rmpath(path_fp)
