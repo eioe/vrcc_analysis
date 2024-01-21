@@ -76,7 +76,7 @@ library(afex)
 VRCC_dir         <- here::here()
 
 # Read the preprocessed data
-data <- read.csv(file = paste0(VRCC_dir,"/Data/VRTask/VRCC_data_consolidated-2023-08-10"))
+data <- read.csv(file = paste0(VRCC_dir,"/Data/VRTask/VRCC_data_consolidated-2023-08-10.csv"))
 
 # conversion of distance from m to cm
 data <- data %>%

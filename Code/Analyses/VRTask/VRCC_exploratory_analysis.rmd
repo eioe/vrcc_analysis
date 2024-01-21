@@ -57,7 +57,7 @@ library(circular)
 VRCC_dir  <- here::here()
 
 # read behavioral & ecg data
-data <- read.csv(file = paste0(VRCC_dir,"/Data/VRTask/VRCC_data_consolidated-2023-08-10"))
+data <- read.csv(file = paste0(VRCC_dir,"/Data/VRTask/VRCC_data_consolidated-2023-08-10.csv"))
 
 # read intial ratings data
 d_sub_start <- read.csv(file = paste0(VRCC_dir,"/Data/VRTask/Ratings/VRCC_data_initial_subjective_ratings.csv"))
@@ -67,7 +67,7 @@ d_sub_mid <- read.csv(file = paste0(VRCC_dir,"/Data/VRTask/Ratings/VRCC_data_mid
 d_sub_mid$threat[d_sub_mid$threat == 0] <- NA # add NAs
 
 # read questionnaires data
-d_qstn <- read.csv(file = paste0(VRCC_dir,"/Data/VRTask/VRCC_data_questionnaires.csv"))
+d_qstn <- read.csv(file = paste0(VRCC_dir,"/Data/VRTask/Ratings/VRCC_data_questionnaires.csv"))
 
 # conversion of distance from m to cm
 data <- data %>%
