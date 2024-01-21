@@ -4,7 +4,7 @@
 
 <h2>VRCC – No cardiac phase bias for threat perception under naturalistic conditions in immersive virtual reality </h2>
 
-💽 **Data:** [to be replaced with EDMOND link]
+💽 **Data:** https://doi.org/10.17617/3.KJGEZQ 
 
 📑 **Preprint:** [to be replaced with bioRxiv link] 
 
@@ -32,7 +32,7 @@ If you run into problems, please do not hesitate to contact us (e.g., via email)
 So if you want to work with the code, I am happy to support you in getting it to work.
   
 **How to get started:**   
-1. Download the data set from [Edmond – The Open Research Data Repository of the Max Planck Society](TODO)  
+1. Download the data set from [Edmond – The Open Research Data Repository of the Max Planck Society](https://doi.org/10.17617/3.KJGEZQ)  
     There are data-readme files on Edmond which explain what the single folders and files contain.
 2. Clone this repository to a clean local directory (called `ROOT` in the next sections). 
 3. Replace the `\Data` folder with the actual data which you downloaded in step 1 and unzipped. 
