@@ -176,7 +176,7 @@ subjects_list <- str_remove(subjects_list, ".csv")
 cardio_data   <- NULL
 
 
-read_cardiodata_from_disc = TRUE
+read_cardiodata_from_disc = FALSE
 path_cardiodata <- file.path(here("Data/VRTask/Cardio/", "cardio_data_tmp.rds"))
 
 if (read_cardiodata_from_disc) {

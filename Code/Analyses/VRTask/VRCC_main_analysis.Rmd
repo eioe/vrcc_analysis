@@ -1,11 +1,13 @@
 ---
-title: <font size="5">**VRCC -- main analysis **</font> 
-author: <br> <font size="4"> Pawel Motyka, Felix Klotzsche, Aleksander Molak </font> <br>  pmotyka@psych.pan.pl <br>klotzsche@cbs.mpg.de <br>aleksander.molak@gmail.com
+title: <font size="5">**VRCC -- main analysis **</font>
+author: <br> <font size="4"> Pawel Motyka, Felix Klotzsche, Aleksander Molak </font>
+  <br>  pmotyka@psych.pan.pl <br>klotzsche@cbs.mpg.de <br>aleksander.molak@gmail.com
 date: <font size="3"> April 2021  </font>
-output: html_document
+output:
+  html_document: default
+  pdf_document: default
 chunk_output_type: console
 self_contained: no
-
 --- 
 
 &nbsp;

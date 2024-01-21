@@ -12,18 +12,21 @@ self_contained: no
 <font size="4">
 **List of sections**:
 
-1. Load required packages and data [S1](#S1)
-2. Comparison of localization error between cardiac phases [S2](#S2)
-3. RR interval length and distance estimates [S3](#S3)
-4. Animal assessment - threat, disgust, and speed ratings  [S4](#S4)
-5. Distance error as a function of subjective threat [S5](#S5)
-6. Distance error as a function of anxiety levels, digust, and speed ratings [S6](#S6)
-7. Cybersickness (SSQ) and presence in VR (SUS) [S7](#S7)
+- [S1](#S1) – Load required packages and data
+- [S2](#S2) - Comparison of localization error between cardiac phases
+- [S3](#S3) - RR interval length and distance estimates
+- [S4](#S4) - Animal assessment - threat, disgust, and speed ratings
+- [S5](#S5) - Distance error as a function of subjective threat
+- [S6](#S6) - Distance error as a function of anxiety levels, disgust, and speed ratings
+- [S7](#S7) - Cybersickness (SSQ) and presence in VR (SUS)
+- [S8](#S8) - Distance errors as a function of real distance
+- [S9](#S9) - Distribution of stimulus onsets across the cardiac cycle
+
 
 <a name="S1"></a>
 &nbsp;
 
-#####**1. Load required packages and data** 
+**1. Load required packages and data** 
 
 ```{r message=FALSE, warning=FALSE}
 
@@ -57,10 +60,10 @@ VRCC_dir  <- here::here()
 data <- read.csv(file = paste0(VRCC_dir,"/Data/VRTask/VRCC_data_consolidated-2023-08-10"))
 
 # read intial ratings data
-d_sub_start <- read.csv(file = paste0(VRCC_dir,"/Data/VRTask/VRCC_data_initial_subjective_ratings.csv"))
+d_sub_start <- read.csv(file = paste0(VRCC_dir,"/Data/VRTask/Ratings/VRCC_data_initial_subjective_ratings.csv"))
 
 # read mid-experimental ratings data
-d_sub_mid <- read.csv(file = paste0(VRCC_dir,"/Data/VRTask/VRCC_data_mid-experimental_subjective_ratings.csv"))
+d_sub_mid <- read.csv(file = paste0(VRCC_dir,"/Data/VRTask/Ratings/VRCC_data_mid-experimental_subjective_ratings.csv"))
 d_sub_mid$threat[d_sub_mid$threat == 0] <- NA # add NAs
 
 # read questionnaires data
@@ -72,79 +75,14 @@ mutate(EstimatedDistance = EstimatedDistance * 100, RealDistance = RealDistance 
 
 ```
 
-
-```{r}
-
-# TODO: fix this [copied from main analysis ]
-
-
-###2.3 Plot distance errors for different animals
- 
-for (p in unique(data$Stimulus)) {
-
-subdata <- data[data$Stimulus == p,]
-
-Figure <- ggplot(data = subdata, aes(x = RealDistance, y = DistanceError)) +
-  geom_point(col = "grey 15", alpha = 0.2, size = 1, shape = 18) +
-  geom_smooth(col = "grey8", method = "loess", level=0.95, alpha = 0.9) +
-  labs(y = "Distance Error", x = "True Distance") +
-  ggtitle(p) +
-  theme_classic() +
-  theme(plot.title = element_text(hjust = 0.5, face = "bold", size = 17), axis.text=element_text(size=15),  axis.title=element_text(size=15)) +
-  scale_x_continuous(limits= c(min(data$RealDistance), max(data$RealDistance)), expand = c(0.01,0.01)) +
-  scale_y_continuous(limits= c(-250, 250), expand = c(0.01,0.01)) + geom_hline(yintercept = 0, col = "royalblue1")
-plot(Figure)
-
-}
-
-
-###2.1 Distribution of stimulus onsets across the cardiac cycle
-
-# specify a data frame with the uniformity test results for each participant
-Onset_distribution_ID <- data.frame(ID = integer(0),
-                                    T_test_statistics = numeric(0), # T - threatening
-                                    T_p_value = numeric(0), # T - threatening
-                                    NT_test_statistics = numeric(0), # NT - non-threatening
-                                    NT_p_value = numeric(0)) #NT - non-threatening
-
-for (p in unique(data$ID)) { # LOOP PARTICIPANTS (p)
-  
-  # save the vector with calculated onset positions in radians as a circular object
-  T_temp_onset <- circular(data$relPosRRrad[data$ID==p & data$FearObject == "True"], type="angles", units="radians", rotation="clock") 
-  
-  NT_temp_onset <- circular(data$relPosRRrad[data$ID==p & data$FearObject == "False"], type="angles", units="radians", rotation="clock")
-
-  # test uniformity of onset distribution for a participant and save the results
-  T_onset_distribution_individual <- rayleigh.test(T_temp_onset) 
-  NT_onset_distribution_individual <- rayleigh.test(NT_temp_onset) 
-  
-  # add test statistics and p-value to the data frame with uniformity testing results
-  T_p_value <- T_onset_distribution_individual$p.value
-  T_test_statistics <- T_onset_distribution_individual$statistic
-  NT_p_value <- NT_onset_distribution_individual$p.value
-  NT_test_statistics <- NT_onset_distribution_individual$statistic
-  
-  Onset_distribution_ID[nrow(Onset_distribution_ID)+1,] <- c(p, T_test_statistics, T_p_value, NT_test_statistics, NT_p_value)
-}
-
-## Optional histograms
-hist(as.numeric(Onset_distribution_ID$T_test_statistics), breaks = 20)
-hist(as.numeric(Onset_distribution_ID$T_p_value), breaks = 20)
-hist(as.numeric(Onset_distribution_ID$NT_test_statistics), breaks = 20)
-hist(as.numeric(Onset_distribution_ID$NT_p_value), breaks = 20)
-
-
-```
-
-
 <a name="S2"></a>
 &nbsp;
 
-#####**2. Comparison of localization error between cardiac phases** 
+**2. Comparison of localization error between cardiac phases** 
 
 ```{r}
 
-### 2.1 Localization error
+# Localization error
 
 d <- data[data$c_phase == "systole" | data$c_phase == "diastole",]
 
@@ -165,7 +103,7 @@ wilcox.test(d$systole, d$diastole, paired = T)
 <a name="S3"></a>
 &nbsp;
 
-#####**3. RR interval length and distance estimates** 
+**3. RR interval length and distance estimates** 
 
 ```{r}
 
@@ -187,7 +125,7 @@ cor.test(d$RRLength, d$LocalizationError, method = "spearman")
 <a name="S4"></a>
 &nbsp;
 
-#####**4. Animal assessment - threat, disgust, and speed ratings** 
+**4. Animal assessment - threat, disgust, and speed ratings** 
 
 ```{r}
 
@@ -329,7 +267,7 @@ length(unique(dm$ID[dm$recognize == 0]))
 <a name="S5"></a>
 &nbsp;
 
-#####**5. Distance error as a function of subjective threat** 
+**5. Distance error as a function of subjective threat** 
 
 ```{r, warning=FALSE}
 
@@ -417,7 +355,7 @@ print(Fig1)
 <a name="S6"></a>
 &nbsp;
 
-#####**6. Distance error as a function anxiety levels, digust, and speed ratings** 
+**6. Distance error as a function anxiety levels, digust, and speed ratings** 
 
 ```{r, warning=FALSE}
 
@@ -535,7 +473,7 @@ scatter.smooth(d$speed, d$distance_error, main = paste0(s, " ", R_method, ":", r
 <a name="S7"></a>
 &nbsp;
 
-#####**7. Cybersickness (SSQ) and presence in VR (SUS)** 
+**7. Cybersickness (SSQ) and presence in VR (SUS)** 
 
 ```{r}
 
@@ -573,4 +511,71 @@ cor.test(dt$SUS.Score, dt$localization_error, method = "spearman")
 
 ```
 
+<a name="S8"></a>
+&nbsp;
 
+**8. Distance errors as function of real distance** 
+```{r}
+
+### Plot distance errors as function of real distance for different animals
+ 
+for (p in unique(data$Stimulus)) {
+
+subdata <- data[data$Stimulus == p,]
+
+Figure <- ggplot(data = subdata, aes(x = RealDistance, y = DistanceError)) +
+  geom_point(col = "grey 15", alpha = 0.2, size = 1, shape = 18) +
+  geom_smooth(col = "grey8", method = "loess", level=0.95, alpha = 0.9) +
+  labs(y = "Distance Error", x = "True Distance") +
+  ggtitle(p) +
+  theme_classic() +
+  theme(plot.title = element_text(hjust = 0.5, face = "bold", size = 17), axis.text=element_text(size=15),  axis.title=element_text(size=15)) +
+  scale_x_continuous(limits= c(min(data$RealDistance), max(data$RealDistance)), expand = c(0.01,0.01)) +
+  scale_y_continuous(limits= c(-250, 250), expand = c(0.01,0.01)) + geom_hline(yintercept = 0, col = "royalblue1")
+plot(Figure)
+
+}
+```
+
+
+<a name="S9"></a>
+&nbsp;
+
+**9. Distribution of stimulus onsets across the cardiac cycle** 
+```{r}
+
+# specify a data frame with the uniformity test results for each participant
+Onset_distribution_ID <- data.frame(ID = integer(0),
+                                    T_test_statistics = numeric(0), # T - threatening
+                                    T_p_value = numeric(0), # T - threatening
+                                    NT_test_statistics = numeric(0), # NT - non-threatening
+                                    NT_p_value = numeric(0)) #NT - non-threatening
+
+for (p in unique(data$ID)) { # LOOP PARTICIPANTS (p)
+  
+  # save the vector with calculated onset positions in radians as a circular object
+  T_temp_onset <- circular(data$relPosRRrad[data$ID==p & data$FearObject == "True"], type="angles", units="radians", rotation="clock") 
+  
+  NT_temp_onset <- circular(data$relPosRRrad[data$ID==p & data$FearObject == "False"], type="angles", units="radians", rotation="clock")
+
+  # test uniformity of onset distribution for a participant and save the results
+  T_onset_distribution_individual <- rayleigh.test(T_temp_onset) 
+  NT_onset_distribution_individual <- rayleigh.test(NT_temp_onset) 
+  
+  # add test statistics and p-value to the data frame with uniformity testing results
+  T_p_value <- T_onset_distribution_individual$p.value
+  T_test_statistics <- T_onset_distribution_individual$statistic
+  NT_p_value <- NT_onset_distribution_individual$p.value
+  NT_test_statistics <- NT_onset_distribution_individual$statistic
+  
+  Onset_distribution_ID[nrow(Onset_distribution_ID)+1,] <- c(p, T_test_statistics, T_p_value, NT_test_statistics, NT_p_value)
+}
+
+## Optional histograms
+hist(as.numeric(Onset_distribution_ID$T_test_statistics), breaks = 20)
+hist(as.numeric(Onset_distribution_ID$T_p_value), breaks = 20)
+hist(as.numeric(Onset_distribution_ID$NT_test_statistics), breaks = 20)
+hist(as.numeric(Onset_distribution_ID$NT_p_value), breaks = 20)
+
+
+```
