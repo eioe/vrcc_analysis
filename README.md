@@ -8,6 +8,8 @@
 
 📑 **Preprint:** [to be replaced with bioRxiv link] 
 
+🐺 **Demo of the VR experiment**: https://osf.io/a7n9b/
+
 <br/><br/>
 [![R.pm](https://img.shields.io/badge/R->4.1-informational.svg?maxAge=259200)](#)
 [![Python.pm](https://img.shields.io/badge/python-3.8-blue.svg?maxAge=259200)](#)
@@ -34,7 +36,7 @@ So if you want to work with the code, I am happy to support you in getting it to
 **How to get started:**   
 1. Download the data set from [Edmond – The Open Research Data Repository of the Max Planck Society](https://doi.org/10.17617/3.KJGEZQ)  
     There are data-readme files on Edmond which explain what the single folders and files contain.
-2. Clone this repository to a clean local directory (called `ROOT` in the next sections). 
+2. Clone this repository to a clean local directory. 
 3. Replace the `\Data` folder with the actual data which you downloaded in step 1 and unzipped. 
 4. Now you should be ready to go. 😊
 
