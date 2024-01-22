@@ -26,7 +26,7 @@ If you want to reproduce the statistics (or the [pre]processing steps) reported 
 
 > **tl;dr**  
 Code relevant for the ECG (pre)processing can be found in [/Code/Analyses/VRTask/Cardio/Preprocessing](/Code/Analyses/VRTask/Cardio/Preprocessing).  
-Most of the main statistical analysis are performed in [/Code/Analyses/VRTask/VRCC_exploratory_analysis.rmd](Analyses/VRTask/VRCC_exploratory_analysis.rmd).  
+Most of the main statistical analysis are performed in [/Code/Analyses/VRTask/VRCC_main_analysis.Rmd](/Code/Analyses/VRTask/VRCC_main_analysis.Rmd), further notebooks with exploratory analyses and the preprocessing can be found in [/Code/Analyses/VRTask](/Code/Analyses/VRTask).  
 All relevant subfolders contain separate README files with concrete explanations.
 
 > **Most important:** 
