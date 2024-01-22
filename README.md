@@ -24,14 +24,14 @@ Combining ECG with immersive virtual reality, we studied whether the cardiac pha
 
 If you want to reproduce the statistics (or the [pre]processing steps) reported in the paper, we suggest that you follow these steps: 
 
-> **tl;dr**  
+> **Shortcuts**  
 Code relevant for the ECG (pre)processing can be found in [/Code/Analyses/VRTask/Cardio/Preprocessing](/Code/Analyses/VRTask/Cardio/Preprocessing).  
 Most of the main statistical analysis are performed in [/Code/Analyses/VRTask/VRCC_main_analysis.Rmd](/Code/Analyses/VRTask/VRCC_main_analysis.Rmd), further notebooks with exploratory analyses and the preprocessing can be found in [/Code/Analyses/VRTask](/Code/Analyses/VRTask).  
 All relevant subfolders contain separate README files with concrete explanations.
 
-> **Most important:** 
+> **Most important**  
 If you run into problems, please do not hesitate to contact us (e.g., via email) or open an issue here. Much of the code is acceptably well documented and the notebooks should (theoretically) run from top to bottom.  
-So if you want to work with the code, I am happy to support you in getting it to work.
+So if you want to work with the code, we are happy to support you in getting it to work.
   
 **How to get started:**   
 1. Download the data set from [Edmond – The Open Research Data Repository of the Max Planck Society](https://doi.org/10.17617/3.KJGEZQ)  
@@ -49,4 +49,4 @@ So if you want to work with the code, I am happy to support you in getting it to
 
 ###### v0.1
 `2024-01`: Code associated with the preprint:
-* <a href="">  <i>bioRxiv</i> Klotzsche*, Motyka*, Molak, Sahula, Darmová, Byrnes, Fajnerová, Gaebler, 2024</a>
+* <a href="">  Klotzsche*, Motyka*, Molak, Sahula, Darmová, Byrnes, Fajnerová, Gaebler, <i>bioRxiv</i>, 2024</a>
