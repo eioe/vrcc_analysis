@@ -1,7 +1,7 @@
 ---
 title: <font size="5">**VRCC -- exploratory analysis **</font> 
 author: <br> <font size="4"> Pawel Motyka, Felix Klotzsche, Aleksander Molak </font> <br>  *pmotyka@psych.pan.pl*  *klotzsche@cbs.mpg.de* *aleksander.molak@gmail.com*
-date: <font size="3"> April 2021  </font>
+date: <font size="3"> Jan 2024  </font>
 output: html_document
 chunk_output_type: console
 self_contained: no

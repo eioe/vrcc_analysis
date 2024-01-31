@@ -2,7 +2,7 @@
 title: <font size="5">**VRCC -- main analysis **</font>
 author: <br> <font size="4"> Pawel Motyka, Felix Klotzsche, Aleksander Molak </font>
   <br>  pmotyka@psych.pan.pl <br>klotzsche@cbs.mpg.de <br>aleksander.molak@gmail.com
-date: <font size="3"> April 2021  </font>
+date: <font size="3"> Jan 2024  </font>
 output:
   html_document: default
   pdf_document: default
