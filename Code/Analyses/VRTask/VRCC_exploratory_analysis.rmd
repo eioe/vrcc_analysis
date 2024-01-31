@@ -283,7 +283,7 @@ di <- di %>% dplyr::rename("threat_start" = "threat")
 d <- inner_join(dm, di)
 
 # check correlations between initial and mid-experimental ratings
-for (s in unique(d$Stimulus)) {
+for (s in unique(d$Stimulus[d$fear_object == T])) {
   
 ds <- d[d$Stimulus == s,]  
 

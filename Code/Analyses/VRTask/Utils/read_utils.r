@@ -33,7 +33,7 @@ get_folders <- function(path, ignore = '_') {
     
     for (i in seq_along(folders)) {
       
-      if (!startsWith(folders[i], ignore)) {
+      if (!startsWith(folders[i], ignore) & !startsWith(folders[i], "README")) {
         
         folders_ready[j] = folders[i]
         j = j + 1
