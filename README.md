@@ -6,8 +6,8 @@
 
 💽 **Data:** https://doi.org/10.17617/3.KJGEZQ 
 
-📑 **Preprint:** [to be replaced with bioRxiv link] 
-
+📑 **Preprint:** https://www.biorxiv.org/content/10.1101/2024.01.31.578172v1  
+  
 🐺 **Demo of the VR experiment**: https://osf.io/a7n9b/
 
 <br/><br/>
