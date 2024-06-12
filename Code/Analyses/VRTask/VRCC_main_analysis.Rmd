@@ -86,6 +86,7 @@ data <- data %>%
          DistanceErrorAbs = DistanceErrorAbs * 100,
          LocalizationError = LocalizationError * 100)
 
+
 ```
 
 <a name="S2"></a>
@@ -120,6 +121,35 @@ hist(dd$mean_angular)
 # wilcox & t test largely agree (not surprising due to reasonable sample size; for sake of simplicity we can therefore just report the t test)
 
 
+# calculate the ratio of systolic and diastolic trials:
+n_per_c_phase <- data %>%
+  mutate(systolength = systolength - 50) %>%   # subtract buffer after R-peak
+  group_by(c_phase, ID) %>% 
+  dplyr::summarize(n = n(), .groups = "drop_last") %>% 
+  dplyr::summarize(n = mean(n)) %>% 
+  ungroup()
+
+n_sys_trials <- n_per_c_phase$n[n_per_c_phase$c_phase == "systole"]
+n_dia_trials <- n_per_c_phase$n[n_per_c_phase$c_phase == "diastole"]
+
+cat("################ \nNumber of trials per cardiac phase:\n")
+cat(sprintf("(Avg.) number of systolic trials: %f \n(Avg.) number of diastolic trials: %f \nRatio: %f \n\n", n_sys_trials, n_dia_trials, n_sys_trials / n_dia_trials))
+
+dur_per_c_phase <- data %>% 
+  mutate(systolength = systolength - 50) %>%   # subtract buffer after R-peak
+  group_by(ID) %>% 
+  dplyr::summarize(m_sys = mean(systolength),
+                   m_dia = mean(RRLength - systolength - 150), 
+                   .groups = "drop_last") %>% 
+  dplyr::summarise(m_sys = mean(m_sys),
+                   m_dia = mean(m_dia), 
+                   .groups = NA) %>% 
+  ungroup()
+
+dur_sys <- dur_per_c_phase$m_sys[1]
+dur_dia <- dur_per_c_phase$m_dia[1]
+
+cat(sprintf("(Avg.) duration of systolic window: %f \n(Avg.) duration of diastolic window: %f \nRatio: %f", dur_sys, dur_dia, dur_sys / dur_dia))
 
 ```
 
