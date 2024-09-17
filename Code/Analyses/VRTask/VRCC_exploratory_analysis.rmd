@@ -34,6 +34,7 @@ self_contained: no
 library(dplyr) 
 library(here)
 library(tidyr)
+library(tidyverse)
 source(here("./Code/Analyses/VRTask/Utils/stats_utils.r"))
 
 # Plotting and tables
@@ -57,13 +58,16 @@ library(circular)
 VRCC_dir  <- here::here()
 
 # read behavioral & ecg data
-data <- read.csv(file = paste0(VRCC_dir,"/Data/VRTask/VRCC_data_consolidated-2023-08-10.csv"))
+data <- read.csv(file = paste0(VRCC_dir,"/Data/VRTask/VRCC_data_consolidated-2023-08-10.csv")) %>% 
+  mutate(Stimulus = str_replace(Stimulus, "Scorpio", "Scorpion"))
 
 # read intial ratings data
-d_sub_start <- read.csv(file = paste0(VRCC_dir,"/Data/VRTask/Ratings/VRCC_data_initial_subjective_ratings.csv"))
+d_sub_start <- read.csv(file = paste0(VRCC_dir,"/Data/VRTask/Ratings/VRCC_data_initial_subjective_ratings.csv")) %>% 
+  mutate(Stimulus = str_replace(Stimulus, "Scorpio", "Scorpion"))
 
 # read mid-experimental ratings data
-d_sub_mid <- read.csv(file = paste0(VRCC_dir,"/Data/VRTask/Ratings/VRCC_data_mid-experimental_subjective_ratings.csv"))
+d_sub_mid <- read.csv(file = paste0(VRCC_dir,"/Data/VRTask/Ratings/VRCC_data_mid-experimental_subjective_ratings.csv")) %>% 
+  mutate(Stimulus = str_replace(Stimulus, "Scorpio", "Scorpion"))
 d_sub_mid$threat[d_sub_mid$threat == 0] <- NA # add NAs
 
 # read questionnaires data
@@ -168,24 +172,24 @@ cR <- rgb(178/255, 31/255, 0/255)
 cB <- rgb(10/255, 80/255, 200/255)
 
 # threat
-boxplot(dis$threat_Crocodile, dis$threat_FinalWolf, dis$threat_FinalSnake, dis$threat_Scorpio, dis$threat_Deer, dis$threat_Pig,  dis$threat_Turtle, dis$threat_Rabbit, col = c(cR, cR, cR, cR, cB, cB, cB,cB), names = c("Crocodile", "Wolf", "Snake", "Scorpio", "Deer", "Pig", "Turtle", "Rabbit"), frame = FALSE, notch = F, ylab = "Subjective threat", cex.lab = 1.2, cex.axis = 1, ylim = c(1,7))
+boxplot(dis$threat_Crocodile, dis$threat_FinalWolf, dis$threat_FinalSnake, dis$threat_Scorpion, dis$threat_Deer, dis$threat_Pig,  dis$threat_Turtle, dis$threat_Rabbit, col = c(cR, cR, cR, cR, cB, cB, cB,cB), names = c("Crocodile", "Wolf", "Snake", "Scorpion", "Deer", "Pig", "Turtle", "Rabbit"), frame = FALSE, notch = F, ylab = "Subjective threat", cex.lab = 1.2, cex.axis = 0.9, ylim = c(1,7))
 abline(h=0, col="gray20", lwd = 1.3, lty = 2)
 
-points(c(mean(dis$threat_Crocodile, na.rm = T), mean(dis$threat_FinalWolf, na.rm = T), mean(dis$threat_FinalSnake, na.rm = T), mean(dis$threat_Scorpio, na.rm = T), mean(dis$threat_Deer, na.rm = T),mean(dis$threat_Pig, na.rm = T),mean(dis$threat_Turtle, na.rm = T),mean(dis$threat_Rabbit, na.rm = T)), pch = 19, cex = 1.4)
+points(c(mean(dis$threat_Crocodile, na.rm = T), mean(dis$threat_FinalWolf, na.rm = T), mean(dis$threat_FinalSnake, na.rm = T), mean(dis$threat_Scorpion, na.rm = T), mean(dis$threat_Deer, na.rm = T),mean(dis$threat_Pig, na.rm = T),mean(dis$threat_Turtle, na.rm = T),mean(dis$threat_Rabbit, na.rm = T)), pch = 19, cex = 1.4)
 # export 3.5 x 7 cm
 
 # disgust
-boxplot(dis$disgust_Crocodile, dis$disgust_FinalWolf, dis$disgust_FinalSnake, dis$disgust_Scorpio, dis$disgust_Deer, dis$disgust_Pig,  dis$disgust_Turtle, dis$disgust_Rabbit, col = c(cR, cR, cR, cR, cB, cB, cB,cB), names = c("Crocodile", "Wolf", "Snake", "Scorpio", "Deer", "Pig", "Turtle", "Rabbit"), frame = FALSE, notch = F, ylab = "Subjective disgust", cex.lab = 1.2, cex.axis = 1, ylim = c(1,7))
+boxplot(dis$disgust_Crocodile, dis$disgust_FinalWolf, dis$disgust_FinalSnake, dis$disgust_Scorpion, dis$disgust_Deer, dis$disgust_Pig,  dis$disgust_Turtle, dis$disgust_Rabbit, col = c(cR, cR, cR, cR, cB, cB, cB,cB), names = c("Crocodile", "Wolf", "Snake", "Scorpion", "Deer", "Pig", "Turtle", "Rabbit"), frame = FALSE, notch = F, ylab = "Subjective disgust", cex.lab = 1.2, cex.axis = 0.9, ylim = c(1,7))
 abline(h=0, col="gray20", lwd = 1.3, lty = 2)
 
-points(c(mean(dis$disgust_Crocodile, na.rm = T), mean(dis$disgust_FinalWolf, na.rm = T), mean(dis$disgust_FinalSnake, na.rm = T), mean(dis$disgust_Scorpio, na.rm = T), mean(dis$disgust_Deer, na.rm = T),mean(dis$disgust_Pig, na.rm = T),mean(dis$disgust_Turtle, na.rm = T),mean(dis$disgust_Rabbit, na.rm = T)), pch = 19, cex = 1.4)
+points(c(mean(dis$disgust_Crocodile, na.rm = T), mean(dis$disgust_FinalWolf, na.rm = T), mean(dis$disgust_FinalSnake, na.rm = T), mean(dis$disgust_Scorpion, na.rm = T), mean(dis$disgust_Deer, na.rm = T),mean(dis$disgust_Pig, na.rm = T),mean(dis$disgust_Turtle, na.rm = T),mean(dis$disgust_Rabbit, na.rm = T)), pch = 19, cex = 1.4)
 # export 3.5 x 7 cm
 
 # speed
-boxplot(dis$speed_Crocodile, dis$speed_FinalWolf, dis$speed_FinalSnake, dis$speed_Scorpio, dis$speed_Deer, dis$speed_Pig,  dis$speed_Turtle, dis$speed_Rabbit, col = c(cR, cR, cR, cR, cB, cB, cB,cB), names = c("Crocodile", "Wolf", "Snake", "Scorpio", "Deer", "Pig", "Turtle", "Rabbit"), frame = FALSE, notch = F, ylab = "Ratings of speed", cex.lab = 1.2, cex.axis = 1, ylim = c(1,7))
+boxplot(dis$speed_Crocodile, dis$speed_FinalWolf, dis$speed_FinalSnake, dis$speed_Scorpion, dis$speed_Deer, dis$speed_Pig,  dis$speed_Turtle, dis$speed_Rabbit, col = c(cR, cR, cR, cR, cB, cB, cB,cB), names = c("Crocodile", "Wolf", "Snake", "Scorpion", "Deer", "Pig", "Turtle", "Rabbit"), frame = FALSE, notch = F, ylab = "Ratings of speed", cex.lab = 1.2, cex.axis = 0.9, ylim = c(1,7))
 abline(h=0, col="gray20", lwd = 1.3, lty = 2)
 
-points(c(mean(dis$speed_Crocodile, na.rm = T), mean(dis$speed_FinalWolf, na.rm = T), mean(dis$speed_FinalSnake, na.rm = T), mean(dis$speed_Scorpio, na.rm = T), mean(dis$speed_Deer, na.rm = T),mean(dis$speed_Pig, na.rm = T),mean(dis$speed_Turtle, na.rm = T),mean(dis$speed_Rabbit, na.rm = T)), pch = 19, cex = 1.4)
+points(c(mean(dis$speed_Crocodile, na.rm = T), mean(dis$speed_FinalWolf, na.rm = T), mean(dis$speed_FinalSnake, na.rm = T), mean(dis$speed_Scorpion, na.rm = T), mean(dis$speed_Deer, na.rm = T),mean(dis$speed_Pig, na.rm = T),mean(dis$speed_Turtle, na.rm = T),mean(dis$speed_Rabbit, na.rm = T)), pch = 19, cex = 1.4)
 # export 3.5 x 7 cm
 
 
