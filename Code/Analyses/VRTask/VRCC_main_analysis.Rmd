@@ -504,6 +504,10 @@ d <- d %>%
   dplyr::group_by(ID, c_phase, FearObject) %>% 
   dplyr::summarize(DistanceError = mean(DistanceError))
 
+d %>% dplyr::group_by(c_phase, FearObject)  %>% 
+  dplyr::summarize(DistanceError_m = mean(DistanceError),
+                   DistanceError_sd = sd(DistanceError))
+
 # run analysis
 fit_all <- aov_ez(data = d,
                   dv = "DistanceError",
@@ -700,7 +704,7 @@ f1 <- ggplot(data = d, aes(y = distance_error)) +
 f1 # export size: 5 x 5
 
 # save to disc:
-fpath_figs <- file.path(VRCC_dir, 'Code', 'Analyses', 'VRTask', 'Figures')
+fpath_figs <- file.path(VRCC_dir, 'Figures')
 fname <- file.path(fpath_figs, 'VRCC_DistErr_BoxViolin_CardiacPhase_Threat.pdf')
 pdf(fname)
 f1
@@ -792,7 +796,7 @@ f2 <- ggplot(data = d, aes(y = distance_error)) +
 f2 # export size: 5 x 5
 
 # save to disc:
-fpath_figs <- file.path(VRCC_dir, 'Code', 'Analyses', 'VRTask', 'Figures')
+fpath_figs <- file.path(VRCC_dir, 'Figures')
 fname <- file.path(fpath_figs, 'VRCC_DistErr_BoxViolin_CardiacPhase_NonThreat.pdf')
 pdf(fname)
 f2
@@ -836,7 +840,7 @@ f3 <- ggplot(data = d, aes(x = c_phase, y = m_DistErr, fill = Color)) +
 f3
 
 # save to disc:
-fpath_figs <- file.path(VRCC_dir, 'Code', 'Analyses', 'VRTask', 'Figures')
+fpath_figs <- file.path(VRCC_dir, 'Figures')
 fname <- file.path(fpath_figs, 'VRCC_DistErr_BoxPlot_ANOVA.pdf')
 pdf(fname)
 f3
