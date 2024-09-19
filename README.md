@@ -47,7 +47,8 @@ So if you want to work with the code, we are happy to support you in getting it 
 > You can use the `tags` in the repo to identify the according commits.
 
 ###### v1.0
-`2024-09`: Code associated with the peer-reviewed publication:  
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.13797560.svg)](https://doi.org/10.5281/zenodo.13797560)  
+`2024-09`: Code associated with the peer-reviewed publication  
 [tbc]
 
 ###### v0.1
