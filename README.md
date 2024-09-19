@@ -2,7 +2,7 @@
 
 ![VME](./VRCC_header_v0.2.png)
 
-<h2>VRCC – No cardiac phase bias for threat perception under naturalistic conditions in immersive virtual reality </h2>
+<h2>VRCC – No cardiac phase bias for threat-related threat perception in immersive virtual reality </h2>
 
 💽 **Data:** https://doi.org/10.17617/3.KJGEZQ 
 
@@ -46,6 +46,9 @@ So if you want to work with the code, we are happy to support you in getting it 
 
 > You can use the `tags` in the repo to identify the according commits.
 
+###### v1.0
+`2024-09`: Code associated with the peer-reviewed publication:  
+[tbc]
 
 ###### v0.1
 `2024-01`: Code associated with the preprint:
