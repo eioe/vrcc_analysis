@@ -4,11 +4,17 @@
 
 <h2>VRCC – No cardiac phase bias for threat-related threat perception in immersive virtual reality </h2>
 
+📖 **Publication:**  [Klotzsche*, Motyka* et al. (2024, Royal Sociaty Open Science)](https://royalsocietypublishing.org/doi/full/10.1098/rsos.241072)
+
 💽 **Data:** https://doi.org/10.17617/3.KJGEZQ 
 
 📑 **Preprint:** https://www.biorxiv.org/content/10.1101/2024.01.31.578172v1  
   
 🐺 **Demo of the VR experiment**: https://osf.io/a7n9b/
+
+<a href="https://royalsocietypublishing.org/doi/full/10.1098/rsos.241072" target="_blank">
+    <img src="https://github.com/user-attachments/assets/d9043f79-cbb6-4c3c-bae2-a5f31f030076" alt="Clickable Image" style="max-width:100%;">
+</a>
 
 <br/><br/>
 [![R.pm](https://img.shields.io/badge/R->4.1-informational.svg?maxAge=259200)](#)
@@ -49,8 +55,8 @@ So if you want to work with the code, we are happy to support you in getting it 
 ###### v1.0
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.13797560.svg)](https://doi.org/10.5281/zenodo.13797560)  
 `2024-09`: Code associated with the peer-reviewed publication  
-[tbc]
+* <a href="https://royalsocietypublishing.org/doi/full/10.1098/rsos.241072">  Klotzsche*, Motyka*, Molak, Sahula, Darmová, Byrnes, Fajnerová, Gaebler, <i>RSOS</i>, 2024</a>
 
 ###### v0.1
 `2024-01`: Code associated with the preprint:
-* <a href="">  Klotzsche*, Motyka*, Molak, Sahula, Darmová, Byrnes, Fajnerová, Gaebler, <i>bioRxiv</i>, 2024</a>
+* <a href="https://www.biorxiv.org/content/10.1101/2024.01.31.578172v1">  Klotzsche*, Motyka*, Molak, Sahula, Darmová, Byrnes, Fajnerová, Gaebler, <i>bioRxiv</i>, 2024</a>
